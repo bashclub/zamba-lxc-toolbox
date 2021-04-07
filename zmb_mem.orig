@@ -1,0 +1,100 @@
+#!/bin/bash
+
+#ZMB_VAR
+
+
+
+apt update && apt full-upgrade -y
+echo -ne '\n' | apt install -y acl dnsutils mc samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules 
+
+mv /etc/krb5.conf /etc/krb5.conf.bak
+cat > /etc/krb5.conf <<EOF
+[libdefaults]
+	default_realm = $ZMB_REA
+    ticket_lifetime = 600
+	dns_lookup_realm = true
+	dns_lookup_kdc = true
+	renew_lifetime = 7d
+EOF
+
+echo -e "$ZMB_APW" | kinit -V $ZMB_ADA
+klist
+
+mv /etc/samba/smb.conf /etc/samba/smb.conf.bak
+cat > /etc/samba/smb.conf <<EOF
+[global]
+	workgroup = $ZMB_DOM
+	security = ADS
+	realm = $ZMB_REA
+	server string = %h server
+
+	vfs objects = acl_xattr shadow_copy2
+    map acl inherit = Yes
+    store dos attributes = Yes
+	idmap config *:backend = tdb
+	idmap config *:range = 3000000-4000000
+	idmap config *:schema_mode = rfc2307
+
+	winbind refresh tickets = Yes
+	winbind use default domain = Yes
+	winbind separator = /
+	winbind nested groups = yes
+	winbind nss info = rfc2307
+
+	pam password change = Yes
+	passwd chat = *Enter\snew\s*\spassword:* %n\n *Retype\snew\s*\spassword:* %n\n *password\supdated\ssuccessfully* .
+	passwd program = /usr/bin/passwd %u
+
+	template homedir = /home/%U
+	template shell = /bin/bash
+	bind interfaces only = Yes
+	interfaces = lo eth0
+	log file = /var/log/samba/log.%m
+	logging = syslog
+	max log size = 1000
+	panic action = /usr/share/samba/panic-action %d
+
+	load printers = No
+	printcap name = /dev/null
+	printing = bsd
+	disable spoolss = Yes
+
+	allow trusted domains = No
+	dns proxy = No
+	shadow: snapdir = .zfs/snapshot
+	shadow: sort = desc
+	shadow: format = -%Y-%m-%d-%H%M
+	shadow: snapprefix = ^zfs-auto-snap_\(frequent\)\{0,1\}\(hourly\)\{0,1\}\(daily\)\{0,1\}\(monthly\)\{0,1\}
+	shadow: delimiter = -20
+
+[share]
+	comment = Main Share
+	path = /tank/share
+	read only = No
+	create mask = 0660
+	directory mask = 0770
+	inherit acls = Yes
+
+
+
+EOF
+
+systemctl restart smbd
+
+echo -e "$ZMB_APW" | net ads join -U $ZMB_ADA createcomputer=Computers
+sed -i "s|files systemd|files systemd winbind|g" /etc/nsswitch.conf
+sed -i "s|#WINBINDD_OPTS=|WINBINDD_OPTS=|" /etc/default/winbind
+echo -e "session optional        pam_mkhomedir.so skel=/etc/skel umask=077" >> /etc/pam.d/common-session
+
+systemctl restart winbind nmbd
+wbinfo -u
+wbinfo -g
+
+mkdir /tank/share
+chown 'administrator':'domain users' /tank/share
+
+setfacl -Rm u:administrator:rwx,g::-,o::- /tank/share
+setfacl -Rdm u:administrator:rwx,g::-,o::- /tank/share
+
+systemctl restart smbd nmbd winbind
+
