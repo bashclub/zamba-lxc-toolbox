@@ -21,9 +21,9 @@ systemctl enable matrix-synapse
 ss -tulpen
 
 mkdir /etc/nginx/ssl
-openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/matrix.key -out /etc/nginx/ssl/matrix.crt -subj "/CN=$MRX_DOM" -addext "subjectAltName=DNS:$MRX_DOM"
+openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/matrix.key -out /etc/nginx/ssl/matrix.crt -subj "/CN=$MATRIX_FQDN" -addext "subjectAltName=DNS:$MATRIX_FQDN"
 
-cat > /etc/nginx/sites-available/$MRX_DOM <<EOF
+cat > /etc/nginx/sites-available/$MATRIX_FQDN <<EOF
 # Virtual Host configuration for example.com
 #
 # You can move that to a different file under sites-available/ and symlink that
@@ -32,15 +32,15 @@ cat > /etc/nginx/sites-available/$MRX_DOM <<EOF
 server {
     listen 80;
     listen [::]:80;
-    server_name $MRX_DOM;
+    server_name $MATRIX_FQDN;
 
-    return 301 https://$MRX_DOM;
+    return 301 https://$MATRIX_FQDN;
 }
 
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
-    server_name $MRX_DOM;
+    server_name $MATRIX_FQDN;
 
     ssl on;
     ssl_certificate /etc/nginx/ssl/matrix.crt;
@@ -55,14 +55,14 @@ server {
 server {
     listen 8448 ssl;
     listen [::]:8448 ssl;
-    server_name $MRX_DOM;
+    server_name $MATRIX_FQDN;
 
     ssl on;
     ssl_certificate /etc/nginx/ssl/matrix.crt;
     ssl_certificate_key /etc/nginx/ssl/matrix.key;
 
     # If you don't wanna serve a site, comment this out
-    root /var/www/$MRX_DOM;
+    root /var/www/$MATRIX_FQDN;
     index index.html index.htm;
 
     location / {
@@ -72,9 +72,9 @@ server {
 }
 
 EOF
-ln -s /etc/nginx/sites-available/$MRX_DOM /etc/nginx/sites-enabled/$MRX_DOM
+ln -s /etc/nginx/sites-available/$MATRIX_FQDN /etc/nginx/sites-enabled/$MATRIX_FQDN
 
-cat > /etc/nginx/sites-available/$ELE_DOM <<EOF
+cat > /etc/nginx/sites-available/$MATRIX_ELEMENT_FQDN <<EOF
 # Virtual Host configuration for example.com
 #
 # You can move that to a different file under sites-available/ and symlink that
@@ -83,45 +83,45 @@ cat > /etc/nginx/sites-available/$ELE_DOM <<EOF
 server {
     listen 80;
     listen [::]:80;
-    server_name $ELE_DOM;
-    return 301 https://$ELE_DOM;
+    server_name $MATRIX_ELEMENT_FQDN;
+    return 301 https://$MATRIX_ELEMENT_FQDN;
 }
 
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
-    server_name $ELE_DOM;
+    server_name $MATRIX_ELEMENT_FQDN;
 
     ssl on;
     ssl_certificate /etc/nginx/ssl/matrix.crt;
     ssl_certificate_key /etc/nginx/ssl/matrix.key;
 
     # If you don't wanna serve a site, comment this out
-    root /var/www/$ELE_DOM/element;
+    root /var/www/$MATRIX_ELEMENT_FQDN/element;
     index index.html index.htm;
 } 
 
 EOF
 
-ln -s /etc/nginx/sites-available/$ELE_DOM /etc/nginx/sites-enabled/$ELE_DOM
+ln -s /etc/nginx/sites-available/$MATRIX_ELEMENT_FQDN /etc/nginx/sites-enabled/$MATRIX_ELEMENT_FQDN
 
 systemctl restart nginx
 
-mkdir /var/www/$ELE_DOM
-cd /var/www/$ELE_DOM
+mkdir /var/www/$MATRIX_ELEMENT_FQDN
+cd /var/www/$MATRIX_ELEMENT_FQDN
 wget https://packages.riot.im/element-release-key.asc
 gpg --import element-release-key.asc
 
-wget https://github.com/vector-im/element-web/releases/download/$ELE_VER/element-$ELE_VER.tar.gz
-wget https://github.com/vector-im/element-web/releases/download/$ELE_VER/element-$ELE_VER.tar.gz.asc
-gpg --verify element-$ELE_VER.tar.gz.asc
+wget https://github.com/vector-im/element-web/releases/download/$MATRIX_ELEMENT_VERSION/element-$MATRIX_ELEMENT_VERSION.tar.gz
+wget https://github.com/vector-im/element-web/releases/download/$MATRIX_ELEMENT_VERSION/element-$MATRIX_ELEMENT_VERSION.tar.gz.asc
+gpg --verify element-$MATRIX_ELEMENT_VERSION.tar.gz.asc
 
-tar -xzvf element-$ELE_VER.tar.gz
-ln -s element-$ELE_VER element
+tar -xzvf element-$MATRIX_ELEMENT_VERSION.tar.gz
+ln -s element-$MATRIX_ELEMENT_VERSION element
 chown www-data:www-data -R element
 cp ./element/config.sample.json ./element/config.json
-sed -i "s|https://matrix-client.matrix.org|https://$MRX_DOM|" ./element/config.json
-sed -i "s|\"server_name\": \"matrix.org\"|\"server_name\": \"$MRX_DOM\"|" ./element/config.json
+sed -i "s|https://matrix-client.matrix.org|https://$MATRIX_FQDN|" ./element/config.json
+sed -i "s|\"server_name\": \"matrix.org\"|\"server_name\": \"$MATRIX_FQDN\"|" ./element/config.json
 
 su postgres <<EOF
 psql -c "CREATE USER $ELE_DBUSER WITH PASSWORD '$ELE_DBPASS';"
@@ -131,7 +131,7 @@ EOF
 
 cd /
 sed -i "s|#registration_shared_secret: <PRIVATE STRING>|registration_shared_secret: \"$MRX_PKE\"|" /etc/matrix-synapse/homeserver.yaml
-sed -i "s|#public_baseurl: https://example.com/|public_baseurl: https://$MRX_DOM/|" /etc/matrix-synapse/homeserver.yaml
+sed -i "s|#public_baseurl: https://example.com/|public_baseurl: https://$MATRIX_FQDN/|" /etc/matrix-synapse/homeserver.yaml
 sed -i "s|#enable_registration: false|enable_registration: true|" /etc/matrix-synapse/homeserver.yaml
 sed -i "s|name: sqlite3|name: psycopg2|" /etc/matrix-synapse/homeserver.yaml
 sed -i "s|database: /var/lib/matrix-synapse/homeserver.db|database: $ELE_DBNAME\n    user: $ELE_DBUSER\n    password: $ELE_DBPASS\n    host: 127.0.0.1\n    cp_min: 5\n    cp_max: 10|" /etc/matrix-synapse/homeserver.yaml

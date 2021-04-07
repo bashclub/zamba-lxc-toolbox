@@ -10,22 +10,22 @@ echo -ne '\n' | apt install -y acl dnsutils mc samba winbind libpam-winbind libn
 mv /etc/krb5.conf /etc/krb5.conf.bak
 cat > /etc/krb5.conf <<EOF
 [libdefaults]
-	default_realm = $ZMB_REA
+	default_realm = $ZMB_REALM
     ticket_lifetime = 600
 	dns_lookup_realm = true
 	dns_lookup_kdc = true
 	renew_lifetime = 7d
 EOF
 
-echo -e "$ZMB_APW" | kinit -V $ZMB_ADA
+echo -e "$ZMB_ADMIN_PASS" | kinit -V $ZMB_ADMIN_USER
 klist
 
 mv /etc/samba/smb.conf /etc/samba/smb.conf.bak
 cat > /etc/samba/smb.conf <<EOF
 [global]
-	workgroup = $ZMB_DOM
+	workgroup = $ZMB_DOMAIN
 	security = ADS
-	realm = $ZMB_REA
+	realm = $ZMB_REALM
 	server string = %h server
 
 	vfs objects = acl_xattr shadow_copy2
@@ -67,9 +67,9 @@ cat > /etc/samba/smb.conf <<EOF
 	shadow: snapprefix = ^zfs-auto-snap_\(frequent\)\{0,1\}\(hourly\)\{0,1\}\(daily\)\{0,1\}\(monthly\)\{0,1\}
 	shadow: delimiter = -20
 
-[share]
+[$ZMB_SHARE]
 	comment = Main Share
-	path = /tank/share
+	path = /$LXC_FILEFS_MOUNTPOINT/$ZMB_SHARE
 	read only = No
 	create mask = 0660
 	directory mask = 0770
@@ -81,7 +81,7 @@ EOF
 
 systemctl restart smbd
 
-echo -e "$ZMB_APW" | net ads join -U $ZMB_ADA createcomputer=Computers
+echo -e "$ZMB_ADMIN_PASS" | net ads join -U $ZMB_ADMIN_USER createcomputer=Computers
 sed -i "s|files systemd|files systemd winbind|g" /etc/nsswitch.conf
 sed -i "s|#WINBINDD_OPTS=|WINBINDD_OPTS=|" /etc/default/winbind
 echo -e "session optional        pam_mkhomedir.so skel=/etc/skel umask=077" >> /etc/pam.d/common-session
@@ -90,11 +90,13 @@ systemctl restart winbind nmbd
 wbinfo -u
 wbinfo -g
 
-mkdir /tank/share
-chown 'administrator':'domain users' /tank/share
+mkdir /$LXC_FILEFS_MOUNTPOINT/$ZMB_SHARE
 
-setfacl -Rm u:administrator:rwx,g::-,o::- /tank/share
-setfacl -Rdm u:administrator:rwx,g::-,o::- /tank/share
+# originally 'domain users' was set, added variable for domain admins group, samba wiki recommends separate group e.g. 'unix admins'
+chown "$ZMB_ADMIN_USER":"$ZMB_DOMAIN_ADMINS_GROUP" /$LXC_FILEFS_MOUNTPOINT/$ZMB_SHARE
+
+setfacl -Rm u:$ZMB_ADMIN_USER:rwx,g::-,o::- /$LXC_FILEFS_MOUNTPOINT/$ZMB_SHARE
+setfacl -Rdm u:$ZMB_ADMIN_USER:rwx,g::-,o::- /$LXC_FILEFS_MOUNTPOINT/$ZMB_SHARE
 
 systemctl restart smbd nmbd winbind
 
