@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#MATRIX_VAR
-
+source ./zamba.conf
 
 MRX_PKE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
@@ -11,7 +10,7 @@ ELE_DBPASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
 apt update && apt full-upgrade -y
 
-apt install -y lsb-release apt-transport-https curl gpg software-properties-common net-tools nginx mc postgresql python3-psycopg2
+apt install -y $LXC_TOOLSET apt-transport-https gpg software-properties-common nginx postgresql python3-psycopg2
 
 wget wget -O /usr/share/keyrings/matrix-org-archive-keyring.gpg https://packages.matrix.org/debian/matrix-org-archive-keyring.gpg
 echo "deb [signed-by=/usr/share/keyrings/matrix-org-archive-keyring.gpg] https://packages.matrix.org/debian/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/matrix-org.list

@@ -1,11 +1,9 @@
 #!/bin/bash
 
-#ZMB_VAR
-
-
+source ./zamba.conf
 
 apt update && apt full-upgrade -y
-echo -ne '\n' | apt install -y acl dnsutils mc samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules 
+echo -ne '\n' | apt install -y $LXC_TOOLSET acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules 
 
 mv /etc/krb5.conf /etc/krb5.conf.bak
 cat > /etc/krb5.conf <<EOF
