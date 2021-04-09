@@ -118,7 +118,7 @@ This parameter is not used yet, but will be integrated in future releases.
 <br>
 
 ## Zamba Server Section
-This section configured the Zamba server (AD DC, AD member and standalone)
+This section configures the Zamba server (AD DC, AD member and standalone)
 <br>
 
 ### ZMB_REALM
@@ -151,4 +151,62 @@ On Windows Servers this group depends on the configured OS language.
 Defines the name of your Zamba share
 ```bash
 ZMB_SHARE="share"
+```
+<br>
+
+## Mailpiler section
+This section configures the mailpiler email archive
+<br>
+
+### PILER_FQDN
+Defines the (public) FQDN of your piler mail archive
+```bash
+PILER_FQDN="piler.zmb.rocks"
+```
+### PILER_SMARTHOST
+Defines the smarthost for piler mail archive
+```bash
+PILER_SMARTHOST="10.10.80.20"
+```
+### PILER_VERSION
+Defines the version number of piler mail archive to install
+```bash
+PILER_VERSION="1.3.10"
+```
+### PILER_SPHINX_VERSION
+Defines the version of sphinx to install
+```bash
+PILER_SPHINX_VERSION="3.3.1"
+```
+### PILER_PHP_VERSION
+Defines the php version to install
+```bash
+PILER_PHP_VERSION="7.4"
+```
+<br>
+
+## Matrix section
+This section configures the matrix chat server
+<br>
+
+### MATRIX_FQDN
+Define the FQDN of your Matrix server
+```bash
+MATRIX_FQDN="matrix.zmb.rocks"
+```
+
+### MATRIX_ELEMENT_FQDN
+Define the FQDN for the Element Web virtual host
+```bash
+MATRIX_ELEMENT_FQDN="element.zmb.rocks"
+```
+### MATRIX_ELEMENT_VERSION
+Define the version of Element Web
+```bash
+MATRIX_ELEMENT_VERSION="v1.7.24"
+```
+### MATRIX_JITSI_FQDN
+Define the FQDN for the Jitsi Meet virtual host
+```bash
+MATRIX_JITSI_FQDN="meet.zmb.rocks"
 ```
