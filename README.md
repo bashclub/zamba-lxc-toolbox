@@ -4,8 +4,8 @@
 Zamba is a Toolbox for Proxmox (ZFS) admins, which fires a container with preconfigured services.
 ### Inclueded services:
 - ZMB (Samba) AD member with ZFS volume snapshot support
-- mailpiler mail archive [malipiler.org](https://www.mailpiler.org/)
-- Matrix Homeserver with Element Web
+- mailpiler mail archive [mailpiler.org](https://www.mailpiler.org/)
+- Matrix Synapse Homeserver [matrix.org](https://matrix.org/docs/projects/server/synapse) with Element Web [Element on github](https://github.com/vector-im/element-web)
 ### Planned features / ideas for future releases
 - ZMB (Samba) standalone with ZFS volume snapshot support
 - ZMB (Samba) Active Directory Domain Controller
