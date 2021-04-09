@@ -32,7 +32,6 @@ After configuring, you are able to launch the script interactively:
 ```bash
 bash install.sh
 ```
-After container creation, you will be prompted to select the service to install.
-Depending on the service you will be asked some more questions durnig installation.
+After container creation, you will be prompted to select the service to install and depending on the service there may be some more questions during installation.
 
-Once the script has finished, the container is installed and running and you can continue with the service specitfic configuration.
+Once the script has finished, the container is installed and running and you can continue with the service specific configuration.
