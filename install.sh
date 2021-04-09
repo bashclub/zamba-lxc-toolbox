@@ -67,6 +67,7 @@ select opt in just_lxc zmb-standalone zmb-member zmb-pdc mailpiler matrix quit; 
     zmb-standalone)
       echo "Selected Zamba standalone"
       echo "This function is not implemented yet! Exiting..."
+      # TODO: write script for Zamba Standalone
       exit 1
       ;;
     zmb-member)
@@ -77,6 +78,7 @@ select opt in just_lxc zmb-standalone zmb-member zmb-pdc mailpiler matrix quit; 
       ;;
     zmb-pdc)
       echo "Selected Zamba AD DC"
+      # TODO: write script for Zamba AD DC
       echo "This function is not implemented yet! Exiting..."
       exit 1
       ;;
