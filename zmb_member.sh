@@ -78,7 +78,7 @@ cat > /etc/samba/smb.conf <<EOF
 
 [$ZMB_SHARE]
 	comment = Main Share
-	path = /$LXC_FILEFS_MOUNTPOINT/$ZMB_SHARE
+	path = /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 	read only = No
 	create mask = 0660
 	directory mask = 0770
@@ -99,13 +99,13 @@ systemctl restart winbind nmbd
 wbinfo -u
 wbinfo -g
 
-mkdir /$LXC_FILEFS_MOUNTPOINT/$ZMB_SHARE
+mkdir /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
 # originally 'domain users' was set, added variable for domain admins group, samba wiki recommends separate group e.g. 'unix admins'
-chown "$ZMB_ADMIN_USER":"$ZMB_DOMAIN_ADMINS_GROUP" /$LXC_FILEFS_MOUNTPOINT/$ZMB_SHARE
+chown "$ZMB_ADMIN_USER":"$ZMB_DOMAIN_ADMINS_GROUP" /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
-setfacl -Rm u:$ZMB_ADMIN_USER:rwx,g::-,o::- /$LXC_FILEFS_MOUNTPOINT/$ZMB_SHARE
-setfacl -Rdm u:$ZMB_ADMIN_USER:rwx,g::-,o::- /$LXC_FILEFS_MOUNTPOINT/$ZMB_SHARE
+setfacl -Rm u:$ZMB_ADMIN_USER:rwx,g::-,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+setfacl -Rdm u:$ZMB_ADMIN_USER:rwx,g::-,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
 systemctl restart smbd nmbd winbind
 

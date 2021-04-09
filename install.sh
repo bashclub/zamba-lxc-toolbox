@@ -72,7 +72,7 @@ select opt in just_lxc zmb-standalone zmb-member zmb-pdc mailpiler matrix quit; 
       ;;
     zmb-member)
       echo "Configuring LXC container '$opt'!"
-      pct set $LXC_NBR -mp0 $LXC_FILEFS_STORAGE:$LXC_FILEFS_SIZE,mp=/$LXC_FILEFS_MOUNTPOINT
+      pct set $LXC_NBR -mp0 $LXC_SHAREFS_STORAGE:$LXC_SHAREFS_SIZE,mp=/$LXC_SHAREFS_MOUNTPOINT
       sleep 2;
       break
       ;;
