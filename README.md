@@ -26,7 +26,7 @@ cd zamba
 ### Configuration
 To fit your requirements, please edit the file `zamba.conf` with your favourite test editor (e.g. `vim` or `nano`).
 The required adjustments are in the LXC container section and in the section for the service you want to launch.
-For further information about the config variables, have a lokk at [CONFIGVARS.md](CONFIGVARS.md)
+For further information about the config variables, have a lokk at [zamba.conf.md](zamba.conf.md)
 ### Installation
 After configuring, you are able to launch the script interactively:
 ```bash
