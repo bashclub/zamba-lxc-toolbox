@@ -15,6 +15,7 @@ Zamba is a Toolbox for Proxmox (ZFS) admins, which fires a container with precon
 - Zabbix [zabbix.com](https://zabbix.com)
 - Abgleich control machine (ZFS Snapshot and Backup engine) [Abgleich on github](https://github.com/pleiszenburg/abgleich)
 - Jitsi Meet server [jitsi.org](https://jitsi.org/jitsi-meet/)
+- Kopano One [kopano.com](https://kopano.com/)
 ## Usage
 Just ssh into your Proxmox machine and clone this git repository. Make sure you have installed `git`.
 ### Clone this Repository
