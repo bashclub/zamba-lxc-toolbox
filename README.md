@@ -1,8 +1,10 @@
 # Zamba
 
 ## About
-Zamba is a Toolbox for Proxmox (ZFS) admins, which fires a container with preconfigured services.
-### Inclueded services:
+Zamba is a Toolbox for Proxmox admins, which fires up a container and installs a service (listed below) on it.
+### Requirements
+Proxmox VE Server with at least one configured ZFS Pool.
+### Included services:
 - ZMB (Samba) AD member with ZFS volume snapshot support
 - mailpiler mail archive [mailpiler.org](https://www.mailpiler.org/)
 - Matrix Synapse Homeserver [matrix.org](https://matrix.org/docs/projects/server/synapse) with Element Web [Element on github](https://github.com/vector-im/element-web)
