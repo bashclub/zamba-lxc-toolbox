@@ -78,6 +78,8 @@ select opt in just_lxc zmb-standalone zmb-member zmb-ad mailpiler matrix quit; d
       ;;
     zmb-ad)
       echo "Selected Zamba AD DC"
+      # Enable nesting for ntp service
+      pct set $LXC_NBR -features nesting=1
       # TODO: write script for Zamba AD DC
       echo "This function is not implemented yet! Exiting..."
       exit 1
@@ -116,3 +118,9 @@ pct push $LXC_NBR ./zamba.conf /root/zamba.conf
 pct push $LXC_NBR ./$opt.sh /root/$opt.sh
 echo "Install '$opt'!"
 lxc-attach -n$LXC_NBR bash /root/$opt.sh
+
+if [[ $opt == "zmb-ad" ]]; then
+  pct stop $LXC_NBR
+  pct set $LXC_NBR \-nameserver $(echo $LXC_IP | cut -d'/' -f 1)
+  pct start $LXC_NBR
+fi
