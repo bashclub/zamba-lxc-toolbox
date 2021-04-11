@@ -48,7 +48,7 @@ sleep 2;
 
 # Check vlan configuration
 if [[ $LXC_VLAN != "" ]];then
-  VLAN=",vlan=$LXC_VLAN"
+  VLAN=",tag=$LXC_VLAN"
 else
  VLAN=""
 fi
