@@ -58,7 +58,7 @@ sleep 2;
 
 PS3="Select the Server-Function: "
 
-select opt in just_lxc zmb-standalone zmb-member zmb-pdc mailpiler matrix quit; do
+select opt in just_lxc zmb-standalone zmb-member zmb-ad mailpiler matrix quit; do
   case $opt in
     just_lxc)
       echo "Debian-only LXC container selected"
@@ -76,7 +76,7 @@ select opt in just_lxc zmb-standalone zmb-member zmb-pdc mailpiler matrix quit; 
       sleep 2;
       break
       ;;
-    zmb-pdc)
+    zmb-ad)
       echo "Selected Zamba AD DC"
       # TODO: write script for Zamba AD DC
       echo "This function is not implemented yet! Exiting..."
