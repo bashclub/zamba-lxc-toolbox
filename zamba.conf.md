@@ -90,7 +90,7 @@ Defines the vlan id of the LXC container's network interface, if the network ada
 LXC_VLAN="80"
 ```
 ### LXC_PWD
-Defines the `root` password of your LXC container
+Defines the `root` password of your LXC container. Please use 'single quatation marks' to avoid unexpected behaviour.
 ```bash
 LXC_PWD="S3cr3tp@ssw0rd"
 ```
@@ -132,9 +132,9 @@ Defines the domain name in your Active Directory or Workgroup (AD DC, AD member,
 ZMB_DOMAIN="ZMB"
 ```
 ### ZMB_DNS_BACKEND
-Defines the desired DNS server backend, supported are `INTERNAL_DNS` and `BIND9_DLZ` for more advanced usage
+Defines the desired DNS server backend, supported are `SAMBA_INTERNAL` and `BIND9_DLZ` for more advanced usage
 ```bash
-ZMB_DNS_BACKEND="INTERNAL_DNS"
+ZMB_DNS_BACKEND="SAMBA_INTERNAL"
 ```
 ### ZMB_ADMIN_USER
 Defines the name of your domain administrator account (AD DC, AD member)
@@ -142,9 +142,9 @@ Defines the name of your domain administrator account (AD DC, AD member)
 ZMB_ADMIN_USER="Administrator"
 ```
 ### ZMB_ADMIN_PASS
-Defines the domain administrator's password (AD DC, AD member)
+Defines the domain administrator's password (AD DC, AD member). Please use 'single quatation marks' to avoid unexpected behaviour.
 ```bash
-ZMB_ADMIN_PASS="1c@nd0@nyth1n9"
+ZMB_ADMIN_PASS='1c@nd0@nyth1n9'
 ```
 ### ZMB_DOMAIN_ADMINS_GROUP
 Defines the domain admins group of your active directory.
