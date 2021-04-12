@@ -5,7 +5,7 @@
 # (C) 2021 Script design and prototype by Markus Helmke <helmke@cloudistboese.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
-source ./zamba.conf
+source /root/zamba.conf
 
 # Set Timezone
 ln -sf /usr/share/zoneinfo/$LXC_TIMEZONE /etc/localtime
@@ -100,7 +100,7 @@ systemctl disable smbd nmbd winbind
 rm -f /etc/samba/smb.conf
 rm -f /etc/krb5.conf
 
-source ./zamba.conf
+source /root/zamba.conf
 
 # provision zamba domain
 samba-tool domain provision --use-rfc2307 --realm=$ZMB_REALM --domain=$ZMB_DOMAIN --adminpass=$ZMB_ADMIN_PASS --server-role=dc --backend-store=mdb --dns-backend=BIND9_DLZ
