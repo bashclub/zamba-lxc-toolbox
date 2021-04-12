@@ -100,6 +100,8 @@ EOF
 
 mkdir -p /var/lib/samba/bind-dns/dns
 
+source ./zamba.conf
+
 # provision zamba domain
 samba-tool domain provision --use-rfc2307 --realm=$ZMB_REALM --domain=$ZMB_DOMAIN --adminpass=$ZMB_ADMIN_PASS --server-role=dc --backend-store=mdb --dns-backend=BIND9_DLZ
 
