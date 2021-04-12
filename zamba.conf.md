@@ -131,6 +131,11 @@ Defines the domain name in your Active Directory or Workgroup (AD DC, AD member,
 ```bash
 ZMB_DOMAIN="ZMB"
 ```
+### ZMB_DNS_BACKEND
+Defines the desired DNS server backend, supported are `INTERNAL_DNS` and `BIND9_DLZ` for more advanced usage
+```bash
+ZMB_DNS_BACKEND="INTERNAL_DNS"
+```
 ### ZMB_ADMIN_USER
 Defines the name of your domain administrator account (AD DC, AD member)
 ```bash

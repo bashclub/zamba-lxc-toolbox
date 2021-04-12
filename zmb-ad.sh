@@ -7,6 +7,10 @@
 
 source /root/zamba.conf
 
+if [[ $ZMB_DNS_BACKEND == "BIND9_DLZ" ]]; then
+  BINDNINE=bind9
+fi
+
 # Set Timezone
 ln -sf /usr/share/zoneinfo/$LXC_TIMEZONE /etc/localtime
 
@@ -47,10 +51,11 @@ EOF
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 # install required packages
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET acl attr ntpdate nginx-full rpl net-tools dnsutils ntp bind9 samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET acl attr ntpdate nginx-full rpl net-tools dnsutils ntp samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils $BINDNINE
 
-# configure bind dns service
-cat << EOF > /etc/default/bind9
+if [[ $ZMB_DNS_BACKEND == "BIND9_DLZ" ]]; then
+  # configure bind dns service
+  cat << EOF > /etc/default/bind9
 #
 # run resolvconf?
 RESOLVCONF=no
@@ -72,7 +77,7 @@ dlz "$LXC_DOMAIN" {
 };
 EOF
 
-cat << EOF > /etc/bind/named.conf.options
+  cat << EOF > /etc/bind/named.conf.options
 options {
   directory "/var/cache/bind";
 
@@ -92,7 +97,8 @@ options {
 };
 EOF
 
-mkdir -p /var/lib/samba/bind-dns/dns
+  mkdir -p /var/lib/samba/bind-dns/dns
+fi
 
 # stop + disable samba services and remove default config
 systemctl stop smbd nmbd winbind
@@ -103,12 +109,12 @@ rm -f /etc/krb5.conf
 source /root/zamba.conf
 
 # provision zamba domain
-samba-tool domain provision --use-rfc2307 --realm=$ZMB_REALM --domain=$ZMB_DOMAIN --adminpass=$ZMB_ADMIN_PASS --server-role=dc --backend-store=mdb --dns-backend=BIND9_DLZ
+samba-tool domain provision --use-rfc2307 --realm=$ZMB_REALM --domain=$ZMB_DOMAIN --adminpass=$ZMB_ADMIN_PASS --server-role=dc --backend-store=mdb --dns-backend=$ZMB_DNS_BACKEND
 
 ln -sf /var/lib/samba/private/krb5.conf /etc/krb5.conf
 
 systemctl unmask samba-ad-dc
-systemctl enable samba-ad-dc bind9
-systemctl restart samba-ad-dc bind9
+systemctl enable samba-ad-dc $BINDNINE
+systemctl restart samba-ad-dc $BINDNINE
 
 exit 0
