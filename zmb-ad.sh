@@ -49,12 +49,6 @@ DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 # install required packages
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET acl attr ntpdate nginx-full rpl net-tools dnsutils ntp bind9 samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils
 
-# stop + disable samba services and remove default config
-systemctl stop smbd nmbd winbind
-systemctl disable smbd nmbd winbind
-rm /etc/samba/smb.conf
-rm /etc/krb5.conf
-
 # configure bind dns service
 cat << EOF > /etc/default/bind9
 #
@@ -99,6 +93,12 @@ options {
 EOF
 
 mkdir -p /var/lib/samba/bind-dns/dns
+
+# stop + disable samba services and remove default config
+systemctl stop smbd nmbd winbind
+systemctl disable smbd nmbd winbind
+rm -f /etc/samba/smb.conf
+rm -f /etc/krb5.conf
 
 source ./zamba.conf
 
