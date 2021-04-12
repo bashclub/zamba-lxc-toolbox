@@ -47,7 +47,7 @@ EOF
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 # install required packages
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y $LXC_TOOLSET acl attr ntpdate nginx-full rpl net-tools dnsutils ntp bind9 samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET acl attr ntpdate nginx-full rpl net-tools dnsutils ntp bind9 samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils
 
 # stop + disable samba services and remove default config
 systemctl stop smbd nmbd winbind
