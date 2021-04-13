@@ -105,7 +105,7 @@ select opt in just_lxc zmb-standalone zmb-member zmb-ad mailpiler matrix quit; d
 done
 
 
-lxc-start $LXC_NBR;
+pct start $LXC_NBR;
 sleep 5;
 # Set the root password and key
 echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
