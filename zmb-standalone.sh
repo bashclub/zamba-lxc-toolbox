@@ -18,7 +18,7 @@ DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET acl samba samba-dsdb-modules samba-vfs-modules 
 
 USER=$(echo "$ZMB_ADMIN_USER" | awk '{print tolower($0)}')
-useradd --comment "Zamba fileserver admin" --create-home --shell /bin/bash
+useradd --comment "Zamba fileserver admin" --create-home --shell /bin/bash $USER
 echo "$USER:$ZMB_ADMIN_PASS" | chpasswd
 smbpasswd -x $USER
 (echo $ZMB_ADMIN_PASS; echo $ZMB_ADMIN_PASS) | smbpasswd -a $USER
