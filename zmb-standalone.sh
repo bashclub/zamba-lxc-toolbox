@@ -36,7 +36,7 @@ cat << EOF >> /etc/samba/smb.conf
     shadow: delimiter = -20
 EOF
 
-sudo chmod -R 770 /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
-sudo chown -R '$ZMB_ADMIN_USER':root /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+chmod -R 770 /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+chown -R '$ZMB_ADMIN_USER':root /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
 systemctl restart smbd nmbd 
