@@ -26,7 +26,7 @@ smbpasswd -x $USER
 cat << EOF >> /etc/samba/smb.conf
 [share]
     comment = Main Share
-    path = /tank/share
+    path = /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
     read only = No
     vfs objects = shadow_copy2
     shadow: snapdir = .zfs/snapshot
@@ -36,7 +36,8 @@ cat << EOF >> /etc/samba/smb.conf
     shadow: delimiter = -20
 EOF
 
+mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 chmod -R 770 /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
-chown -R '$ZMB_ADMIN_USER':root /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+chown -R '$USER':root /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
 systemctl restart smbd nmbd 
