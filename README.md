@@ -6,12 +6,12 @@ Zamba is a Toolbox for Proxmox admins, which fires up a container and installs a
 Proxmox VE Server with at least one configured ZFS Pool.
 ### Included services:
 - Debian LXC Container
+- ZMB (Samba) standalone with ZFS volume snapshot support
 - ZMB (Samba) AD member with ZFS volume snapshot support
 - ZMB (Samba) Active Directory Domain Controller
 - mailpiler mail archive [mailpiler.org](https://www.mailpiler.org/)
 - Matrix Synapse Homeserver [matrix.org](https://matrix.org/docs/projects/server/synapse) with Element Web [Element on github](https://github.com/vector-im/element-web)
 ### Planned features / ideas for future releases
-- ZMB (Samba) standalone with ZFS volume snapshot support
 - Nextcloud Server [nextcloud.com](https://nextcloud.com/)
 - optional Addon: Cockpit (including ZFS Manager) [cockpit-project.org](https://cockpit-project.org/)
 - check_mk RAW Edition [checkmk.com](https://checkmk.com)
