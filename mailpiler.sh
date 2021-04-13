@@ -5,13 +5,13 @@
 # (C) 2021 Script design and prototype by Markus Helmke <helmke@cloudistboese.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
-source ./zamba.conf
+# configure system language
+dpkg-reconfigure locales
+
+source /root/zamba.conf
 
 # Set Timezone
 ln -sf /usr/share/zoneinfo/$LXC_TIMEZONE /etc/localtime
-
-# configure system language
-dpkg-reconfigure locales
 
 HOSTNAME=$(hostname -f)
 
