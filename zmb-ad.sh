@@ -106,8 +106,6 @@ systemctl disable smbd nmbd winbind
 rm -f /etc/samba/smb.conf
 rm -f /etc/krb5.conf
 
-source /root/zamba.conf
-
 # provision zamba domain
 samba-tool domain provision --use-rfc2307 --realm=$ZMB_REALM --domain=$ZMB_DOMAIN --adminpass=$ZMB_ADMIN_PASS --server-role=dc --backend-store=mdb --dns-backend=$ZMB_DNS_BACKEND
 

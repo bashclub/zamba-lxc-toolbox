@@ -16,9 +16,6 @@ ln -sf /usr/share/zoneinfo/$LXC_TIMEZONE /etc/localtime
 apt update && apt full-upgrade -y
 echo -ne '\n' | apt install -y $LXC_TOOLSET acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules 
 
-
-source /root/zamba.conf
-
 mv /etc/krb5.conf /etc/krb5.conf.bak
 cat > /etc/krb5.conf <<EOF
 [libdefaults]
