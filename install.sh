@@ -65,10 +65,10 @@ select opt in just_lxc zmb-standalone zmb-member zmb-ad mailpiler matrix quit; d
       break
       ;;
     zmb-standalone)
-      echo "Selected Zamba standalone"
-      echo "This function is not implemented yet! Exiting..."
-      # TODO: write script for Zamba Standalone
-      exit 1
+      echo "Configuring LXC container '$opt'!"
+      pct set $LXC_NBR -mp0 $LXC_SHAREFS_STORAGE:$LXC_SHAREFS_SIZE,mp=/$LXC_SHAREFS_MOUNTPOINT
+      sleep 2;
+      break
       ;;
     zmb-member)
       echo "Configuring LXC container '$opt'!"
