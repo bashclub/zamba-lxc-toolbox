@@ -27,8 +27,6 @@ else
         echo "Hostname matches PILER_FQDNAIN, so starting installation."
 fi
 
-apt install -y gpg apt-transport-https lsb-release
-
 wget -q https://packages.sury.org/php/apt.gpg -O- | apt-key add -
 echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
 
