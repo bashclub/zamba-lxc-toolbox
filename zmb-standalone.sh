@@ -17,8 +17,11 @@ apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET acl samba samba-dsdb-modules samba-vfs-modules 
 
-smbpasswd -x $ZMB_ADMIN_USER
-(echo $ZMB_ADMIN_PASS; echo $ZMB_ADMIN_PASS) | smbpasswd -a $ZMB_ADMIN_USER
+USER=$(echo "$ZMB_ADMIN_USER" | awk '{print tolower($0)}')
+useradd --comment "Zamba fileserver admin" --create-home --shell /bin/bash
+echo "$USER:$ZMB_ADMIN_PASS" | chpasswd
+smbpasswd -x $USER
+(echo $ZMB_ADMIN_PASS; echo $ZMB_ADMIN_PASS) | smbpasswd -a $USER
 
 cat << EOF >> /etc/samba/smb.conf
 [share]
@@ -36,4 +39,4 @@ EOF
 sudo chmod -R 770 /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 sudo chown -R '$ZMB_ADMIN_USER':root /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
-systemctl restart smbd nmbd winbind
+systemctl restart smbd nmbd 
