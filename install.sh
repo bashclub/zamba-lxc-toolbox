@@ -111,8 +111,7 @@ sleep 5;
 echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
 lxc-attach -n$LXC_NBR mkdir /root/.ssh;
 echo -e "$LXC_AUTHORIZED_KEY" | lxc-attach -n$LXC_NBR tee /root/.ssh/authorized_keys;
-# usually not needed after adding authorized_keys: 
-# lxc-attach -n$LXC_NBR systemctl restart ssh.service
+pct push $LXC_NBR ./sources.list /etc/apt/sources.list
 pct push $LXC_NBR ./zamba.conf /root/zamba.conf
 pct push $LXC_NBR ./$opt.sh /root/$opt.sh
 echo "Install '$opt'!"
