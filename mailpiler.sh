@@ -5,13 +5,13 @@
 # (C) 2021 Script design and prototype by Markus Helmke <helmke@cloudistboese.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+# configure system language
+dpkg-reconfigure locales
+
 source /root/zamba.conf
 
 # Set Timezone
 ln -sf /usr/share/zoneinfo/$LXC_TIMEZONE /etc/localtime
-
-# configure system language
-dpkg-reconfigure locales
 
 HOSTNAME=$(hostname -f)
 
@@ -27,14 +27,13 @@ else
         echo "Hostname matches PILER_FQDNAIN, so starting installation."
 fi
 
-apt install -y gpg apt-transport-https lsb-release
-
-wget -q https://packages.sury.org/php/apt.gpg -O- | apt-key add -
-echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
-
 apt update && apt full-upgrade -y
 
 apt install -y $LXC_TOOLSET build-essential libwrap0-dev libpst-dev tnef libytnef0-dev unrtf catdoc libtre-dev tre-agrep poppler-utils libzip-dev unixodbc libpq5 software-properties-common libpoppler-dev openssl libssl-dev memcached telnet nginx mariadb-server default-libmysqlclient-dev python-mysqldb gcc libwrap0 libzip4 latex2rtf latex2html catdoc tnef zipcmp zipmerge ziptool libsodium23
+
+# install php
+wget -q https://packages.sury.org/php/apt.gpg -O- | apt-key add -
+echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
 
 apt update && apt install -y php$PILER_PHP_VERSION-{fpm,common,ldap,mysql,cli,opcache,phpdbg,gd,memcache,json,readline,zip}
 
