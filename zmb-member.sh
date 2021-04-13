@@ -13,8 +13,9 @@ source /root/zamba.conf
 # Set Timezone
 ln -sf /usr/share/zoneinfo/$LXC_TIMEZONE /etc/localtime
 
-apt update && apt full-upgrade -y
-echo -ne '\n' | apt install -y $LXC_TOOLSET acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules 
+apt update
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules 
 
 mv /etc/krb5.conf /etc/krb5.conf.bak
 cat > /etc/krb5.conf <<EOF
