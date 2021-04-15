@@ -15,3 +15,4 @@ ln -sf /usr/share/zoneinfo/$LXC_TIMEZONE /etc/localtime
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET
+sed -i "s|\"syntax on|syntax on|g" /etc/vim/vimrc
