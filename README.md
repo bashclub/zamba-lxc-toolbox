@@ -1,4 +1,4 @@
-# Zamba
+# Zamba LXC Toolbox
 
 ## About
 Zamba is a Toolbox for Proxmox admins, which fires up a container and installs a service (listed below) on it.
