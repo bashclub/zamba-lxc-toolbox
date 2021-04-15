@@ -13,7 +13,6 @@ Proxmox VE Server with at least one configured ZFS Pool.
 - Matrix Synapse Homeserver [matrix.org](https://matrix.org/docs/projects/server/synapse) with Element Web [Element on github](https://github.com/vector-im/element-web)
 ### Planned features / ideas for future releases
 - Nextcloud Server [nextcloud.com](https://nextcloud.com/)
-- optional Addon: Cockpit (including ZFS Manager) [cockpit-project.org](https://cockpit-project.org/)
 - check_mk RAW Edition [checkmk.com](https://checkmk.com)
 - Zabbix [zabbix.com](https://zabbix.com)
 - Abgleich control machine (ZFS Snapshot and Backup engine) [Abgleich on github](https://github.com/pleiszenburg/abgleich)
