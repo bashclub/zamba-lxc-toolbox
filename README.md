@@ -1,16 +1,16 @@
 # Zamba LXC Toolbox
 
 ## About
-Zamba is a Toolbox for Proxmox admins, which fires up a container and installs a service (listed below) on it.
+Zamba LXC Toolbox is a collection of scripts to easily install LXC containers with preconfigured services.
 ### Requirements
 Proxmox VE Server with at least one configured ZFS Pool.
 ### Included services:
-- Debian LXC Container
-- ZMB (Samba) standalone with ZFS volume snapshot support
-- ZMB (Samba) AD member with ZFS volume snapshot support
-- ZMB (Samba) Active Directory Domain Controller
-- mailpiler mail archive [mailpiler.org](https://www.mailpiler.org/)
-- Matrix Synapse Homeserver [matrix.org](https://matrix.org/docs/projects/server/synapse) with Element Web [Element on github](https://github.com/vector-im/element-web)
+- `just-lxc` => Debian LXC Container only
+- `zmb-ad` => ZMB (Samba) Active Directory Domain Controller
+- `zmb-member` => ZMB (Samba) AD member with ZFS volume snapshot support
+- `zmb-standalone` => ZMB (Samba) standalone server with ZFS volume snapshot support (previous versions)
+- `mailpiler` => mailpiler mail archive [mailpiler.org](https://www.mailpiler.org/)
+- `matrix` => Matrix Synapse Homeserver [matrix.org](https://matrix.org/docs/projects/server/synapse) with Element Web [Element on github](https://github.com/vector-im/element-web)
 ### Planned features / ideas for future releases
 - Nextcloud Server [nextcloud.com](https://nextcloud.com/)
 - check_mk RAW Edition [checkmk.com](https://checkmk.com)
