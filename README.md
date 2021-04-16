@@ -15,10 +15,12 @@ Proxmox VE Server with at least one configured ZFS Pool.
 - `matrix` => Matrix Synapse Homeserver [matrix.org](https://matrix.org/docs/projects/server/synapse) with Element Web [Element on github](https://github.com/vector-im/element-web)
 ## Usage
 Just ssh into your Proxmox machine and clone this git repository. Make sure you have installed `git`.
-### Clone this Repository
 ```bash
 apt update
 apt -y install git
+```
+### Clone this Repository
+```bash
 git clone https://github.com/bashclub/zamba-lxc-toolbox
 cd zamba
 ```
