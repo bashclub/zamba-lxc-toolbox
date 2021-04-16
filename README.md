@@ -8,7 +8,7 @@ The package also provides LXC container installers for `mailpiler`, `matrix-syna
 Proxmox VE Server with at least one configured ZFS Pool.
 ### Included services:
 - `just-lxc` => Debian LXC Container only
-- `zmb-ad` => ZMB (Samba) Active Directory Domain Controller
+- `zmb-ad` => ZMB (Samba) Active Directory Domain Controller, DNS Backends `SAMBA_INTERNAL` and `BIND9_DLZ` are supported
 - `zmb-member` => ZMB (Samba) AD member with ZFS volume snapshot support
 - `zmb-standalone` => ZMB (Samba) standalone server with ZFS volume snapshot support (previous versions)
 - `mailpiler` => mailpiler mail archive [mailpiler.org](https://www.mailpiler.org/)
