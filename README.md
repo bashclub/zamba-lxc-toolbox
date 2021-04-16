@@ -17,7 +17,7 @@ Just ssh into your Proxmox machine and clone this git repository. Make sure you 
 ```bash
 apt update
 apt -y install git
-git clone https://github.com/cpzengel/zamba-lxc-toolbox
+git clone https://github.com/bashclub/zamba-lxc-toolbox
 cd zamba
 ```
 ### Configuration
