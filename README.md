@@ -2,7 +2,7 @@
 
 ## About
 Zamba LXC Toolbox is a collection of scripts to easily install LXC containers with preconfigured services on Proxmox with ZFS.
-The main feature is `Zamba`, the fusion of ZFS and Samba in thre different flavours (standalone, active directory dc or active directory member), preconfigured to access ZFS snapshots by "Windows Previous Versions" to easily recover encrypted by ransomware files, accidently deleted files or just to revert changes.
+The main feature is `Zamba`, the fusion of ZFS and Samba in three different flavours (standalone, active directory dc or active directory member), preconfigured to access ZFS snapshots by "Windows Previous Versions" to easily recover encrypted by ransomware files, accidently deleted files or just to revert changes.
 The package also provides LXC container installers for `mailpiler`, `matrix-synapse` + `element-web` and more services will follow in future releases.
 ### Requirements
 Proxmox VE Server with at least one configured ZFS Pool.
