@@ -17,19 +17,19 @@
 ############### ZAMBA INSTALL SCRIPT ###############
 
 # Load configuration file
-source ./zamba.conf
+source $PWD/zamba.conf
 
 LXC_MP="0"
 LXC_UNPRIVILEGED="1"
 LXC_NESTING="0"
 
-select opt in just_lxc zmb-standalone zmb-member zmb-ad mailpiler matrix quit; do
+select opt in zmb-standalone zmb-ad zmb-member mailpiler matrix debian-unpriv debian-priv quit; do
   case $opt in
-    deb-unpriv)
+    debian-unpriv)
       echo "Debian-only LXC container unprivileged mode selected"
       break
       ;;
-    deb-priv)
+    debian-priv)
       echo "Debian-only LXC container privileged mode selected"
       LXC_UNPRIVILEGED="0"
       break
@@ -120,8 +120,8 @@ pct start $LXC_NBR;
 sleep 5;
 # Set the root password and key
 echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
-lxc-attach -n$LXC_NBR mkdir /root/.ssh;
-echo -e "$LXC_AUTHORIZED_KEY" | lxc-attach -n$LXC_NBR tee /root/.ssh/authorized_keys;
+lxc-attach -n$LXC_NBR mkdir -p /root/.ssh;
+pct push $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
 pct push $LXC_NBR ./sources.list /etc/apt/sources.list
 pct push $LXC_NBR ./zamba.conf /root/zamba.conf
 pct push $LXC_NBR ./$opt.sh /root/$opt.sh
