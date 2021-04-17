@@ -22,7 +22,7 @@ apt -y install git
 ### Clone this Repository
 ```bash
 git clone https://github.com/bashclub/zamba-lxc-toolbox
-cd zamba
+cd zamba-lxc-toolbox
 ```
 ### Configuration
 To fit your requirements, please edit the file `zamba.conf` with your favourite test editor (e.g. `vim` or `nano`).
