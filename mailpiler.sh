@@ -14,9 +14,6 @@ LANGUAGE=$LXC_LOCALE
 EOF
 locale-gen $LXC_LOCALE
 
-# Set Timezone
-ln -sf /usr/share/zoneinfo/$LXC_TIMEZONE /etc/localtime
-
 HOSTNAME=$(hostname -f)
 
 echo "Ensure your Hostname is set to your Piler FQDN!"
