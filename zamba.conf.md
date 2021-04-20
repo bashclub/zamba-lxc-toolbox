@@ -37,13 +37,6 @@ Defines the mountpoint of the filesystem shared by Zamba inside your LXC contain
 ```bash
 LXC_SHAREFS_MOUNTPOINT="tank"
 ```
-### LXC_UNPRIVILEGED
-Defines if the LXC container will be created in `unpprivileged` or `privileged` mode (default: 1)
-```bash
-LXC_UNPRIVILEGED="1"
-```
-Privileged also means the container runs as `root` user. Set this option only, if it's required for the service.
-`Zamba AD DC`, `Zamba AD member`, `Zamba standalone` and `mailpiler` are required to run in privileged mode.
 ### LXC_MEM
 Defines the amount of RAM in MB your LXC container is allowed to use (default: 1024)
 ```bash
@@ -60,7 +53,7 @@ Defines the hostname of your LXC container
 LXC_SWAP="zamba"
 ```
 ### LXC_DOMAIN
-Defines the domain name /search domain of your LXC container
+Defines the domain name / search domain of your LXC container
 ```bash
 LXC_DOMAIN="zmb.rocks"
 ```
@@ -75,12 +68,14 @@ Defines the default gateway IP address of your LXC container
 LXC_GW="10.10.80.254"
 ```
 ### LXC_DNS
-Defines the DNS server ip addres of your LXC container
+Defines the DNS server ip address of your LXC container
 ```bash
 LXC_DNS="10.10.80.254"
 ```
+`zmb-ad` used this DNS server for installation, after installation and domain provisioning it will be used as forwarding DNS
+For other services this should be your active directory domain controller (if present, else a DNS server of your choice)
 ### LXC_BRIDGE
-Defines the network bridge to bind the network adapter of your LXC container to
+Defines the network bridge to bind the network adapter of your LXC container
 ```bash
 LXC_BRIDGE="vmbr0"
 ```
@@ -90,19 +85,20 @@ Defines the vlan id of the LXC container's network interface, if the network ada
 LXC_VLAN="80"
 ```
 ### LXC_PWD
-Defines the `root` password of your LXC container. Please use 'single quatation marks' to avoid unexpected behaviour.
+Defines the `root` password of your LXC container. Please use 'single quotation marks' to avoid unexpected behaviour.
 ```bash
 LXC_PWD="S3cr3tp@ssw0rd"
 ```
 ### LXC_AUTHORIZED_KEY
-If you have a SSH key to add to the LXC container's `root` account authorized_keys, you can paste it here.
+Defines an authorized_keys file to push into the LXC container.
+By default the authorized_keys will be inherited from your proxmox host.
 ```bash
-LXC_AUTHORIZED_KEY="ssh-rsa xxxxxxxx"
+LXC_AUTHORIZED_KEY="/root/.ssh/authorized_keys"
 ```
 ### LXC_TOOLSET
-Define your (administrative) tools, you always want to have instlled into yout LXC container
+Define your (administrative) tools, you always want to have installed into your LXC container
 ```bash
-LXC_TOOLSET="net-tools dnsutils mc sysstat lsb-release curl git"
+LXC_TOOLSET="vim htop net-tools dnsutils mc sysstat lsb-release curl git gnupg2 apt-transport-https"
 ```
 ### LXC_TIMEZONE
 Define the local timezone of your LXC container (default: Euroe/Berlin)
@@ -110,7 +106,7 @@ Define the local timezone of your LXC container (default: Euroe/Berlin)
 LXC_TIMEZONE="Europe/Berlin"
 ```
 ### LXC_LOCALE
-Define system language on LXC container
+Define system language on LXC container (locales)
 ```bash
 LXC_LOCALE="de_DE.utf8"
 ```
@@ -137,21 +133,17 @@ Defines the desired DNS server backend, supported are `SAMBA_INTERNAL` and `BIND
 ZMB_DNS_BACKEND="SAMBA_INTERNAL"
 ```
 ### ZMB_ADMIN_USER
-Defines the name of your domain administrator account (AD DC, AD member)
+Defines the name of your domain administrator account (AD DC, AD member, standalone)
 ```bash
 ZMB_ADMIN_USER="Administrator"
 ```
 ### ZMB_ADMIN_PASS
-Defines the domain administrator's password (AD DC, AD member). Please use 'single quatation marks' to avoid unexpected behaviour.
+Defines the domain administrator's password (AD DC, AD member).
 ```bash
 ZMB_ADMIN_PASS='1c@nd0@nyth1n9'
 ```
-### ZMB_DOMAIN_ADMINS_GROUP
-Defines the domain admins group of your active directory.
-```bash
-ZMB_DOMAIN_ADMINS_GROUP="domain admins"
-```
-On Windows Servers this group depends on the configured OS language.
+Please use 'single quotation marks' to avoid unexpected behaviour.
+`zmb-ad` domain administrator has to meet the password complexity policy, if password is too weak, domain provisioning will fail.
 ### ZMB_SHARE
 Defines the name of your Zamba share
 ```bash

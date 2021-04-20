@@ -7,12 +7,13 @@ The package also provides LXC container installers for `mailpiler`, `matrix-syna
 ### Requirements
 Proxmox VE Server with at least one configured ZFS Pool.
 ### Included services:
-- `just-lxc` => Debian LXC Container only
-- `zmb-ad` => ZMB (Samba) Active Directory Domain Controller, DNS Backends `SAMBA_INTERNAL` and `BIND9_DLZ` are supported
-- `zmb-member` => ZMB (Samba) AD member with ZFS volume snapshot support
 - `zmb-standalone` => ZMB (Samba) standalone server with ZFS volume snapshot support (previous versions)
+- `zmb-ad` => ZMB (Samba) Active Directory Domain Controller, DNS Backends `SAMBA_INTERNAL` and `BIND9_DLZ` are supported
+- `zmb-member` => ZMB (Samba) AD member with ZFS volume snapshot support (previous versions)
 - `mailpiler` => mailpiler mail archive [mailpiler.org](https://www.mailpiler.org/)
 - `matrix` => Matrix Synapse Homeserver [matrix.org](https://matrix.org/docs/projects/server/synapse) with Element Web [Element on github](https://github.com/vector-im/element-web)
+- `debian-unpriv` => Debian unprivileged container with basic toolset
+- `debian-unpriv` => Debian privileged container with basic toolset
 ## Usage
 Just ssh into your Proxmox machine and clone this git repository. Make sure you have installed `git`.
 ```bash

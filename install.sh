@@ -17,7 +17,60 @@
 ############### ZAMBA INSTALL SCRIPT ###############
 
 # Load configuration file
-source ./zamba.conf
+source $PWD/zamba.conf
+
+LXC_MP="0"
+LXC_UNPRIVILEGED="1"
+LXC_NESTING="0"
+
+select opt in zmb-standalone zmb-ad zmb-member mailpiler matrix debian-unpriv debian-priv quit; do
+  case $opt in
+    debian-unpriv)
+      echo "Debian-only LXC container unprivileged mode selected"
+      break
+      ;;
+    debian-priv)
+      echo "Debian-only LXC container privileged mode selected"
+      LXC_UNPRIVILEGED="0"
+      break
+      ;;
+    zmb-standalone)
+      echo "Configuring LXC container '$opt'!"
+      LXC_MP="1"
+      LXC_UNPRIVILEGED="0"
+      break
+      ;;
+    zmb-member)
+      echo "Configuring LXC container '$opt'!"
+      LXC_MP="1"
+      LXC_UNPRIVILEGED="0"
+      break
+      ;;
+    zmb-ad)
+      echo "Selected Zamba AD DC"
+      LXC_NESTING="1"
+      LXC_UNPRIVILEGED="0"
+      break
+      ;;
+    mailpiler)
+      echo "Configuring LXC container for '$opt'!"
+      LXC_NESTING="1"
+      break
+      ;;
+    matrix)
+      echo "Install Matrix chat server and element web service"
+      break
+      ;;
+    quit)
+      echo "Script aborted by user interaction."
+      exit 0
+      ;;
+    *)
+      echo "Invalid option! Exiting..."
+      exit 1
+      ;;
+    esac
+done
 
 # CHeck is the newest template available, else download it.
 DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep debian-10-standard | cut -d'_' -f2)
@@ -53,66 +106,30 @@ else
  VLAN=""
 fi
 # Reconfigure conatiner
-pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME \-nameserver $LXC_DNS -searchdomain $LXC_DOMAIN -onboot 1 -timezone $LXC_TIMEZONE -net0 name=eth0,bridge=$LXC_BRIDGE,firewall=1,gw=$LXC_GW,ip=$LXC_IP,type=veth$VLAN;
+pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME \-nameserver $LXC_DNS -searchdomain $LXC_DOMAIN -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING -net0 name=eth0,bridge=$LXC_BRIDGE,firewall=1,gw=$LXC_GW,ip=$LXC_IP,type=veth$VLAN;
+sleep 2
+
+if [ $LXC_MP -gt 0 ]; then
+  pct set $LXC_NBR -mp0 $LXC_SHAREFS_STORAGE:$LXC_SHAREFS_SIZE,mp=/$LXC_SHAREFS_MOUNTPOINT
+fi
 sleep 2;
 
 PS3="Select the Server-Function: "
 
-select opt in just_lxc zmb-standalone zmb-member zmb-ad mailpiler matrix quit; do
-  case $opt in
-    just_lxc)
-      echo "Debian-only LXC container selected"
-      break
-      ;;
-    zmb-standalone)
-      echo "Configuring LXC container '$opt'!"
-      pct set $LXC_NBR -mp0 $LXC_SHAREFS_STORAGE:$LXC_SHAREFS_SIZE,mp=/$LXC_SHAREFS_MOUNTPOINT
-      sleep 2;
-      break
-      ;;
-    zmb-member)
-      echo "Configuring LXC container '$opt'!"
-      pct set $LXC_NBR -mp0 $LXC_SHAREFS_STORAGE:$LXC_SHAREFS_SIZE,mp=/$LXC_SHAREFS_MOUNTPOINT
-      sleep 2;
-      break
-      ;;
-    zmb-ad)
-      echo "Selected Zamba AD DC"
-      # Enable nesting for ntp service
-      pct set $LXC_NBR -features nesting=1
-      sleep 2
-      break
-      ;;
-    mailpiler)
-      echo "Configuring LXC container for '$opt'!"
-      pct set $LXC_NBR -features nesting=1
-      sleep 2;
-      break
-      ;;
-    matrix)
-      echo "Install Matrix chat server and element web service"
-      break
-      ;;
-    quit)
-      echo "Script aborted by user interaction."
-      exit 0
-      ;;
-    *)
-      echo "Invalid option! Exiting..."
-      exit 1
-      ;;
-    esac
-done
-
-
 pct start $LXC_NBR;
 sleep 5;
 # Set the root password and key
+echo "Setting root password"
 echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
+echo "Creating /root/.ssh"
 lxc-attach -n$LXC_NBR mkdir /root/.ssh;
-echo -e "$LXC_AUTHORIZED_KEY" | lxc-attach -n$LXC_NBR tee /root/.ssh/authorized_keys;
+echo "Copying authorized_keys"
+pct push $LXC_NBR $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
+echo "Copying sources.list"
 pct push $LXC_NBR ./sources.list /etc/apt/sources.list
+echo "Copying zamba.conf"
 pct push $LXC_NBR ./zamba.conf /root/zamba.conf
+echo "Copying install script"
 pct push $LXC_NBR ./$opt.sh /root/$opt.sh
 echo "Install '$opt'!"
 lxc-attach -n$LXC_NBR bash /root/$opt.sh
