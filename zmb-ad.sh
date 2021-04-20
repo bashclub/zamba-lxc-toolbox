@@ -18,9 +18,6 @@ if [[ $ZMB_DNS_BACKEND == "BIND9_DLZ" ]]; then
   BINDNINE=bind9
 fi
 
-# Set Timezone
-ln -sf /usr/share/zoneinfo/$LXC_TIMEZONE /etc/localtime
-
 ## configure ntp
 cat << EOF > /etc/ntp.conf
 # Local clock. Note that is not the "localhost" address!
