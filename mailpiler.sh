@@ -94,7 +94,7 @@ cd /etc/nginx/sites-available
 cp /tmp/piler-$PILER_VERSION/contrib/webserver/piler-nginx.conf /etc/nginx/sites-available/
 ln -s /etc/nginx/sites-available/piler-nginx.conf /etc/nginx/sites-enabled/piler-nginx.conf
 
-sed -i "s|PILER_HOST|$PILER_FQDN|g" /etc/nginx/sites-available/piler-nginx.conf
+sed -i "s|PILER_HOST|$PILER_FQDN default_host|g" /etc/nginx/sites-available/piler-nginx.conf
 sed -i "s|/var/run/php/php7.4-fpm.sock|/var/run/php/php$PILER_PHP_VERSION-fpm.sock|g" /etc/nginx/sites-available/piler-nginx.conf
 
 sed -i "/server_name.*/a \\
@@ -114,10 +114,10 @@ sed -i "/server_name.*/a \\
 sed -i "/^server {.*/i\
 server {\n\
         listen 80;\n\
-        server_name $PILER_FQDN;\n\
+        server_name $PILER_FQDN default_host;\n\
         server_tokens off;\n\
         # HTTP to HTTPS redirect.\n\
-        return 301 https://$PILER_FQDN;\n\
+        return 301 https://\$host\$request_uri;\n\
 }" /etc/nginx/sites-available/piler-nginx.conf
 
 cp /usr/local/etc/piler/config-site.php /usr/local/etc/piler/config-site.php.bak
@@ -137,7 +137,7 @@ cat >> /usr/local/etc/piler/config-site.php <<EOF
 \$config['ENABLE_ON_THE_FLY_VERIFICATION'] = 1;
 
 // general settings.
-\$config['TIMEZONE'] = 'Europe/Berlin';
+\$config['TIMEZONE'] = '$LXC_TIMEZONE';
 
 // authentication
 // Enable authentication against an imap server
@@ -179,9 +179,9 @@ cat >> /usr/local/etc/piler/config-site.php <<EOF
 \$config['SPHINX_STRICT_SCHEMA'] = 1; // required for Sphinx $PILER_SPHINX_VERSION, see https://bitbucket.org/jsuto/piler/issues/1085/sphinx-331.
 EOF
 
+rm /etc/nginx/sites-enabled/default
+
 nginx -t && systemctl restart nginx
 
 apt autoremove -y
 apt clean -y
-
-
