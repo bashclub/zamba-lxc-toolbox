@@ -119,11 +119,17 @@ PS3="Select the Server-Function: "
 pct start $LXC_NBR;
 sleep 5;
 # Set the root password and key
+echo "Setting root password"
 echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
-lxc-attach -n$LXC_NBR mkdir -p /root/.ssh;
-pct push $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
+echo "Creating /root/.ssh"
+lxc-attach -n$LXC_NBR mkdir /root/.ssh;
+echo "Copying authorized_keys"
+pct push $LXC_NBR $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
+echo "Copying sources.list"
 pct push $LXC_NBR ./sources.list /etc/apt/sources.list
+echo "Copying zamba.conf"
 pct push $LXC_NBR ./zamba.conf /root/zamba.conf
+echo "Copying install script"
 pct push $LXC_NBR ./$opt.sh /root/$opt.sh
 echo "Install '$opt'!"
 lxc-attach -n$LXC_NBR bash /root/$opt.sh
