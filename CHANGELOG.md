@@ -5,3 +5,4 @@
 - improved / updated documentation
 - replaced `just-lxc` container by `debian-priv` and `debian-unpriv` container
 - (un)privileged now defined as constant based on created service #6
+- improved log messages in `install.sh`
