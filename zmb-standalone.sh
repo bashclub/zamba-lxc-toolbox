@@ -5,13 +5,14 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
-# configure system language
-dpkg-reconfigure locales
-
 source /root/zamba.conf
 
-# Set Timezone
-ln -sf /usr/share/zoneinfo/$LXC_TIMEZONE /etc/localtime
+sed -i "s|# $LXC_LOCALE|$LXC_LOCALE|" /etc/locale.gen
+cat << EOF > /etc/default/locale
+LANG="$LXC_LOCALE"
+LANGUAGE=$LXC_LOCALE
+EOF
+locale-gen $LXC_LOCALE
 
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
