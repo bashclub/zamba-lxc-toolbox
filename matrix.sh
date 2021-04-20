@@ -14,9 +14,6 @@ LANGUAGE=$LXC_LOCALE
 EOF
 locale-gen $LXC_LOCALE
 
-# Set Timezone
-ln -sf /usr/share/zoneinfo/$LXC_TIMEZONE /etc/localtime
-
 MRX_PKE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
 ELE_DBNAME="synapse_db"
