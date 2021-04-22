@@ -106,7 +106,12 @@ else
  VLAN=""
 fi
 # Reconfigure conatiner
-pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME \-nameserver $LXC_DNS -searchdomain $LXC_DOMAIN -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING -net0 name=eth0,bridge=$LXC_BRIDGE,firewall=1,gw=$LXC_GW,ip=$LXC_IP,type=veth$VLAN;
+pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING;
+if [ $LXC_DHCP == true ]; then
+ pct set $LXC_NBR -net0 name=eth0,bridge=$LXC_BRIDGE,ip=dhcp;
+else
+ pct set $LXC_NBR -net0 name=eth0,bridge=$LXC_BRIDGE,firewall=1,gw=$LXC_GW,ip=$LXC_IP,type=veth$VLAN -nameserver $LXC_DNS -searchdomain $LXC_DOMAIN;
+fi
 sleep 2
 
 if [ $LXC_MP -gt 0 ]; then
