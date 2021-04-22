@@ -25,7 +25,7 @@ smbpasswd -x $USER
 (echo $ZMB_ADMIN_PASS; echo $ZMB_ADMIN_PASS) | smbpasswd -a $USER
 
 cat << EOF >> /etc/samba/smb.conf
-[share]
+[$ZMB_SHARE]
     comment = Main Share
     path = /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
     read only = No
