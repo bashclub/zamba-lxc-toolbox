@@ -1,3 +1,6 @@
+**** Zamba LXC Toolbox main branch ****
+- added dhcp support
+
 **** Zamba LXC Toolbox v0.1 ****
 - `locales` are now configured noninteractive #21
 - timezone is now configured with `pct set` command in `install.sh` #22
