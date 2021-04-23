@@ -85,7 +85,7 @@ else
 fi
 
 # Get next free LXC-number
-LXC_LST=$( lxc-ls | egrep -o '.{1,5}$' )
+LXC_LST=$( lxc-ls -1 | tail -1 )
 LXC_CHK=$((LXC_LST+1));
 
 if  [ $LXC_CHK -lt 100 ] || [ -f /etc/pve/qemu-server/$LXC_CHK.conf ]; then
