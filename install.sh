@@ -19,9 +19,6 @@
 # Load configuration file
 source $PWD/zamba.conf
 
-LXC_MP="0"
-LXC_UNPRIVILEGED="1"
-LXC_NESTING="0"
 
 select opt in zmb-standalone zmb-ad zmb-member mailpiler matrix debian-unpriv debian-priv quit; do
   case $opt in
@@ -31,30 +28,22 @@ select opt in zmb-standalone zmb-ad zmb-member mailpiler matrix debian-unpriv de
       ;;
     debian-priv)
       echo "Debian-only LXC container privileged mode selected"
-      LXC_UNPRIVILEGED="0"
       break
       ;;
     zmb-standalone)
       echo "Configuring LXC container '$opt'!"
-      LXC_MP="1"
-      LXC_UNPRIVILEGED="0"
       break
       ;;
     zmb-member)
       echo "Configuring LXC container '$opt'!"
-      LXC_MP="1"
-      LXC_UNPRIVILEGED="0"
       break
       ;;
     zmb-ad)
       echo "Selected Zamba AD DC"
-      LXC_NESTING="1"
-      LXC_UNPRIVILEGED="0"
       break
       ;;
     mailpiler)
       echo "Configuring LXC container for '$opt'!"
-      LXC_NESTING="1"
       break
       ;;
     matrix)
@@ -71,6 +60,8 @@ select opt in zmb-standalone zmb-ad zmb-member mailpiler matrix debian-unpriv de
       ;;
     esac
 done
+
+source $PWD/src/$opt/constants-service.conf
 
 # CHeck is the newest template available, else download it.
 DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep debian-10-standard | cut -d'_' -f2)
@@ -119,20 +110,20 @@ PS3="Select the Server-Function: "
 pct start $LXC_NBR;
 sleep 5;
 # Set the root password and key
-echo "Setting root password"
 echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
-echo "Creating /root/.ssh"
-lxc-attach -n$LXC_NBR mkdir /root/.ssh;
-echo "Copying authorized_keys"
-pct push $LXC_NBR $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
-echo "Copying sources.list"
-pct push $LXC_NBR ./sources.list /etc/apt/sources.list
-echo "Copying zamba.conf"
-pct push $LXC_NBR ./zamba.conf /root/zamba.conf
-echo "Copying install script"
-pct push $LXC_NBR ./$opt.sh /root/$opt.sh
+lxc-attach -n$LXC_NBR mkdir -p /root/.ssh;
+pct push $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
+pct push $LXC_NBR $PWD/src/sources.list /etc/apt/sources.list
+pct push $LXC_NBR $PWD/zamba.conf /root/zamba.conf
+pct push $LXC_NBR $PWD/src/constants.conf /root/constants.conf
+pct push $LXC_NBR $PWD/src/lxc-base.sh /root/lxc-base.sh
+pct push $LXC_NBR $PWD/src/$opt/install-service.sh /root/install-service.sh
+pct push $LXC_NBR $PWD/src/$opt/constants-service.conf /root/constants-service.conf
+
+echo "Installing basic container setup..."
+pct push $LXC_NBR $PWD/src/lxc-base.sh /root/lxc-base.sh
 echo "Install '$opt'!"
-lxc-attach -n$LXC_NBR bash /root/$opt.sh
+lxc-attach -n$LXC_NBR bash /root/install-service.sh
 
 if [[ $opt == "zmb-ad" ]]; then
   pct stop $LXC_NBR
