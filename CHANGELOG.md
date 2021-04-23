@@ -1,5 +1,7 @@
 **** Zamba LXC Toolbox main branch ****
 - added dhcp support
+- fixed hardcoded samba sharename in `zmb-standalone` script
+- added support for container id's larger than 999
 
 **** Zamba LXC Toolbox v0.1 ****
 - `locales` are now configured noninteractive #21
