@@ -57,6 +57,11 @@ Defines the domain name / search domain of your LXC container
 ```bash
 LXC_DOMAIN="zmb.rocks"
 ```
+### LXC_DHCP
+Enable DHCP on LAN (eth0) - (Obtain an IP address automatically) [true/false]
+```bash
+LXC_DHCP=false
+```
 ### LXC_IP
 Defines the local IP address and subnet of your LXC container in CIDR format
 ```bash
