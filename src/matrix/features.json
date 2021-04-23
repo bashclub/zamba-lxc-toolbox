@@ -1,0 +1,9 @@
+{
+    "unprivileged": 1,
+    "features": {},
+    "sharefs": {},
+    "mem": 1024,
+    "swap": 1024,
+    "hostname": "matrix",
+    "domain": "zmb.rocks"
+}

@@ -16,50 +16,37 @@
 
 ############### ZAMBA INSTALL SCRIPT ###############
 
+if [[ "$2" == *".conf" ]]; then
+  CONF=$2
+else
+  CONF=zamba.conf
+fi
+
 # Load configuration file
-source $PWD/zamba.conf
+source $PWD/$CONF
 
+OPTS=$(ls -d $PWD/src/*/ | grep -v __ | xargs basename -a)
 
-select opt in zmb-standalone zmb-ad zmb-member mailpiler matrix debian-unpriv debian-priv quit; do
-  case $opt in
-    debian-unpriv)
-      echo "Debian-only LXC container unprivileged mode selected"
-      break
-      ;;
-    debian-priv)
-      echo "Debian-only LXC container privileged mode selected"
-      break
-      ;;
-    zmb-standalone)
-      echo "Configuring LXC container '$opt'!"
-      break
-      ;;
-    zmb-member)
-      echo "Configuring LXC container '$opt'!"
-      break
-      ;;
-    zmb-ad)
-      echo "Selected Zamba AD DC"
-      break
-      ;;
-    mailpiler)
-      echo "Configuring LXC container for '$opt'!"
-      break
-      ;;
-    matrix)
-      echo "Install Matrix chat server and element web service"
-      break
-      ;;
-    quit)
-      echo "Script aborted by user interaction."
+if [ -z ${1+x} ]; then
+  if [[ $opt in $OPTS ]]; then
+    echo "Configuring '$opt' container..."
+  else
+    echo "Invalid option: '$opt', exiting..."
+    exit 1
+  fi
+else
+  select opt in $OPTS quit; do
+    if [[ $opt in $OPTS ]]; then
+      echo "Configuring '$opt' container..."
+    elif [[ "$opt" == "quit" ]]; then
+      echo "'quit' selected, exiting..."
       exit 0
-      ;;
-    *)
-      echo "Invalid option! Exiting..."
+    else
+      echo "Invalid option, exiting..."
       exit 1
-      ;;
-    esac
-done
+    fi
+  done
+fi
 
 source $PWD/src/$opt/constants-service.conf
 
@@ -119,7 +106,7 @@ echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
 lxc-attach -n$LXC_NBR mkdir -p /root/.ssh;
 pct push $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
 pct push $LXC_NBR $PWD/src/sources.list /etc/apt/sources.list
-pct push $LXC_NBR $PWD/zamba.conf /root/zamba.conf
+pct push $LXC_NBR $PWD/$CONF /root/zamba.conf
 pct push $LXC_NBR $PWD/src/constants.conf /root/constants.conf
 pct push $LXC_NBR $PWD/src/lxc-base.sh /root/lxc-base.sh
 pct push $LXC_NBR $PWD/src/$opt/install-service.sh /root/install-service.sh

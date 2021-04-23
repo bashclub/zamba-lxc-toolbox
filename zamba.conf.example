@@ -1,0 +1,112 @@
+#!/bin/bash
+
+# This ist the Zamba main configuration file.
+# Please adjust the settings to your needs before running the installer.
+
+# Authors:
+# (C) 2021 Idea an concept by Christian Zengel <christian@sysops.de>
+# (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
+# (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
+
+
+############### Linux Container Section ###############
+
+# Defines the Proxmox storage where your LXC container template are stored (default: local)
+LXC_TEMPLATE_STORAGE="local"
+
+# Defines the size in GB of the LXC container's root filesystem (default: 32)
+# Depending on your environment, you should consider increasing the size for use of `mailpiler` or `matrix`.
+LXC_ROOTFS_SIZE="32"
+# Defines the Proxmox storage where your LXC container's root filesystem will be generated (default: local-zfs)
+LXC_ROOTFS_STORAGE="local-zfs"
+
+# Defines the size in GB your LXC container's filesystem shared by Zamba (AD member & standalone) (default: 100)
+LXC_SHAREFS_SIZE="100"
+# Defines the Proxmox storage where your LXC container's filesystem shared by Zamba will be generated (default: local-zfs)
+LXC_SHAREFS_STORAGE="local-zfs"
+# Defines the mountpoint of the filesystem shared by Zamba inside your LXC container (default: tank)
+LXC_SHAREFS_MOUNTPOINT="tank"
+
+# Defines the amount of RAM in MB your LXC container is allowed to use (default: 1024)
+LXC_MEM="1024"
+
+# Defines the amount of swap space in MB your LXC container is allowed to use (default: 1024)
+LXC_SWAP="1024"
+
+# Defines the hostname of your LXC container
+LXC_HOSTNAME="zamba"
+
+# Defines the domain name / search domain of your LXC container
+LXC_DOMAIN="zmb.rocks"
+
+# Defines the local IP address and subnet of your LXC container in CIDR format
+LXC_IP="192.168.100.200/24"
+
+# Defines the default gateway IP address of your LXC container
+LXC_GW="192.168.100.254"
+
+# Defines the DNS server ip address of your LXC container
+# `zmb-ad` used this DNS server for installation, after installation and domain provisioning it will be used as forwarding DNS
+# For other services this should be your active directory domain controller (if present, else a DNS server of your choice)
+LXC_DNS="192.168.100.254"
+
+# Defines the network bridge to bind the network adapter of your LXC container
+LXC_BRIDGE="vmbr0"
+
+# Defines the vlan id of the LXC container's network interface, if the network adapter should be connected untagged, just leave the value empty.
+LXC_VLAN=
+
+# Defines the `root` password of your LXC container. Please use 'single quatation marks' to avoid unexpected behaviour.
+LXC_PWD='S3cr3tp@ssw0rd'
+
+# Defines an authorized_keys file to push into the LXC container.
+# By default the authorized_keys will be inherited from your proxmox host.
+LXC_AUTHORIZED_KEY="/root/.ssh/authorized_keys"
+
+# Define your (administrative) tools, you always want to have installed into your LXC container
+LXC_TOOLSET="vim htop net-tools dnsutils sysstat mc"
+
+# Define the local timezone of your LXC container (default: Euroe/Berlin)
+LXC_TIMEZONE="Europe/Berlin"
+
+# Define system language on LXC container (locales)
+# This parameter is not used yet, but will be integrated in future releases.
+LXC_LOCALE=de_DE.UTF-8
+
+# Set dark background for vim syntax highlighting (0 or 1)
+LXC_VIM_BG_DARK=1
+
+############### Zamba-Server-Section ###############
+
+# Defines the REALM for the Active Directory (AD DC, AD member)
+ZMB_REALM="ZMB.ROCKS"
+# Defines the domain name in your Active Directory or Workgroup (AD DC, AD member, standalone)
+ZMB_DOMAIN="ZMB"
+
+# Defines the name of your domain administrator account (AD DC, AD member, standalone)
+ZMB_ADMIN_USER="administrator"
+# The admin password for zamba installation. Please use 'single quatation marks' to avoid unexpected behaviour
+# `zmb-ad` domain administrator has to meet the password complexity policy, if password is too weak, domain provisioning will fail
+ZMB_ADMIN_PASS='1c@nd0@nyth1n9'
+
+# Defines the name of your Zamba share
+ZMB_SHARE="share"
+
+############### Mailpiler-Section ###############
+
+# Defines the (public) FQDN of your piler mail archive
+PILER_FQDN="piler.zmb.rocks"
+# Defines the smarthost for piler mail archive
+PILER_SMARTHOST="your.mailserver.tld"
+
+
+############### Matrix-Section ###############
+
+# Define the FQDN of your Matrix server
+MATRIX_FQDN="matrix.zmb.rocks"
+
+# Define the FQDN for the Element Web virtual host
+MATRIX_ELEMENT_FQDN="element.zmb.rocks"
+
+# Define the version of Element Web
+MATRIX_ELEMENT_VERSION="v1.7.24"
