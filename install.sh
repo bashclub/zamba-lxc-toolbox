@@ -160,7 +160,7 @@ pct push $LXC_NBR $PWD/src/$service/install-service.sh /root/install-service.sh
 pct push $LXC_NBR $PWD/src/$service/constants-service.conf /root/constants-service.conf
 
 echo "Installing basic container setup..."
-pct push $LXC_NBR $PWD/src/lxc-base.sh /root/lxc-base.sh
+lxc-attach -n$LXC_NBR bash /root/lxc-base.sh
 echo "Install '$service'!"
 lxc-attach -n$LXC_NBR bash /root/install-service.sh
 
