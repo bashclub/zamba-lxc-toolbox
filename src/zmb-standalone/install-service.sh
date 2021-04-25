@@ -7,7 +7,13 @@
 
 source /root/zamba.conf
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba samba-dsdb-modules samba-vfs-modules 
+# add wsdd package repo
+apt-key adv --fetch-keys https://pkg.ltec.ch/public/conf/ltec-ag.gpg.key
+echo "deb https://pkg.ltec.ch/public/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/wsdd.list
+
+apt update
+
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba samba-dsdb-modules samba-vfs-modules wsdd
 
 USER=$(echo "$ZMB_ADMIN_USER" | awk '{print tolower($0)}')
 useradd --comment "Zamba fileserver admin" --create-home --shell /bin/bash $USER
@@ -16,7 +22,7 @@ smbpasswd -x $USER
 (echo $ZMB_ADMIN_PASS; echo $ZMB_ADMIN_PASS) | smbpasswd -a $USER
 
 cat << EOF >> /etc/samba/smb.conf
-[share]
+[$ZMB_SHARE]
     comment = Main Share
     path = /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
     read only = No
@@ -32,4 +38,4 @@ mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 chmod -R 770 /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 chown -R $USER:root /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
-systemctl restart smbd nmbd 
+systemctl restart smbd nmbd wsdd
