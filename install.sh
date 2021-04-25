@@ -15,40 +15,83 @@
 # Please adjust th settings in 'zamba.conf' to your needs before running the script
 
 ############### ZAMBA INSTALL SCRIPT ###############
+prog="$(basename "$0")"
 
-if [[ "$2" == *".conf" ]]; then
-  CONF=$2
-else
-  CONF=zamba.conf
-fi
+usage() {
+	cat >&2 <<-EOF
+	usage: $prog [-h] [-i CTID] [-s SERVICE] [-c CFGFILE]
+	  installs a preconfigured lxc container on your proxmox server
+    -h           displays this help text
+    -i CTID      provide a container id instead of auto detection
+    -s SERVICE   provide the service name and skip the selection dialog
+    -c CFGFILE   use a different config file than 'zamba.conf'
+  ---------------------------------------------------------------------------
+    (C) 2021     zamba-lxc-toolbox by bashclub (https://github.con/bashclub)
+  ---------------------------------------------------------------------------
+
+	EOF
+	exit $1
+}
+
+ctid=0
+service=ask
+config=$PWD/zamba.conf
+
+while getopts "hi:s:c:" opt; do
+  case $opt in
+    h) usage 0 ;;
+    i) ctid=$OPTARG ;;
+    s) service=$OPTARG ;;
+    c) config=$OPTARG ;;
+    *) usage 1 ;;
+  esac
+done
+shift $((OPTIND-1))
 
 # Load configuration file
-source $PWD/$CONF
+echo "Loading config file '$config'..."
+source $config
 
 OPTS=$(ls -d $PWD/src/*/ | grep -v __ | xargs basename -a)
 
-if [ -z ${1+x} ]; then
-  if [[ $opt in $OPTS ]]; then
-    echo "Configuring '$opt' container..."
-  else
-    echo "Invalid option: '$opt', exiting..."
-    exit 1
-  fi
-else
-  select opt in $OPTS quit; do
-    if [[ $opt in $OPTS ]]; then
-      echo "Configuring '$opt' container..."
-    elif [[ "$opt" == "quit" ]]; then
-      echo "'quit' selected, exiting..."
-      exit 0
+echo 0 > $PWD/VALIDATION
+if [[ "$service" == "ask" ]]; then
+  select svc in $OPTS quit; do
+    if [[ "$svc" != "quit" ]]; then
+      echo -e "$OPTS" | while read line; do
+        if [[ "$svc" == "$line" ]]; then
+          service=$svc
+          echo "Installation of $service selected."
+          echo 1 > $PWD/VALIDATION
+          break
+        fi
+      done
     else
-      echo "Invalid option, exiting..."
-      exit 1
+      echo "Selected 'quit' exiting without action..."
+      exit 0
+    fi
+    if [[ "$(cat $PWD/VALIDATION)" == "1" ]]; then
+      break
+    fi
+  done
+else
+  echo -e "$OPTS" | while read line; do
+    if [[ "$service" == "$line" ]]; then
+      echo "Installation of $service selected."
+      echo 1 > $PWD/VALIDATION
+      break
     fi
   done
 fi
 
-source $PWD/src/$opt/constants-service.conf
+if [[ "$(cat $PWD/VALIDATION)" != "1" ]]; then
+  echo "Invalid option, exiting..."
+  usage 1
+fi
+
+rm -f $PWD/VALIDATION
+
+source $PWD/src/$service/constants-service.conf
 
 # CHeck is the newest template available, else download it.
 DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep debian-10-standard | cut -d'_' -f2)
@@ -62,9 +105,13 @@ else
   pveam download $LXC_TEMPLATE_STORAGE debian-10-standard_$DEB_REP\_amd64.tar.gz
 fi
 
-# Get next free LXC-number
-LXC_LST=$( lxc-ls -1 | tail -1 )
-LXC_CHK=$((LXC_LST+1));
+if [ $ctid -gt 99 ]; then
+  LXC_CHK=$ctid
+else
+  # Get next free LXC-number
+  LXC_LST=$( lxc-ls -1 | tail -1 )
+  LXC_CHK=$((LXC_LST+1));
+fi
 
 if  [ $LXC_CHK -lt 100 ] || [ -f /etc/pve/qemu-server/$LXC_CHK.conf ]; then
   LXC_NBR=$(pvesh get /cluster/nextid);
@@ -103,21 +150,21 @@ pct start $LXC_NBR;
 sleep 5;
 # Set the root password and key
 echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
-lxc-attach -n$LXC_NBR mkdir -p /root/.ssh;
-pct push $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
+lxc-attach -n$LXC_NBR mkdir /root/.ssh;
+pct push $LXC_NBR $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
 pct push $LXC_NBR $PWD/src/sources.list /etc/apt/sources.list
-pct push $LXC_NBR $PWD/$CONF /root/zamba.conf
+pct push $LXC_NBR $config /root/zamba.conf
 pct push $LXC_NBR $PWD/src/constants.conf /root/constants.conf
 pct push $LXC_NBR $PWD/src/lxc-base.sh /root/lxc-base.sh
-pct push $LXC_NBR $PWD/src/$opt/install-service.sh /root/install-service.sh
-pct push $LXC_NBR $PWD/src/$opt/constants-service.conf /root/constants-service.conf
+pct push $LXC_NBR $PWD/src/$service/install-service.sh /root/install-service.sh
+pct push $LXC_NBR $PWD/src/$service/constants-service.conf /root/constants-service.conf
 
 echo "Installing basic container setup..."
 pct push $LXC_NBR $PWD/src/lxc-base.sh /root/lxc-base.sh
-echo "Install '$opt'!"
+echo "Install '$service'!"
 lxc-attach -n$LXC_NBR bash /root/install-service.sh
 
-if [[ $opt == "zmb-ad" ]]; then
+if [[ $service == "zmb-ad" ]]; then
   pct stop $LXC_NBR
   pct set $LXC_NBR \-nameserver $(echo $LXC_IP | cut -d'/' -f 1)
   pct start $LXC_NBR
