@@ -1,3 +1,5 @@
 *__pycache__*
 .vscode/*
 conf/*
+!conf/README.md
+!conf/zamba.conf.example
