@@ -21,10 +21,10 @@ usage() {
 	cat >&2 <<-EOF
 	usage: $prog [-h] [-i CTID] [-s SERVICE] [-c CFGFILE]
 	  installs a preconfigured lxc container on your proxmox server
-    -h           displays this help text
     -i CTID      provide a container id instead of auto detection
     -s SERVICE   provide the service name and skip the selection dialog
     -c CFGFILE   use a different config file than 'zamba.conf'
+    -h           displays this help text
   ---------------------------------------------------------------------------
     (C) 2021     zamba-lxc-toolbox by bashclub (https://github.con/bashclub)
   ---------------------------------------------------------------------------
@@ -35,7 +35,8 @@ usage() {
 
 ctid=0
 service=ask
-config=$PWD/zamba.conf
+config=$PWD/conf/zamba.conf
+verbose=0
 
 while getopts "hi:s:c:" opt; do
   case $opt in
@@ -54,15 +55,15 @@ source $config
 
 OPTS=$(ls -d $PWD/src/*/ | grep -v __ | xargs basename -a)
 
-echo 0 > $PWD/VALIDATION
+valid=0
 if [[ "$service" == "ask" ]]; then
   select svc in $OPTS quit; do
     if [[ "$svc" != "quit" ]]; then
-      echo -e "$OPTS" | while read line; do
+       for line in $(echo $OPTS); do
         if [[ "$svc" == "$line" ]]; then
           service=$svc
           echo "Installation of $service selected."
-          echo 1 > $PWD/VALIDATION
+          valid=1
           break
         fi
       done
@@ -70,26 +71,24 @@ if [[ "$service" == "ask" ]]; then
       echo "Selected 'quit' exiting without action..."
       exit 0
     fi
-    if [[ "$(cat $PWD/VALIDATION)" == "1" ]]; then
+    if [[ "$valid" == "1" ]]; then
       break
     fi
   done
 else
-  echo -e "$OPTS" | while read line; do
+  for line in $(echo $OPTS); do
     if [[ "$service" == "$line" ]]; then
       echo "Installation of $service selected."
-      echo 1 > $PWD/VALIDATION
+      valid=1
       break
     fi
   done
 fi
 
-if [[ "$(cat $PWD/VALIDATION)" != "1" ]]; then
+if [[ "$valid" != "1" ]]; then
   echo "Invalid option, exiting..."
   usage 1
 fi
-
-rm -f $PWD/VALIDATION
 
 source $PWD/src/$service/constants-service.conf
 
