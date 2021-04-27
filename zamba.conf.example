@@ -39,6 +39,9 @@ LXC_HOSTNAME="zamba"
 # Defines the domain name / search domain of your LXC container
 LXC_DOMAIN="zmb.rocks"
 
+# Enable DHCP on LAN (eth0) - (Obtain an IP address automatically) [true/false]
+LXC_DHCP=false
+
 # Defines the local IP address and subnet of your LXC container in CIDR format
 LXC_IP="192.168.100.200/24"
 
@@ -61,7 +64,7 @@ LXC_PWD='S3cr3tp@ssw0rd'
 
 # Defines an authorized_keys file to push into the LXC container.
 # By default the authorized_keys will be inherited from your proxmox host.
-LXC_AUTHORIZED_KEY="/root/.ssh/authorized_keys"
+LXC_AUTHORIZED_KEY=~/.ssh/authorized_keys
 
 # Define your (administrative) tools, you always want to have installed into your LXC container
 LXC_TOOLSET="vim htop net-tools dnsutils sysstat mc"
@@ -70,8 +73,8 @@ LXC_TOOLSET="vim htop net-tools dnsutils sysstat mc"
 LXC_TIMEZONE="Europe/Berlin"
 
 # Define system language on LXC container (locales)
-# This parameter is not used yet, but will be integrated in future releases.
-LXC_LOCALE=de_DE.UTF-8
+# With thi paramater you can generate additional locales, the default language will be inherited from proxmox host.
+LXC_LOCALE="en_US.UTF-8"
 
 # Set dark background for vim syntax highlighting (0 or 1)
 LXC_VIM_BG_DARK=1
@@ -99,7 +102,6 @@ PILER_FQDN="piler.zmb.rocks"
 # Defines the smarthost for piler mail archive
 PILER_SMARTHOST="your.mailserver.tld"
 
-
 ############### Matrix-Section ###############
 
 # Define the FQDN of your Matrix server
@@ -107,6 +109,3 @@ MATRIX_FQDN="matrix.zmb.rocks"
 
 # Define the FQDN for the Element Web virtual host
 MATRIX_ELEMENT_FQDN="element.zmb.rocks"
-
-# Define the version of Element Web
-MATRIX_ELEMENT_VERSION="v1.7.24"
