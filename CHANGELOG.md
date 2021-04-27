@@ -1,7 +1,13 @@
-**** Zamba LXC Toolbox main branch ****
+**** Zamba LXC Toolbox devel branch ****
 - added dhcp support
 - fixed hardcoded samba sharename in `zmb-standalone` script
 - added support for container id's larger than 999
+- added optional parameters for ct id, service and config file
+- mailpiler version now configured to download `latest` version
+- added `conf` folder to store user configs
+- splitted basic container setup and service installation into multiple scripts
+- created `constants` to minimize config variables
+- added `wsdd` to `zmb-standalone` service
 
 **** Zamba LXC Toolbox v0.1 ****
 - `locales` are now configured noninteractive #21
