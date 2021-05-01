@@ -109,3 +109,20 @@ MATRIX_FQDN="matrix.zmb.rocks"
 
 # Define the FQDN for the Element Web virtual host
 MATRIX_ELEMENT_FQDN="element.zmb.rocks"
+
+############### Nextcloud-Section ###############
+
+# Define the FQDN of your Matrix server
+NEXTCLOUD_FQDN="nc1.zmb.rocks"
+
+# The initial admin-user which will be configured
+NEXTCLOUD_ADMIN_USR="zmb-admin"
+
+# Build a strong password for this user. Username and password will shown at the end of the instalation. 
+NEXTCLOUD_ADMIN_PWD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
+
+# Defines the data directory, which will be createt under LXC_SHAREFS_MOUNTPOINT
+NEXTCLOUD_DATA="nc_data"
+
+
+
