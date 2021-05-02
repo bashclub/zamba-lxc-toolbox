@@ -6,6 +6,7 @@
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
 source /root/zamba.conf
+source /root/constants-service.conf
 
 if [[ $ZMB_DNS_BACKEND == "BIND9_DLZ" ]]; then
   BINDNINE=bind9
