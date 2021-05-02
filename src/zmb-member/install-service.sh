@@ -6,6 +6,7 @@
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
 source /root/zamba.conf
+source /root/constants-service.conf
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules 
 

@@ -6,6 +6,7 @@
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
 source /root/zamba.conf
+source /root/constants-service.conf
 
 HOSTNAME=$(hostname -f)
 
@@ -16,18 +17,23 @@ echo $HOSTNAME
 if 
     [ "$HOSTNAME" != "$PILER_FQDN" ]
 then
-        echo "Hostname doesn't match PILER_FQDNain! Check install.sh, /etc/hosts, /etc/hostname." && exit
+        echo "Hostname doesn't match $PILER_FQDN! Check install.sh, /etc/hosts, /etc/hostname." && exit
 else
-        echo "Hostname matches PILER_FQDNAIN, so starting installation."
+        echo "Hostname matches $PILER_FQDN, so starting installation."
 fi
 
 # install php
 wget -q https://packages.sury.org/php/apt.gpg -O- | apt-key add -
 echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
 
-DEBIAN_FRONTEND=nonintercative DEBIAN_PRIORITY=critical apt install -y -qq build-essential libwrap0-dev libpst-dev tnef libytnef0-dev unrtf catdoc libtre-dev tre-agrep poppler-utils libzip-dev unixodbc libpq5 libpoppler-dev openssl libssl-dev memcached telnet nginx mariadb-server default-libmysqlclient-dev python-mysqldb gcc libwrap0 libzip4 latex2rtf latex2html catdoc tnef zipcmp zipmerge ziptool libsodium23 php$PILER_PHP_VERSION-{fpm,common,ldap,mysql,cli,opcache,phpdbg,gd,memcache,json,readline,zip}
+apt update
 
-DEBIAN_FRONTEND=nonintercative DEBIAN_PRIORITY=critical apt remove --purge -y -qq postfix
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq build-essential libwrap0-dev libpst-dev tnef libytnef0-dev \
+unrtf catdoc libtre-dev tre-agrep poppler-utils libzip-dev unixodbc libpq5 libpoppler-dev openssl libssl-dev memcached telnet nginx \
+mariadb-server default-libmysqlclient-dev python-mysqldb gcc libwrap0 libzip4 latex2rtf latex2html catdoc tnef zipcmp zipmerge ziptool libsodium23 \
+php$PILER_PHP_VERSION-{fpm,common,ldap,mysql,cli,opcache,phpdbg,gd,memcache,json,readline,zip}
+
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt remove --purge -y -qq postfix
 
 cat > /etc/mysql/conf.d/mailpiler.conf <<EOF
 innodb_buffer_pool_size=256M

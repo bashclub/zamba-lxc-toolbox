@@ -6,6 +6,7 @@
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
 source /root/zamba.conf
+source /root/constants-service.conf
 
 # add wsdd package repo
 apt-key adv --fetch-keys https://pkg.ltec.ch/public/conf/ltec-ag.gpg.key

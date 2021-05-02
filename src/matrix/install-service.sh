@@ -6,6 +6,7 @@
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
 source /root/zamba.conf
+source /root/constants-service.conf
 
 MRX_PKE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
@@ -13,12 +14,12 @@ ELE_DBNAME="synapse_db"
 ELE_DBUSER="synapse_user"
 ELE_DBPASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
-DEBIAN_FRONTEND=nonintercative DEBIAN_PRIORITY=critical apt install -y -qq nginx postgresql python3-psycopg2
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq nginx postgresql python3-psycopg2
 
 wget -O /usr/share/keyrings/matrix-org-archive-keyring.gpg https://packages.matrix.org/debian/matrix-org-archive-keyring.gpg
 echo "deb [signed-by=/usr/share/keyrings/matrix-org-archive-keyring.gpg] https://packages.matrix.org/debian/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/matrix-org.list
 apt update
-DEBIAN_FRONTEND=nonintercative DEBIAN_PRIORITY=critical apt install -y -qq matrix-synapse-py3
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq matrix-synapse-py3
 systemctl enable matrix-synapse
 
 ss -tulpen
