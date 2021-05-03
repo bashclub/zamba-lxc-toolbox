@@ -26,7 +26,7 @@ usage() {
     -c CFGFILE   use a different config file than 'zamba.conf'
     -h           displays this help text
   ---------------------------------------------------------------------------
-    (C) 2021     zamba-lxc-toolbox by bashclub (https://github.con/bashclub)
+    (C) 2021     zamba-lxc-toolbox by bashclub (https://github.com/bashclub)
   ---------------------------------------------------------------------------
 
 	EOF
