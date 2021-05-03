@@ -17,7 +17,7 @@ Proxmox VE Server with at least one configured ZFS Pool.
 - `matrix` => Matrix Synapse Homeserver [matrix.org](https://matrix.org/docs/projects/server/synapse) with Element Web [Element on github](https://github.com/vector-im/element-web)
 - `nextcloud` => Nextcloud Server [nextcloud.com](https://nextcloud.com/) with fail2ban und redis configuration
 - `debian-unpriv` => Debian unprivileged container with basic toolset
-- `debian-unpriv` => Debian privileged container with basic toolset
+- `debian-priv` => Debian privileged container with basic toolset
 ## Usage
 Just ssh into your Proxmox machine and clone this git repository. Make sure you have installed `git`.
 ```bash
