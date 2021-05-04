@@ -23,6 +23,21 @@ LXC_MP="0"
 LXC_UNPRIVILEGED="1"
 LXC_NESTING="0"
 
+# Check config Settings
+if [[ $LXC_TIMEZONE != $(timedatectl list-timezones | grep $LXC_TIMEZONE) ]]; then
+  echo "Unknown LXC_TIMEZONE setting (list available Timezones 'timedatectl list-timezones')"; exit 0
+fi
+if [[ $LXC_TEMPLATE_STORAGE != $(pvesh get storage --noborder --noheader | grep $LXC_TEMPLATE_STORAGE$) ]]; then
+  echo "Unknown LXC_TEMPLATE_STORAGE, please check your storage name"; exit 0
+fi
+if [[ $LXC_ROOTFS_STORAGE != $(pvesh get storage --noborder --noheader | grep $LXC_ROOTFS_STORAGE$) ]]; then
+  echo "Unknown LXC_ROOTFS_STORAGE, please check your storage name"; exit 0
+fi
+if [[ $LXC_SHAREFS_STORAGE != $(pvesh get storage --noborder --noheader | grep $LXC_SHAREFS_STORAGE$) ]]; then
+  echo "Unknown LXC_SHAREFS_STORAGE, please check your storage name"; exit 0
+fi
+
+
 select opt in zmb-standalone zmb-ad zmb-member mailpiler matrix debian-unpriv debian-priv quit; do
   case $opt in
     debian-unpriv)
