@@ -124,5 +124,5 @@ NEXTCLOUD_ADMIN_PWD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head
 # Defines the data directory, which will be createt under LXC_SHAREFS_MOUNTPOINT
 NEXTCLOUD_DATA="nc_data"
 
-
-
+# Defines the trusted reverse proxy, which will enable the detection of source ip to fail2ban
+NEXTCLOUD_REVPROX="192.168.100.254"
