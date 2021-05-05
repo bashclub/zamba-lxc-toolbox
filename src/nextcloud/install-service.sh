@@ -388,6 +388,10 @@ array (
 'theme' => '',
 'trashbin_retention_obligation' => 'auto, 7',
 'updater.release.channel' => 'stable',
+'trusted_proxies' => 
+array (
+'$NEXTCLOUD_REVPROX'
+),
 );
 EOF
 
