@@ -12,7 +12,7 @@ MYSQL_PASSWORD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq unzip nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq unzip sudo nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd
 
 cat << EOF > /etc/nginx/sites-available/default
 server {
@@ -44,6 +44,7 @@ rm open3a.zip
 chmod 666 system/DBData/Installation.pfdb.php
 chmod -R 777 specifics/
 chmod -R 777 system/Backups
+chown -R www-data:www-data /var/www/html
 
 echo "sudo -u www-data /usr/bin/php /var/www/html/plugins/Installation/backup.php; for backup in $(ls -r1 /var/www/html/system/Backup/*.gz | /bin/grep -v $(date +%Y%m%d)); do /bin/rm $backup;done" > /etc/cron.daily/open3a-backup
 chmod +x /etc/cron.daily/open3a-backup
