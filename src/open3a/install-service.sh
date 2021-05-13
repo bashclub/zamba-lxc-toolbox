@@ -12,7 +12,7 @@ MYSQL_PASSWORD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq unzip nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq unzip nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd
 
 cat << EOF > /etc/nginx/sites-available/default
 server {
