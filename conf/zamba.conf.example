@@ -126,3 +126,16 @@ NEXTCLOUD_DATA="nc_data"
 
 # Defines the trusted reverse proxy, which will enable the detection of source ip to fail2ban
 NEXTCLOUD_REVPROX="192.168.100.254"
+
+############### Check_MK-Section ###############
+
+# Define the name of your checkmk instance
+CMK_INSTANCE=zmb-rocks
+
+# Define the password of user 'cmkadmin'
+CMK_ADMIN_PW='Ju5t@n0thers3cur3p@ssw0rd'
+
+# checkmk edition (raw or free)
+# raw = completely free
+# free = limited version of the enterprise edition (25 hosts, 1 instance)
+CMK_EDITION=raw
