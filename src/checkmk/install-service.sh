@@ -13,4 +13,18 @@ DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install ./che
 
 omd create --admin-password $CMK_ADMIN_PW $CMK_INSTANCE
 
+cat << EOF > /etc/apache2/sites-available/000-default.conf
+<VirtualHost *:80>
+	RewriteEngine On
+	RewriteCond %{HTTPS} !=on
+	RewriteRule ^/?(.*) https://%{SERVER_NAME}/spille [R,L]
+</VirtualHost>
+EOF
+
+a2enmod ssl
+a2enmod rewrite
+a2ensite default-ssl
+
+systemctl restart apache2.service
+
 omd start $CMK_INSTANCE
