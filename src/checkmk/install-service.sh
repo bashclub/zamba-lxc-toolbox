@@ -17,7 +17,7 @@ cat << EOF > /etc/apache2/sites-available/000-default.conf
 <VirtualHost *:80>
 	RewriteEngine On
 	RewriteCond %{HTTPS} !=on
-	RewriteRule ^/?(.*) https://%{SERVER_NAME}/spille [R,L]
+	RewriteRule ^/?(.*) https://%{SERVER_NAME}/$CMK_INSTANCE [R,L]
 </VirtualHost>
 EOF
 
