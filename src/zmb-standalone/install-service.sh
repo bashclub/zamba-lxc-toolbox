@@ -11,10 +11,17 @@ source /root/constants-service.conf
 # add wsdd package repo
 apt-key adv --fetch-keys https://pkg.ltec.ch/public/conf/ltec-ag.gpg.key
 echo "deb https://pkg.ltec.ch/public/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/wsdd.list
+echo "deb http://ftp.de.debian.org/debian buster-backports main contrib" > /etc/apt/sources.list.d/buster-backports.list
 
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba samba-dsdb-modules samba-vfs-modules wsdd
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" --no-install-recommends -t buster-backports cockpit
+
+mkdir /usr/share/cockpit/smb
+wget https://raw.githubusercontent.com/enira/cockpit-smb-plugin/master/index.html -O /usr/share/cockpit/smb/index.html
+wget https://raw.githubusercontent.com/enira/cockpit-smb-plugin/master/manifest.json -O /usr/share/cockpit/smb/manifest.json
+wget https://raw.githubusercontent.com/enira/cockpit-smb-plugin/master/smb.js -O /usr/share/cockpit/smb/smb.js
 
 USER=$(echo "$ZMB_ADMIN_USER" | awk '{print tolower($0)}')
 useradd --comment "Zamba fileserver admin" --create-home --shell /bin/bash $USER
