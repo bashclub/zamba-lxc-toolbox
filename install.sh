@@ -124,11 +124,7 @@ pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl
 sleep 2;
 
 # Check vlan configuration
-if [[ $LXC_VLAN != "" ]];then
-  VLAN=",tag=$LXC_VLAN"
-else
- VLAN=""
-fi
+if [[ $LXC_VLAN != "" ]];then VLAN=",tag=$LXC_VLAN"; else VLAN=""; fi
 # Reconfigure conatiner
 pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING;
 if [ $LXC_DHCP == true ]; then
