@@ -74,7 +74,7 @@ LXC_TIMEZONE="Europe/Berlin"
 
 # Define system language on LXC container (locales)
 # With thi paramater you can generate additional locales, the default language will be inherited from proxmox host.
-LXC_LOCALE="en_US.UTF-8"
+LXC_LOCALE="de_DE.UTF-8"
 
 # Set dark background for vim syntax highlighting (0 or 1)
 LXC_VIM_BG_DARK=1
