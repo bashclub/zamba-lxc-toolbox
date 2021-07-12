@@ -61,8 +61,8 @@ chmod 755 /var/piler
 
 if [[ "$PILER_VERSION" == "latest" ]]; then
         URL=$(curl -s https://www.mailpiler.org/wiki/download | grep "https://bitbucket.org/jsuto/piler/downloads/piler-" | cut -d '"' -f2)
+        PILER_VERSION=$(echo $URL | cut -d'-' -f2 | cut -d'.' -f1-3)
         wget -O piler-$PILER_VERSION.tar.gz $URL
-        PILER_VERSION=$(ls piler-* | cut -d'-' -f2 | cut -d'.' -f1-3)
 else
         wget https://bitbucket.org/jsuto/piler/downloads/piler-$PILER_VERSION.tar.gz
 fi
