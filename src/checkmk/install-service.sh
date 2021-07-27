@@ -30,8 +30,4 @@ systemctl restart apache2.service
 omd start $CMK_INSTANCE
 
 # install matrix notification plugin
-su - $CMK_INSTANCE
-cd ~/local/share/check_mk/notifications/
-wget https://github.com/bashclub/check_mk_matrix_notifications/raw/master/matrix.py
-chmod +x ./matrix.py
-exit
+su - $CMK_INSTANCE -c "wget -O  ~/local/share/check_mk/notifications/matrix.py https://github.com/bashclub/check_mk_matrix_notifications/raw/master/matrix.py && chmod +x ~/local/share/check_mk/notifications/matrix.py"
