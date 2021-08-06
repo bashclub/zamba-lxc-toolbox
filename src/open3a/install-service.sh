@@ -52,4 +52,7 @@ chmod +x /etc/cron.daily/open3a-backup
 systemctl enable --now php7.3-fpm
 systemctl restart nginx
 
-echo -e "Your open3a installation is now complete. Please continue with setup in your Browser:\nURL:\t\thttp://$LXC_IP\nLogin:\t\tAdmin\nPassword:\tAdmin\n\nMysql-Settings:\nServer:\t\tlocalhost\nUser:\t\topen3a\nPassword:\t$MYSQL_PASSWORD\nDatabase:\topen3a"
+echo "Your open3a installation is now complete. Please continue with setup in your Browser:\nURL:\t\thttp://$LXC_IP\nLogin:\t\tAdmin\nPassword:\tAdmin\n\nMysql-Settings:\nServer:\t\tlocalhost\nUser:\t\topen3a\nPassword:\t$MYSQL_PASSWORD\nDatabase:\topen3a" > /root/summary
+echo -e "$(cat /root/summary)"
+
+exit 0

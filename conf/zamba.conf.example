@@ -34,7 +34,7 @@ LXC_MEM="1024"
 LXC_SWAP="1024"
 
 # Defines the hostname of your LXC container
-LXC_HOSTNAME="zamba"
+LXC_HOSTNAME="${service}.zmbrocks"
 
 # Defines the domain name / search domain of your LXC container
 LXC_DOMAIN="zmb.rocks"

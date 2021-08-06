@@ -410,7 +410,10 @@ bash /$LXC_SHAREFS_MOUNTPOINT/$NEXTCLOUD_DATA/config_nextcloud.sh
 EOF
 echo "*/5 * * * * www-data /usr/bin/php -f /var/www/nextcloud/cron.php > /dev/null 2>&1" > /etc/cron.d/nextcloud
 
-echo -e "\n######################################################################\n\n    Please note this user and password for the nextcloud login:\n        '$NEXTCLOUD_ADMIN_USR' / '$NEXTCLOUD_ADMIN_PWD'\n                Enjoy your Nextcloud intallation.\n\n######################################################################"
+echo "\n\n"
+echo "######################################################################\n\n    Please note this user and password for the nextcloud login:\n        '$NEXTCLOUD_ADMIN_USR' / '$NEXTCLOUD_ADMIN_PWD'\n                Enjoy your Nextcloud intallation.\n\n######################################################################" > /root/summary
+echo -e "$(cat /root/summary)"
+
 systemctl stop nginx php$NEXTCLOUD_PHP_VERSION-fpm
 systemctl restart postgresql php$NEXTCLOUD_PHP_VERSION-fpm redis-server nginx
 
