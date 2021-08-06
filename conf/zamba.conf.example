@@ -130,7 +130,7 @@ NEXTCLOUD_REVPROX="192.168.100.254"
 ############### Check_MK-Section ###############
 
 # Define the name of your checkmk instance
-CMK_INSTANCE=zmb-rocks
+CMK_INSTANCE=zmbrocks
 
 # Define the password of user 'cmkadmin'
 CMK_ADMIN_PW='Ju5t@n0thers3cur3p@ssw0rd'

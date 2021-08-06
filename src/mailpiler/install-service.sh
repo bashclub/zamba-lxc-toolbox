@@ -26,6 +26,9 @@ fi
 wget -q https://packages.sury.org/php/apt.gpg -O- | apt-key add -
 echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
 
+apt-key adv --fetch-keys 'https://mariadb.org/mariadb_release_signing_key.asc'
+add-apt-repository 'deb [arch=amd64] https://mirror.wtnet.de/mariadb/repo/10.5/debian buster main'
+
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq build-essential libwrap0-dev libpst-dev tnef libytnef0-dev \
@@ -58,6 +61,7 @@ chmod 755 /var/piler
 
 if [[ "$PILER_VERSION" == "latest" ]]; then
         URL=$(curl -s https://www.mailpiler.org/wiki/download | grep "https://bitbucket.org/jsuto/piler/downloads/piler-" | cut -d '"' -f2)
+        PILER_VERSION=$(echo $URL | cut -d'-' -f2 | cut -d'.' -f1-3)
         wget -O piler-$PILER_VERSION.tar.gz $URL
 else
         wget https://bitbucket.org/jsuto/piler/downloads/piler-$PILER_VERSION.tar.gz
