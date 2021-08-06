@@ -51,7 +51,7 @@ LXC_SWAP="1024"
 ### LXC_HOSTNAME
 Defines the hostname of your LXC container
 ```bash
-LXC_SWAP="zamba"
+LXC_HOSTNAME="${service}.zmbrocks"
 ```
 ### LXC_DOMAIN
 Defines the domain name / search domain of your LXC container
@@ -104,7 +104,7 @@ LXC_AUTHORIZED_KEY="/root/.ssh/authorized_keys"
 ### LXC_TOOLSET
 Define your (administrative) tools, you always want to have installed into your LXC container
 ```bash
-LXC_TOOLSET="vim htop net-tools dnsutils mc sysstat lsb-release curl git gnupg2 apt-transport-https"
+LXC_TOOLSET="vim htop net-tools dnsutils sysstat mc"
 ```
 ### LXC_TIMEZONE
 Define the local timezone of your LXC container (default: Euroe/Berlin)
@@ -113,11 +113,14 @@ LXC_TIMEZONE="Europe/Berlin"
 ```
 ### LXC_LOCALE
 Define system language on LXC container (locales)
+With this paramater you can generate additional locales, the default language will be inherited from proxmox host.
 ```bash
-LXC_LOCALE="de_DE.utf8"
+LXC_LOCALE="en_US.UTF-8""
 ```
-This parameter is not used yet, but will be integrated in future releases.
-<br>
+### Set dark background for vim syntax highlighting (0 or 1)
+```bash
+LXC_VIM_BG_DARK=1
+```
 
 ## Zamba Server Section
 This section configures the Zamba server (AD DC, AD member and standalone)
@@ -132,11 +135,6 @@ ZMB_REALM="ZMB.ROCKS"
 Defines the domain name in your Active Directory or Workgroup (AD DC, AD member, standalone)
 ```bash
 ZMB_DOMAIN="ZMB"
-```
-### ZMB_DNS_BACKEND
-Defines the desired DNS server backend, supported are `SAMBA_INTERNAL` and `BIND9_DLZ` for more advanced usage
-```bash
-ZMB_DNS_BACKEND="SAMBA_INTERNAL"
 ```
 ### ZMB_ADMIN_USER
 Defines the name of your domain administrator account (AD DC, AD member, standalone)
@@ -171,21 +169,6 @@ Defines the smarthost for piler mail archive
 ```bash
 PILER_SMARTHOST="10.10.80.20"
 ```
-### PILER_VERSION
-Defines the version number of piler mail archive to install
-```bash
-PILER_VERSION="1.3.10"
-```
-### PILER_SPHINX_VERSION
-Defines the version of sphinx to install
-```bash
-PILER_SPHINX_VERSION="3.3.1"
-```
-### PILER_PHP_VERSION
-Defines the php version to install
-```bash
-PILER_PHP_VERSION="7.4"
-```
 <br>
 
 ## Matrix section
@@ -208,8 +191,49 @@ Define the version of Element Web
 ```bash
 MATRIX_ELEMENT_VERSION="v1.7.24"
 ```
-### MATRIX_JITSI_FQDN
-Define the FQDN for the Jitsi Meet virtual host
+
+## Nextcloud Section
+This section configures the nextcloud server
+<br>
+
+### Define the FQDN of your Nextcloud server
 ```bash
-MATRIX_JITSI_FQDN="meet.zmb.rocks"
+NEXTCLOUD_FQDN="nc1.zmb.rocks"
+```
+
+### The initial admin-user which will be configured
+```bash
+NEXTCLOUD_ADMIN_USR="zmb-admin"
+```
+
+### Build a strong password for this user. Username and password will shown at the end of the instalation. 
+```bash
+NEXTCLOUD_ADMIN_PWD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
+```
+### Defines the data directory, which will be createt under LXC_SHAREFS_MOUNTPOINT
+```bash
+NEXTCLOUD_DATA="nc_data"
+```
+### Defines the trusted reverse proxy, which will enable the detection of source ip to fail2ban
+```bash
+NEXTCLOUD_REVPROX="192.168.100.254"
+```
+## Check_MK Section
+This section configures the checkmk server
+<br>
+
+### Define the name of your checkmk instance
+```bash
+CMK_INSTANCE=zmbrocks
+```
+
+### Define the password of user 'cmkadmin'
+```bash
+CMK_ADMIN_PW='Ju5t@n0thers3cur3p@ssw0rd'
+```
+### checkmk edition (raw or free)
+#### raw = completely free
+#### free = limited version of the enterprise edition (25 hosts, 1 instance)
+```bash
+CMK_EDITION=raw
 ```
