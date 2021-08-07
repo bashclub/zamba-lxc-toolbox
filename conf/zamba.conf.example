@@ -34,7 +34,7 @@ LXC_MEM="1024"
 LXC_SWAP="1024"
 
 # Defines the hostname of your LXC container
-LXC_HOSTNAME="${service}.zmbrocks"
+LXC_HOSTNAME="${service}"
 
 # Defines the domain name / search domain of your LXC container
 LXC_DOMAIN="zmb.rocks"
@@ -74,7 +74,9 @@ LXC_TIMEZONE="Europe/Berlin"
 
 # Define system language on LXC container (locales)
 # With this paramater you can generate additional locales, the default language will be inherited from proxmox host.
-LXC_LOCALE="en_US.UTF-8"
+# en_US.UTF-8  english
+# de_DE.UTF-8  german (default)
+LXC_LOCALE="de_DE.UTF-8"
 
 # Set dark background for vim syntax highlighting (0 or 1)
 LXC_VIM_BG_DARK=1

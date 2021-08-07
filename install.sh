@@ -152,7 +152,7 @@ if [[ $LXC_VLAN != "" ]];then VLAN=",tag=$LXC_VLAN"; else VLAN=""; fi
 PVE_VER=$(pveversion | grep 'pve-manager' | cut -d'/' -f2 | sed 's/[^0-9]//g')
 pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME -onboot 1 -features nesting=$LXC_NESTING;
 # timezone switch added in Version 6.3
-if [ $PVE_VER -gt 630 ];then pct set $LXC_NBR -timezone $LXC_TIMEZONE;fi
+if [ $PVE_VER -ge 630 ];then pct set $LXC_NBR -timezone $LXC_TIMEZONE;fi
 if [ $LXC_DHCP == true ]; then
  pct set $LXC_NBR -net0 name=eth0,bridge=$LXC_BRIDGE,ip=dhcp,type=veth$VLAN;
 else
