@@ -43,7 +43,7 @@ unzip open3a.zip
 rm open3a.zip
 chmod 666 system/DBData/Installation.pfdb.php
 chmod -R 777 specifics/
-chmod -R 777 system/Backups
+chmod -R 777 system/Backup
 chown -R www-data:www-data /var/www/html
 
 echo "sudo -u www-data /usr/bin/php /var/www/html/plugins/Installation/backup.php; for backup in $(ls -r1 /var/www/html/system/Backup/*.gz | /bin/grep -v $(date +%Y%m%d)); do /bin/rm $backup;done" > /etc/cron.daily/open3a-backup
