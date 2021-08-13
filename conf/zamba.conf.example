@@ -34,7 +34,7 @@ LXC_MEM="1024"
 LXC_SWAP="1024"
 
 # Defines the hostname of your LXC container
-LXC_HOSTNAME="zamba"
+LXC_HOSTNAME="${service}"
 
 # Defines the domain name / search domain of your LXC container
 LXC_DOMAIN="zmb.rocks"
@@ -73,8 +73,10 @@ LXC_TOOLSET="vim htop net-tools dnsutils sysstat mc"
 LXC_TIMEZONE="Europe/Berlin"
 
 # Define system language on LXC container (locales)
-# With thi paramater you can generate additional locales, the default language will be inherited from proxmox host.
-LXC_LOCALE="en_US.UTF-8"
+# With this paramater you can generate additional locales, the default language will be inherited from proxmox host.
+# en_US.UTF-8  english
+# de_DE.UTF-8  german (default)
+LXC_LOCALE="de_DE.UTF-8"
 
 # Set dark background for vim syntax highlighting (0 or 1)
 LXC_VIM_BG_DARK=1
@@ -112,7 +114,7 @@ MATRIX_ELEMENT_FQDN="element.zmb.rocks"
 
 ############### Nextcloud-Section ###############
 
-# Define the FQDN of your Matrix server
+# Define the FQDN of your Nextcloud server
 NEXTCLOUD_FQDN="nc1.zmb.rocks"
 
 # The initial admin-user which will be configured

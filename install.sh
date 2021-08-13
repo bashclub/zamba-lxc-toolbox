@@ -53,6 +53,27 @@ shift $((OPTIND-1))
 echo "Loading config file '$config'..."
 source $config
 
+# Check config Settings
+echo "Check Setting 'Timezone'"
+if [[ $LXC_TIMEZONE != $(timedatectl list-timezones | grep $LXC_TIMEZONE) ]]; then
+  echo "Unknown LXC_TIMEZONE setting (list available Timezones 'timedatectl list-timezones')"; exit 0
+fi
+echo "Check Setting 'Template Storage'"
+pvstorage=$(pvesh get storage --noborder --noheader);
+if [[ $LXC_TEMPLATE_STORAGE != $(echo "$pvstorage" | grep $LXC_TEMPLATE_STORAGE$) ]]; then
+  echo "Unknown LXC_TEMPLATE_STORAGE, please check your storage name"; exit 0
+fi
+echo "Check Setting 'Rootfs Storage'"
+if [[ $LXC_ROOTFS_STORAGE != $(echo "$pvstorage" | grep $LXC_ROOTFS_STORAGE$) ]]; then
+  echo "Unknown LXC_ROOTFS_STORAGE, please check your storage name"; exit 0
+fi
+echo "Check Setting 'Sharefs Storage'"
+if [[ $LXC_SHAREFS_STORAGE != $(echo "$pvstorage" | grep $LXC_SHAREFS_STORAGE$) ]]; then
+  echo "Unknown LXC_SHAREFS_STORAGE, please check your storage name"; exit 0
+fi
+echo -e "Settings \e[0;92mOK\e[0m"
+
+
 OPTS=$(ls -d $PWD/src/*/ | grep -v __ | xargs basename -a)
 
 valid=0
@@ -90,9 +111,11 @@ if [[ "$valid" != "1" ]]; then
   usage 1
 fi
 
+source $config
 source $PWD/src/$service/constants-service.conf
+LXC_HOSTNAME="${LXC_HOSTNAME/-/}"
 
-# CHeck is the newest template available, else download it.
+# Check is the newest template available, else download it.
 DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep debian-10-standard | cut -d'_' -f2)
 DEB_REP=$(pveam available --section system | grep debian-10-standard | cut -d'_' -f2)
 
@@ -126,7 +149,10 @@ sleep 2;
 # Check vlan configuration
 if [[ $LXC_VLAN != "" ]];then VLAN=",tag=$LXC_VLAN"; else VLAN=""; fi
 # Reconfigure conatiner
-pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING;
+PVE_VER=$(pveversion | grep 'pve-manager' | cut -d'/' -f2 | sed 's/[^0-9]//g')
+pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME -onboot 1 -features nesting=$LXC_NESTING;
+# timezone switch added in Version 6.3
+if [ $PVE_VER -ge 630 ];then pct set $LXC_NBR -timezone $LXC_TIMEZONE;fi
 if [ $LXC_DHCP == true ]; then
  pct set $LXC_NBR -net0 name=eth0,bridge=$LXC_BRIDGE,ip=dhcp,type=veth$VLAN;
 else
@@ -159,8 +185,14 @@ lxc-attach -n$LXC_NBR bash /root/lxc-base.sh
 echo "Install '$service'!"
 lxc-attach -n$LXC_NBR bash /root/install-service.sh
 
+summary=$(pct exec $LXC_NBR -- bash -c '[ -f /root/summary ] && cat /root/summary')
+if [[ $summary != "" ]];then pct set $LXC_NBR --description="$(echo -e "$summary")"; fi
+
 if [[ $service == "zmb-ad" ]]; then
   pct stop $LXC_NBR
   pct set $LXC_NBR \-nameserver $(echo $LXC_IP | cut -d'/' -f 1)
   pct start $LXC_NBR
 fi
+
+# timezone switch added in Version 6.3
+if [ $PVE_VER -lt 630 ]; then echo "echo "$LXC_TIMEZONE" > /etc/timezone" | pct enter $LXC_NBR; fi
