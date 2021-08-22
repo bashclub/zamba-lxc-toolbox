@@ -76,7 +76,7 @@ sed -i "s/;opcache.interned_strings_buffer=.*/opcache.interned_strings_buffer=8/
 sed -i "s/;opcache.max_accelerated_files=.*/opcache.max_accelerated_files=10000/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/;opcache.revalidate_freq=.*/opcache.revalidate_freq=1/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/;opcache.save_comments=.*/opcache.save_comments=1/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
-sed -i '\$aapc.enable_cli=1' /etc/php/$NEXTCLOUD_PHP_VERSION/mods-available/apcu.ini
+sed -i '$aapc.enable_cli=1' /etc/php/$NEXTCLOUD_PHP_VERSION/mods-available/apcu.ini
 sed -i "s/rights=\"none\" pattern=\"PS\"/rights=\"read|write\" pattern=\"PS\"/" /etc/ImageMagick-6/policy.xml
 sed -i "s/rights=\"none\" pattern=\"EPS\"/rights=\"read|write\" pattern=\"EPS\"/" /etc/ImageMagick-6/policy.xml
 sed -i "s/rights=\"none\" pattern=\"PDF\"/rights=\"read|write\" pattern=\"PDF\"/" /etc/ImageMagick-6/policy.xml
@@ -239,6 +239,14 @@ access_log off;
 location / {
 try_files \$uri \$uri/ /index.php\$request_uri;
 }
+location /push/ {
+proxy_pass http://localhost:7867/;
+proxy_http_version 1.1;
+proxy_set_header Upgrade \$http_upgrade;
+proxy_set_header Connection "Upgrade";
+proxy_set_header Host \$host;
+proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+}
 }
 EOF
 
@@ -400,10 +408,32 @@ php /var/www/nextcloud/occ app:disable survey_client
 php /var/www/nextcloud/occ app:disable firstrunwizard
 php /var/www/nextcloud/occ app:enable admin_audit
 php /var/www/nextcloud/occ app:enable files_pdfviewer
+php /var/www/nextcloud/occ app:enable notify_push
 php /var/www/nextcloud/occ background:cron
 DFOE
 
 /root/permissions.sh
+
+## Enable Push Daemon for Nextcloud Clients
+
+cat > /etc/systemd/system/notify_push.service << EOF
+[Unit]
+Description = Push daemon for Nextcloud clients
+
+[Service]
+Environment=PORT=7867
+Environment=NEXTCLOUD_URL=https://$NEXTCLOUD_FQDN
+Environment=ALLOW_SELF_SIGNED=true
+ExecStartPre=/bin/sleep 3
+ExecStart=/var/www/nextcloud/apps/notify_push/bin/x86_64/notify_push /var/www/nextcloud/config/config.php
+User=www-data
+
+[Install]
+WantedBy = multi-user.target
+EOF
+
+sed -i '$a127.0.0.1 '"$NEXTCLOUD_FQDN"'' /etc/hosts
+systemctl enable --now notify_push
 
 su -s /bin/bash www-data <<EOF
 bash /$LXC_SHAREFS_MOUNTPOINT/$NEXTCLOUD_DATA/config_nextcloud.sh
@@ -411,10 +441,10 @@ EOF
 echo "*/5 * * * * www-data /usr/bin/php -f /var/www/nextcloud/cron.php > /dev/null 2>&1" > /etc/cron.d/nextcloud
 
 echo "\n\n"
-echo "######################################################################\n\n    Please note this user and password for the nextcloud login:\n        '$NEXTCLOUD_ADMIN_USR' / '$NEXTCLOUD_ADMIN_PWD'\n                Enjoy your Nextcloud intallation.\n\n######################################################################" > /root/summary
+echo "######################################################################\n\n    Please note this user and password for the nextcloud login:\n      Open your Browser: https://$NEXTCLOUD_FQDN\n        '$NEXTCLOUD_ADMIN_USR' / '$NEXTCLOUD_ADMIN_PWD'\n                Enjoy your Nextcloud intallation.\n\n######################################################################" > /root/summary
 echo -e "$(cat /root/summary)"
 
 systemctl stop nginx php$NEXTCLOUD_PHP_VERSION-fpm
-systemctl restart postgresql php$NEXTCLOUD_PHP_VERSION-fpm redis-server nginx
+systemctl restart postgresql php$NEXTCLOUD_PHP_VERSION-fpm redis-server nginx notify_push
 
 exit 0
