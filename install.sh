@@ -113,7 +113,6 @@ fi
 
 source $config
 source $PWD/src/$service/constants-service.conf
-LXC_HOSTNAME="${LXC_HOSTNAME/-/}"
 
 # Check is the newest template available, else download it.
 DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep debian-10-standard | cut -d'_' -f2)
