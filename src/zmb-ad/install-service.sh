@@ -96,8 +96,7 @@ EOF
 fi
 
 # stop + disable samba services and remove default config
-systemctl stop smbd nmbd winbind
-systemctl disable smbd nmbd winbind
+systemctl disable --now smbd nmbd winbind systemd-resolved
 rm -f /etc/samba/smb.conf
 rm -f /etc/krb5.conf
 
