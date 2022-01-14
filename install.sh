@@ -93,15 +93,15 @@ fi
 source $PWD/src/$service/constants-service.conf
 
 # CHeck is the newest template available, else download it.
-DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep debian-10-standard | cut -d'_' -f2)
-DEB_REP=$(pveam available --section system | grep debian-10-standard | cut -d'_' -f2)
+DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep $LXC_TEMPLATE_VERSION | cut -d'_' -f2)
+DEB_REP=$(pveam available --section system | grep $LXC_TEMPLATE_VERSION | cut -d'_' -f2)
 
 if [[ $DEB_LOC == $DEB_REP ]];
 then
-  echo "Newest Version of Debian 10 Standard $DEP_REP exists.";
+  echo "Newest Version of $LXC_TEMPLATE_VERSION $DEP_REP exists.";
 else
-  echo "Will now download newest Debian 10 Standard $DEP_REP.";
-  pveam download $LXC_TEMPLATE_STORAGE debian-10-standard_$DEB_REP\_amd64.tar.gz
+  echo "Will now download newest $LXC_TEMPLATE_VERSION $DEP_REP.";
+  pveam download $LXC_TEMPLATE_STORAGE "$LXC_TEMPLATE_VERSION"_$DEB_REP\_amd64.tar.gz
 fi
 
 if [ $ctid -gt 99 ]; then
@@ -120,7 +120,7 @@ fi
 echo "Will now create LXC Container $LXC_NBR!";
 
 # Create the container
-pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/debian-10-standard_$DEB_REP\_amd64.tar.gz -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
+pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/"$LXC_TEMPLATE_VERSION"_$DEB_REP\_amd64.tar.gz -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
 sleep 2;
 
 # Check vlan configuration
@@ -147,7 +147,6 @@ sleep 5;
 echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
 lxc-attach -n$LXC_NBR mkdir /root/.ssh;
 pct push $LXC_NBR $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
-pct push $LXC_NBR $PWD/src/sources.list /etc/apt/sources.list
 pct push $LXC_NBR $config /root/zamba.conf
 pct push $LXC_NBR $PWD/src/constants.conf /root/constants.conf
 pct push $LXC_NBR $PWD/src/lxc-base.sh /root/lxc-base.sh

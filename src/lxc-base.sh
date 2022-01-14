@@ -9,6 +9,7 @@
 echo "Loading configuration..."
 source /root/zamba.conf
 source /root/constants.conf
+source /root/constants-service.conf
 
 echo "Updating locales"
 # update locales
@@ -17,11 +18,36 @@ cat << EOF > /etc/default/locale
 LANG="$LXC_LOCALE"
 LANGUAGE=$LXC_LOCALE
 EOF
-locale-gen $LXC_LOCALE
+locale-gen $LXC_LOCALE 
+
+# Generate sources
+if [ "$LXC_TEMPLATE_VERSION" == "debian-11-standard" ] ; then
+
+cat << EOF > /etc/apt/sources.list
+deb http://ftp.de.debian.org/debian bullseye main contrib
+
+deb http://ftp.de.debian.org/debian bullseye-updates main contrib
+
+# security updates
+deb http://security.debian.org bullseye-security main contrib
+EOF
+
+elif [ "$LXC_TEMPLATE_VERSION" == "debian-10-standard" ] ; then
+
+cat << EOF > /etc/apt/sources.list
+deb http://ftp.de.debian.org/debian buster main contrib
+
+deb http://ftp.de.debian.org/debian buster-updates main contrib
+
+# security updates
+deb http://security.debian.org buster/updates main contrib
+EOF
+else echo "LXC Debian Version false. Please check configuration files!" ; exit
+fi
 
 # update package lists
 echo "Updating package database..."
-apt update
+apt --allow-releaseinfo-change update
 
 # install latest packages
 echo "Installing latest updates"
