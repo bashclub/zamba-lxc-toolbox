@@ -5,12 +5,19 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
-dpkg-reconfigure locales
-
 source /root/zamba.conf
+source /root/proxmox.conf
 
-# Set Timezone
-ln -sf /usr/share/zoneinfo/$LXC_TIMEZONE /etc/localtime
+sed -i "s/^#.$HOST_LOCALE/$HOST_LOCALE/" /etc/locale.gen
+locale-gen $HOST_LOCALE
+
+sed -i "s/^#.$LXC_LOCALE/$LXC_LOCALE/" /etc/locale.gen
+locale-gen $LXC_LOCALE
+echo LANG=$LXC_LOCALE > /etc/default/locale
+echo LANGUAGE=$LXC_LOCALE >> /etc/default/locale
+export LANG=$LXC_LOCALE
+export LANGUAGE=$LXC_LOCALE
+export LC_CTYPE=C
 
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade

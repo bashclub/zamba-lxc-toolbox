@@ -1,0 +1,11 @@
+{
+    "unprivileged": 1,
+    "features": {
+        "nesting": 1
+    },
+    "sharefs": {},
+    "mem": 1024,
+    "swap": 1024,
+    "hostname": "piler",
+    "domain": "zmb.rocks"
+}

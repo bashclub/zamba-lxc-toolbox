@@ -1,0 +1,14 @@
+
+bash -vx install.sh -s checkmk > checkmk.inst.log
+bash -vx install.sh -s debian-unpriv > debian-unpriv.inst.log
+bash -vx install.sh -s matrix > matrix.inst.log
+bash -vx install.sh -s nextcloud > nextcloud.inst.log
+bash -vx install.sh -s open3a > open3a.inst.log
+bash -vx install.sh -s zmb-ad > zmb-ad.inst.log
+bash -vx install.sh -s zmb-member > zmb-member.inst.log
+bash -vx install.sh -s zmb-standalone > zmb-standalone.inst.log
+bash -vx install.sh -s debian-priv > debian-priv.inst.log
+bash -vx install.sh -s mailpiler > mailpiler.inst.log
+bash -vx install.sh -s onlyoffice > onlyoffice.inst.log
+bash -vx install.sh -s proxmox-pbs > proxmox-pbs.inst.log
+bash -vx install.sh -s urbackup > urbackup.inst.log
