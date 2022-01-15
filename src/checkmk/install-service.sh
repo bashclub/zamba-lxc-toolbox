@@ -8,8 +8,9 @@
 source /root/zamba.conf
 source /root/constants-service.conf
 
-wget https://download.checkmk.com/checkmk/$CMK_VERSION/check-mk-$CMK_EDITION-$CMK_VERSION$CMK_BUILD.buster_amd64.deb
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install ./check-mk-$CMK_EDITION-$CMK_VERSION$CMK_BUILD.buster_amd64.deb
+cd /tmp
+wget https://download.checkmk.com/checkmk/$CMK_VERSION/check-mk-$CMK_EDITION-$CMK_VERSION$CMK_BUILD.$(lsb_release -cs)_amd64.deb
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install ./check-mk-$CMK_EDITION-$CMK_VERSION$CMK_BUILD.$(lsb_release -cs)_amd64.deb
 
 omd create --admin-password $CMK_ADMIN_PW $CMK_INSTANCE
 
@@ -30,8 +31,7 @@ systemctl restart apache2.service
 omd start $CMK_INSTANCE
 
 # install matrix notification plugin
-su - $CMK_INSTANCE
-cd ~/local/share/check_mk/notifications/
-wget https://github.com/bashclub/check_mk_matrix_notifications/raw/master/matrix.py
-chmod +x ./matrix.py
-exit
+
+wget -O /opt/omd/sites/$CMK_INSTANCE/local/share/check_mk/notifications/matrix.py https://github.com/bashclub/check_mk_matrix_notifications/raw/master/matrix.py
+chmod +x /opt/omd/sites/$CMK_INSTANCE/local/share/check_mk/notifications/matrix.py
+chown $CMK_INSTANCE /opt/omd/sites/$CMK_INSTANCE/local/share/check_mk/notifications/matrix.py
