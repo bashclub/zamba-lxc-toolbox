@@ -8,9 +8,69 @@
 source /root/zamba.conf
 source /root/constants-service.conf
 
-if [[ $ZMB_DNS_BACKEND == "BIND9_DLZ" ]]; then
-  BINDNINE=bind9
-fi
+ZMB_DNS_BACKEND="SAMBA_INTERNAL"
+
+for f in ${OPTIONAL_FEATURES[@]}; do
+  if [[ "$f" == "wsdd" ]]; then
+    ADDITIONAL_PACKAGES="wsdd $ADDITIONAL_PACKAGES"
+    ADDITIONAL_SERVICES="wsdd $ADDITIONAL_SERVICES"
+    apt-key adv --fetch-keys https://pkg.ltec.ch/public/conf/ltec-ag.gpg.key
+    echo "deb https://pkg.ltec.ch/public/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/wsdd.list
+  elif [[ "$f" == "splitdns" ]]; then
+    ADDITIONAL_PACKAGES="nginx-full $ADDITIONAL_PACKAGES"
+    ADDITIONAL_SERVICES="nginx $ADDITIONAL_SERVICES"
+  elif [[ "$f" == "bind9dlz" ]]; then
+    ZMB_DNS_BACKEND="BIND9_DLZ"
+    ADDITIONAL_PACKAGES="bind9 $ADDITIONAL_PACKAGES"
+    ADDITIONAL_SERVICES="wsdd $ADDITIONAL_SERVICES"
+      # configure bind dns service
+    cat << EOF > /etc/default/bind9
+#
+# run resolvconf?
+RESOLVCONF=no
+
+# startup options for the server
+OPTIONS="-4 -u bind"
+EOF
+
+    cat << EOF > /etc/bind/named.conf.local
+//
+// Do any local configuration here
+//
+
+// Consider adding the 1918 zones here, if they are not used in your
+// organization
+//include "/etc/bind/zones.rfc1918";
+dlz "$LXC_DOMAIN" {
+  database "dlopen /usr/lib/x86_64-linux-gnu/samba/bind9/dlz_bind9_11.so";
+};
+EOF
+
+    cat << EOF > /etc/bind/named.conf.options
+options {
+  directory "/var/cache/bind";
+
+  forwarders {
+    $LXC_DNS;
+  };
+
+  allow-query {  any;};
+  dnssec-validation no;
+
+  auth-nxdomain no;    # conform to RFC1035
+  listen-on-v6 { any; };
+  listen-on { any; };
+
+  tkey-gssapi-keytab "/var/lib/samba/bind-dns/dns.keytab";
+  minimal-responses yes;
+};
+EOF
+
+    mkdir -p /var/lib/samba/bind-dns/dns
+  else
+    echo "Unsupported optional feature $f"
+  fi
+done
 
 ## configure ntp
 cat << EOF > /etc/ntp.conf
@@ -46,58 +106,20 @@ EOF
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 # install required packages
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET acl attr ntpdate nginx-full rpl net-tools dnsutils ntp samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils $BINDNINE
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET $ADDITIONAL_PACKAGES acl attr ntpdate rpl net-tools dnsutils ntp samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils
 
-if [[ $ZMB_DNS_BACKEND == "BIND9_DLZ" ]]; then
-  # configure bind dns service
-  cat << EOF > /etc/default/bind9
-#
-# run resolvconf?
-RESOLVCONF=no
-
-# startup options for the server
-OPTIONS="-4 -u bind"
+if [[ "$ADDITIONAL_PACKAGES" == *"nginx-full"* ]]; then
+  cat << EOF > /etc/nginx/sites-available/default
+server {
+    listen 80;
+    server_name $LXC_DOMAIN default_server;
+    return 301 http://www.$LXC_DOMAIN\$request_uri;
+}
 EOF
-
-cat << EOF > /etc/bind/named.conf.local
-//
-// Do any local configuration here
-//
-
-// Consider adding the 1918 zones here, if they are not used in your
-// organization
-//include "/etc/bind/zones.rfc1918";
-dlz "$LXC_DOMAIN" {
-  database "dlopen /usr/lib/x86_64-linux-gnu/samba/bind9/dlz_bind9_11.so";
-};
-EOF
-
-  cat << EOF > /etc/bind/named.conf.options
-options {
-  directory "/var/cache/bind";
-
-  forwarders {
-    $LXC_DNS;
-  };
-
-  allow-query {  any;};
-  dnssec-validation no;
-
-  auth-nxdomain no;    # conform to RFC1035
-  listen-on-v6 { any; };
-  listen-on { any; };
-
-  tkey-gssapi-keytab "/var/lib/samba/bind-dns/dns.keytab";
-  minimal-responses yes;
-};
-EOF
-
-  mkdir -p /var/lib/samba/bind-dns/dns
 fi
 
 # stop + disable samba services and remove default config
-systemctl stop smbd nmbd winbind
-systemctl disable smbd nmbd winbind
+systemctl disable --now smbd nmbd winbind systemd-resolved
 rm -f /etc/samba/smb.conf
 rm -f /etc/krb5.conf
 
@@ -107,7 +129,7 @@ samba-tool domain provision --use-rfc2307 --realm=$ZMB_REALM --domain=$ZMB_DOMAI
 cp /var/lib/samba/private/krb5.conf /etc/krb5.conf
 
 systemctl unmask samba-ad-dc
-systemctl enable samba-ad-dc $BINDNINE
-systemctl restart samba-ad-dc $BINDNINE
+systemctl enable samba-ad-dc $ADDITIONAL_SERVICES
+systemctl restart samba-ad-dc $ADDITIONAL_SERVICES
 
 exit 0
