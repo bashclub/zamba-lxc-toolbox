@@ -8,7 +8,13 @@
 source /root/zamba.conf
 source /root/constants-service.conf
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules 
+# add wsdd package repo
+apt-key adv --fetch-keys https://pkg.ltec.ch/public/conf/ltec-ag.gpg.key
+echo "deb https://pkg.ltec.ch/public/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/wsdd.list
+
+apt update
+
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules wsdd
 
 mv /etc/krb5.conf /etc/krb5.conf.bak
 cat > /etc/krb5.conf <<EOF
@@ -62,7 +68,6 @@ cat > /etc/samba/smb.conf <<EOF
 	printing = bsd
 	disable spoolss = Yes
 
-	allow trusted domains = No
 	dns proxy = No
 	shadow: snapdir = .zfs/snapshot
 	shadow: sort = desc
@@ -77,8 +82,6 @@ cat > /etc/samba/smb.conf <<EOF
 	create mask = 0660
 	directory mask = 0770
 	inherit acls = Yes
-
-
 
 EOF
 
@@ -101,5 +104,4 @@ chown "$ZMB_ADMIN_USER" /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 setfacl -Rm u:$ZMB_ADMIN_USER:rwx,g::-,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 setfacl -Rdm u:$ZMB_ADMIN_USER:rwx,g::-,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
-systemctl restart smbd nmbd winbind
-
+systemctl restart smbd nmbd winbind wsdd
