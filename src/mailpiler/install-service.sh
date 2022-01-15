@@ -27,13 +27,13 @@ wget -q https://packages.sury.org/php/apt.gpg -O- | apt-key add -
 echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
 
 apt-key adv --fetch-keys 'https://mariadb.org/mariadb_release_signing_key.asc'
-add-apt-repository 'deb [arch=amd64] https://mirror.wtnet.de/mariadb/repo/10.5/debian buster main'
+add-apt-repository "deb [arch=amd64] https://mirror.wtnet.de/mariadb/repo/10.5/debian $(lsb_release -cs) main"
 
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq build-essential libwrap0-dev libpst-dev tnef libytnef0-dev \
 unrtf catdoc libtre-dev tre-agrep poppler-utils libzip-dev unixodbc libpq5 libpoppler-dev openssl libssl-dev memcached telnet nginx \
-mariadb-server default-libmysqlclient-dev python-mysqldb gcc libwrap0 libzip4 latex2rtf latex2html catdoc tnef zipcmp zipmerge ziptool libsodium23 \
+mariadb-server default-libmysqlclient-dev python3-mysqldb gcc libwrap0 libzip4 latex2rtf latex2html catdoc tnef zipcmp zipmerge ziptool libsodium23 \
 php$PILER_PHP_VERSION-{fpm,common,ldap,mysql,cli,opcache,phpdbg,gd,memcache,json,readline,zip}
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt remove --purge -y -qq postfix
@@ -118,11 +118,13 @@ sed -i "/server_name.*/a \\
 sed -i "/^server {.*/i\
 server {\n\
         listen 80;\n\
-        server_name $PILER_FQDN;\n\
+        server_name _;\n\
         server_tokens off;\n\
         # HTTP to HTTPS redirect.\n\
         return 301 https://$PILER_FQDN;\n\
 }" /etc/nginx/sites-available/piler-nginx.conf
+
+unlink /etc/nginx/sites-enabled/default
 
 cp /usr/local/etc/piler/config-site.php /usr/local/etc/piler/config-site.php.bak
 sed -i "s|\$config\['SITE_URL'\] = .*|\$config\['SITE_URL'\] = 'https://$PILER_FQDN/';|" /usr/local/etc/piler/config-site.php
