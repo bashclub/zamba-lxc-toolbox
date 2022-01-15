@@ -31,6 +31,13 @@ ONLYOFFICE_DB_USER=$ONLYOFFICE_DB_USER
 ONLYOFFICE_DB_PASS=$ONLYOFFICE_DB_PASS
 EOF
 
-/etc/nginx/conf.d/ds.conf
+mkdir /etc/nginx/ssl
+openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/onlyoffice.key -out /etc/nginx/ssl/onlyoffice.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
+
+rm /etc/nginx/conf.d/ds.conf
 cp /etc/onlyoffice/documentserver/nginx/ds-ssl.conf.tmpl /etc/onlyoffice/documentserver/nginx/ds-ssl.conf
 ln -sf /etc/onlyoffice/documentserver/nginx/ds-ssl.conf /etc/nginx/conf.d/ds-ssl.conf
+
+sed -i "s|ssl_certificate {{SSL_CERTIFICATE_PATH}}|ssl_certificate /etc/nginx/ssl/onlyoffice.crt|" /etc/nginx/conf.d/ds-ssl.conf
+sed -i "s|ssl_certificate_key {{SSL_KEY_PATH}}|ssl_certificate_key /etc/nginx/ssl/onlyoffice.key|" /etc/nginx/conf.d/ds-ssl.conf
+systemctl restart nginx
