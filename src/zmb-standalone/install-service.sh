@@ -11,12 +11,12 @@ source /root/constants-service.conf
 # add wsdd package repo
 apt-key adv --fetch-keys https://pkg.ltec.ch/public/conf/ltec-ag.gpg.key
 echo "deb https://pkg.ltec.ch/public/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/wsdd.list
-echo "deb http://ftp.de.debian.org/debian buster-backports main contrib" > /etc/apt/sources.list.d/buster-backports.list
+echo "deb http://ftp.de.debian.org/debian $(lsb_release -cs)-backports main contrib" > /etc/apt/sources.list.d/$(lsb_release -cs)-backports.list
 
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba samba-dsdb-modules samba-vfs-modules wsdd
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" --no-install-recommends -t buster-backports cockpit
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" --no-install-recommends -t $(lsb_release -cs)-backports cockpit
 
 mkdir /usr/share/cockpit/smb
 wget https://raw.githubusercontent.com/enira/cockpit-smb-plugin/master/index.html -O /usr/share/cockpit/smb/index.html
@@ -35,6 +35,8 @@ cat << EOF >> /etc/samba/smb.conf
     path = /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
     read only = No
     vfs objects = shadow_copy2
+	create mask = 0660
+	directory mask = 0770
     shadow: snapdir = .zfs/snapshot
     shadow: sort = desc
     shadow: format = -%Y-%m-%d-%H%M
