@@ -11,7 +11,7 @@ source /root/constants-service.conf
 HOSTNAME=$(hostname -f)
 
 wget -q -O - https://packages.sury.org/php/apt.gpg | apt-key add -
-echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
+echo "deb https://packages.sury.org/php/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/php.list
 
 wget -q -O - https://nginx.org/keys/nginx_signing.key | apt-key add -
 echo "deb http://nginx.org/packages/debian $(lsb_release -cs) nginx" | tee /etc/apt/sources.list.d/nginx.list
@@ -76,7 +76,7 @@ sed -i "s/;opcache.interned_strings_buffer=.*/opcache.interned_strings_buffer=8/
 sed -i "s/;opcache.max_accelerated_files=.*/opcache.max_accelerated_files=10000/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/;opcache.revalidate_freq=.*/opcache.revalidate_freq=1/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/;opcache.save_comments=.*/opcache.save_comments=1/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
-sed -i '\$aapc.enable_cli=1' /etc/php/$NEXTCLOUD_PHP_VERSION/mods-available/apcu.ini
+echo -e '\napc.enable_cli=1' >> /etc/php/$NEXTCLOUD_PHP_VERSION/mods-available/apcu.ini
 sed -i "s/rights=\"none\" pattern=\"PS\"/rights=\"read|write\" pattern=\"PS\"/" /etc/ImageMagick-6/policy.xml
 sed -i "s/rights=\"none\" pattern=\"EPS\"/rights=\"read|write\" pattern=\"EPS\"/" /etc/ImageMagick-6/policy.xml
 sed -i "s/rights=\"none\" pattern=\"PDF\"/rights=\"read|write\" pattern=\"PDF\"/" /etc/ImageMagick-6/policy.xml

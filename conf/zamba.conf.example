@@ -112,6 +112,12 @@ MATRIX_FQDN="matrix.zmb.rocks"
 # Define the FQDN for the Element Web virtual host
 MATRIX_ELEMENT_FQDN="element.zmb.rocks"
 
+# Define the administrative user of matrix service
+MATRIX_ADMIN_USER="admin"
+
+# Define the admin password
+MATRIX_ADMIN_PASSWORD="Start!123"
+
 ############### Nextcloud-Section ###############
 
 # Define the FQDN of your Nextcloud server
