@@ -60,7 +60,7 @@ LXC_BRIDGE="vmbr0"
 LXC_VLAN=
 
 # Defines the `root` password of your LXC container. Please use 'single quatation marks' to avoid unexpected behaviour.
-LXC_PWD='S3cr3tp@ssw0rd'
+LXC_PWD='Start!123'
 
 # Defines an authorized_keys file to push into the LXC container.
 # By default the authorized_keys will be inherited from your proxmox host.
@@ -92,7 +92,7 @@ ZMB_DOMAIN="ZMB"
 ZMB_ADMIN_USER="administrator"
 # The admin password for zamba installation. Please use 'single quatation marks' to avoid unexpected behaviour
 # `zmb-ad` domain administrator has to meet the password complexity policy, if password is too weak, domain provisioning will fail
-ZMB_ADMIN_PASS='1c@nd0@nyth1n9'
+ZMB_ADMIN_PASS='Start!123'
 
 # Defines the name of your Zamba share
 ZMB_SHARE="share"
@@ -141,7 +141,7 @@ NEXTCLOUD_REVPROX="192.168.100.254"
 CMK_INSTANCE=zmbrocks
 
 # Define the password of user 'cmkadmin'
-CMK_ADMIN_PW='Ju5t@n0thers3cur3p@ssw0rd'
+CMK_ADMIN_PW='Start!123'
 
 # checkmk edition (raw or free)
 # raw = completely free

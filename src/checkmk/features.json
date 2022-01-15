@@ -1,9 +1,0 @@
-{
-    "unprivileged": 0,
-    "features": {},
-    "sharefs": {},
-    "mem": 1024,
-    "swap": 1024,
-    "hostname": "checkmk",
-    "domain": "zmb.rocks"
-}
