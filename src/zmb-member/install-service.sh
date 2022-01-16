@@ -6,17 +6,15 @@
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
 source /root/zamba.conf
+source /root/constants-service.conf
 
-sed -i "s|# $LXC_LOCALE|$LXC_LOCALE|" /etc/locale.gen
-cat << EOF > /etc/default/locale
-LANG="$LXC_LOCALE"
-LANGUAGE=$LXC_LOCALE
-EOF
-locale-gen $LXC_LOCALE
+# add wsdd package repo
+apt-key adv --fetch-keys https://pkg.ltec.ch/public/conf/ltec-ag.gpg.key
+echo "deb https://pkg.ltec.ch/public/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/wsdd.list
 
 apt update
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules 
+
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules wsdd
 
 mv /etc/krb5.conf /etc/krb5.conf.bak
 cat > /etc/krb5.conf <<EOF
@@ -70,12 +68,11 @@ cat > /etc/samba/smb.conf <<EOF
 	printing = bsd
 	disable spoolss = Yes
 
-	allow trusted domains = No
 	dns proxy = No
 	shadow: snapdir = .zfs/snapshot
 	shadow: sort = desc
 	shadow: format = -%Y-%m-%d-%H%M
-	shadow: snapprefix = ^zfs-auto-snap_\(frequent\)\{0,1\}\(hourly\)\{0,1\}\(daily\)\{0,1\}\(monthly\)\{0,1\}
+	shadow: snapprefix = ^zfs-auto-snap_\(frequent\)\{0,1\}\(hourly\)\{0,1\}\(daily\)\{0,1\}\(weekly\)\{0,1\}\(monthly\)\{0,1\}\(backup\)\{0,1\}\(manual\)\{0,1\}
 	shadow: delimiter = -20
 
 [$ZMB_SHARE]
@@ -85,8 +82,6 @@ cat > /etc/samba/smb.conf <<EOF
 	create mask = 0660
 	directory mask = 0770
 	inherit acls = Yes
-
-
 
 EOF
 
@@ -109,5 +104,4 @@ chown "$ZMB_ADMIN_USER" /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 setfacl -Rm u:$ZMB_ADMIN_USER:rwx,g::-,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 setfacl -Rdm u:$ZMB_ADMIN_USER:rwx,g::-,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
-systemctl restart smbd nmbd winbind
-
+systemctl restart smbd nmbd winbind wsdd

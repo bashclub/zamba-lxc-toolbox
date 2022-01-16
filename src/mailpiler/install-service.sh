@@ -6,13 +6,7 @@
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
 source /root/zamba.conf
-
-sed -i "s|# $LXC_LOCALE|$LXC_LOCALE|" /etc/locale.gen
-cat << EOF > /etc/default/locale
-LANG="$LXC_LOCALE"
-LANGUAGE=$LXC_LOCALE
-EOF
-locale-gen $LXC_LOCALE
+source /root/constants-service.conf
 
 HOSTNAME=$(hostname -f)
 
@@ -23,22 +17,26 @@ echo $HOSTNAME
 if 
     [ "$HOSTNAME" != "$PILER_FQDN" ]
 then
-        echo "Hostname doesn't match PILER_FQDNain! Check install.sh, /etc/hosts, /etc/hostname." && exit
+        echo "Hostname doesn't match $PILER_FQDN! Check install.sh, /etc/hosts, /etc/hostname." && exit
 else
-        echo "Hostname matches PILER_FQDNAIN, so starting installation."
+        echo "Hostname matches $PILER_FQDN, so starting installation."
 fi
-
-apt update && apt full-upgrade -y
-
-apt install -y $LXC_TOOLSET build-essential libwrap0-dev libpst-dev tnef libytnef0-dev unrtf catdoc libtre-dev tre-agrep poppler-utils libzip-dev unixodbc libpq5 software-properties-common libpoppler-dev openssl libssl-dev memcached telnet nginx mariadb-server default-libmysqlclient-dev python-mysqldb gcc libwrap0 libzip4 latex2rtf latex2html catdoc tnef zipcmp zipmerge ziptool libsodium23
 
 # install php
 wget -q https://packages.sury.org/php/apt.gpg -O- | apt-key add -
 echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
 
-apt update && apt install -y php$PILER_PHP_VERSION-{fpm,common,ldap,mysql,cli,opcache,phpdbg,gd,memcache,json,readline,zip}
+apt-key adv --fetch-keys 'https://mariadb.org/mariadb_release_signing_key.asc'
+add-apt-repository "deb [arch=amd64] https://mirror.wtnet.de/mariadb/repo/10.5/debian $(lsb_release -cs) main"
 
-apt purge -y postfix
+apt update
+
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq build-essential libwrap0-dev libpst-dev tnef libytnef0-dev \
+unrtf catdoc libtre-dev tre-agrep poppler-utils libzip-dev unixodbc libpq5 libpoppler-dev openssl libssl-dev memcached telnet nginx \
+mariadb-server default-libmysqlclient-dev python3-mysqldb gcc libwrap0 libzip4 latex2rtf latex2html catdoc tnef zipcmp zipmerge ziptool libsodium23 \
+php$PILER_PHP_VERSION-{fpm,common,ldap,mysql,cli,opcache,phpdbg,gd,memcache,json,readline,zip}
+
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt remove --purge -y -qq postfix
 
 cat > /etc/mysql/conf.d/mailpiler.conf <<EOF
 innodb_buffer_pool_size=256M
@@ -61,7 +59,13 @@ useradd -g piler -m -s /bin/bash -d /var/piler piler
 usermod -L piler
 chmod 755 /var/piler
 
-wget https://bitbucket.org/jsuto/piler/downloads/piler-$PILER_VERSION.tar.gz
+if [[ "$PILER_VERSION" == "latest" ]]; then
+        URL=$(curl -s https://www.mailpiler.org/wiki/download | grep "https://bitbucket.org/jsuto/piler/downloads/piler-" | cut -d '"' -f2)
+        PILER_VERSION=$(echo $URL | cut -d'-' -f2 | cut -d'.' -f1-3)
+        wget -O piler-$PILER_VERSION.tar.gz $URL
+else
+        wget https://bitbucket.org/jsuto/piler/downloads/piler-$PILER_VERSION.tar.gz
+fi
 tar -xvzf piler-$PILER_VERSION.tar.gz
 cd piler-$PILER_VERSION/
 ./configure --localstatedir=/var --with-database=mysql --enable-tcpwrappers --enable-memcached
@@ -94,7 +98,7 @@ cd /etc/nginx/sites-available
 cp /tmp/piler-$PILER_VERSION/contrib/webserver/piler-nginx.conf /etc/nginx/sites-available/
 ln -s /etc/nginx/sites-available/piler-nginx.conf /etc/nginx/sites-enabled/piler-nginx.conf
 
-sed -i "s|PILER_HOST|$PILER_FQDN default_host|g" /etc/nginx/sites-available/piler-nginx.conf
+sed -i "s|PILER_HOST|$PILER_FQDN|g" /etc/nginx/sites-available/piler-nginx.conf
 sed -i "s|/var/run/php/php7.4-fpm.sock|/var/run/php/php$PILER_PHP_VERSION-fpm.sock|g" /etc/nginx/sites-available/piler-nginx.conf
 
 sed -i "/server_name.*/a \\
@@ -114,11 +118,13 @@ sed -i "/server_name.*/a \\
 sed -i "/^server {.*/i\
 server {\n\
         listen 80;\n\
-        server_name $PILER_FQDN default_host;\n\
+        server_name _;\n\
         server_tokens off;\n\
         # HTTP to HTTPS redirect.\n\
-        return 301 https://\$host\$request_uri;\n\
+        return 301 https://$PILER_FQDN;\n\
 }" /etc/nginx/sites-available/piler-nginx.conf
+
+unlink /etc/nginx/sites-enabled/default
 
 cp /usr/local/etc/piler/config-site.php /usr/local/etc/piler/config-site.php.bak
 sed -i "s|\$config\['SITE_URL'\] = .*|\$config\['SITE_URL'\] = 'https://$PILER_FQDN/';|" /usr/local/etc/piler/config-site.php
@@ -137,7 +143,7 @@ cat >> /usr/local/etc/piler/config-site.php <<EOF
 \$config['ENABLE_ON_THE_FLY_VERIFICATION'] = 1;
 
 // general settings.
-\$config['TIMEZONE'] = '$LXC_TIMEZONE';
+\$config['TIMEZONE'] = 'Europe/Berlin';
 
 // authentication
 // Enable authentication against an imap server
@@ -179,9 +185,4 @@ cat >> /usr/local/etc/piler/config-site.php <<EOF
 \$config['SPHINX_STRICT_SCHEMA'] = 1; // required for Sphinx $PILER_SPHINX_VERSION, see https://bitbucket.org/jsuto/piler/issues/1085/sphinx-331.
 EOF
 
-rm /etc/nginx/sites-enabled/default
-
 nginx -t && systemctl restart nginx
-
-apt autoremove -y
-apt clean -y
