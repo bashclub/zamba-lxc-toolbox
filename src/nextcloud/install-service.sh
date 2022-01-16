@@ -239,6 +239,14 @@ access_log off;
 location / {
 try_files \$uri \$uri/ /index.php\$request_uri;
 }
+location /push/ {
+proxy_pass http://localhost:7867/;
+proxy_http_version 1.1;
+proxy_set_header Upgrade \$http_upgrade;
+proxy_set_header Connection "Upgrade";
+proxy_set_header Host \$host;
+proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+}
 }
 EOF
 
@@ -399,6 +407,7 @@ sed -i "s/output_buffering=.*/output_buffering=0/" /var/www/nextcloud/.user.ini
 php /var/www/nextcloud/occ app:disable survey_client
 php /var/www/nextcloud/occ app:disable firstrunwizard
 php /var/www/nextcloud/occ app:enable admin_audit
+php /var/www/nextcloud/occ app:enable notify_push
 php /var/www/nextcloud/occ app:enable files_pdfviewer
 php /var/www/nextcloud/occ background:cron
 DFOE
@@ -408,10 +417,27 @@ DFOE
 su -s /bin/bash www-data <<EOF
 bash /$LXC_SHAREFS_MOUNTPOINT/$NEXTCLOUD_DATA/config_nextcloud.sh
 EOF
+
+#### Create file for high performance backend
+
+cat > /etc/systemd/system/notify_push.service << EOF
+[Unit]
+Description = Push daemon for Nextcloud clients
+[Service]
+Environment=PORT=7867
+Environment=NEXTCLOUD_URL=https://$NEXTCLOUD_FQDN
+Environment=ALLOW_SELF_SIGNED=true
+ExecStart=/var/www/nextcloud/apps/notify_push/bin/x86_64/notify_push /var/www/nextcloud/config/config.php
+User=www-data
+[Install]
+WantedBy = multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now notify_push
+
 echo "*/5 * * * * www-data /usr/bin/php -f /var/www/nextcloud/cron.php > /dev/null 2>&1" > /etc/cron.d/nextcloud
 
 echo -e "\n######################################################################\n\n    Please note this user and password for the nextcloud login:\n        '$NEXTCLOUD_ADMIN_USR' / '$NEXTCLOUD_ADMIN_PWD'\n                Enjoy your Nextcloud intallation.\n\n######################################################################"
-systemctl stop nginx php$NEXTCLOUD_PHP_VERSION-fpm
-systemctl restart postgresql php$NEXTCLOUD_PHP_VERSION-fpm redis-server nginx
 
-exit 0
+shutdown -r now
