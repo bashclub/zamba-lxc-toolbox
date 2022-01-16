@@ -14,6 +14,7 @@ source /root/constants-service.conf
 echo "Updating locales"
 # update locales
 sed -i "s|# $LXC_LOCALE|$LXC_LOCALE|" /etc/locale.gen
+sed -i "s/^# *\($LANG\)/\1/" /etc/locale.gen
 cat << EOF > /etc/default/locale
 LANG="$LXC_LOCALE"
 LANGUAGE=$LXC_LOCALE
