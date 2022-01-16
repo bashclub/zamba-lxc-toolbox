@@ -161,12 +161,15 @@ pct push $LXC_NBR $PWD/src/$service/constants-service.conf /root/constants-servi
 if [ $PVE_VER -lt 630 ]; then echo "echo "$LXC_TIMEZONE" > /etc/timezone" | pct enter $LXC_NBR; fi
 
 echo "Installing basic container setup..."
-lxc-attach -n$LXC_NBR bash /root/lxc-base.sh
+lxc-attach -n$LXC_NBR -- bash /root/lxc-base.sh
 echo "Install '$service'!"
-lxc-attach -n$LXC_NBR bash /root/install-service.sh
+lxc-attach -n$LXC_NBR -- bash /root/install-service.sh
 
 if [[ $service == "zmb-ad" ]]; then
   pct stop $LXC_NBR
   pct set $LXC_NBR \-nameserver $(echo $LXC_IP | cut -d'/' -f 1)
   pct start $LXC_NBR
 fi
+
+summary=$(pct exec $LXC_NBR -- bash -c '[ -f /root/summary ] && cat /root/summary')
+if [[ $summary != "" ]];then pct set $LXC_NBR --description="$(echo -e "$summary")"; fi

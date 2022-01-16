@@ -438,6 +438,8 @@ systemctl enable --now notify_push
 
 echo "*/5 * * * * www-data /usr/bin/php -f /var/www/nextcloud/cron.php > /dev/null 2>&1" > /etc/cron.d/nextcloud
 
-echo -e "\n######################################################################\n\n    Please note this user and password for the nextcloud login:\n        '$NEXTCLOUD_ADMIN_USR' / '$NEXTCLOUD_ADMIN_PWD'\n                Enjoy your Nextcloud intallation.\n\n######################################################################"
+echo "######################################################################\n\n    Please note this user and password for the nextcloud login:\n        '$NEXTCLOUD_ADMIN_USR' / '$NEXTCLOUD_ADMIN_PWD'\n                Enjoy your Nextcloud intallation.\n\n######################################################################" > /root/summary
+echo "\n\n"
+echo -e "$(cat /root/summary)"
 
 shutdown -r now
