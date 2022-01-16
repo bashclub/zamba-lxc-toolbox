@@ -53,6 +53,26 @@ shift $((OPTIND-1))
 echo "Loading config file '$config'..."
 source $config
 
+# Check config Settings
+echo "Check Setting 'Timezone'"
+if [[ $LXC_TIMEZONE != $(timedatectl list-timezones | grep $LXC_TIMEZONE) ]]; then
+  echo "Unknown LXC_TIMEZONE setting (list available Timezones 'timedatectl list-timezones')"; exit 0
+fi
+echo "Check Setting 'Template Storage'"
+pvstorage=$(pvesh get storage --noborder --noheader);
+if [[ $LXC_TEMPLATE_STORAGE != $(echo "$pvstorage" | grep $LXC_TEMPLATE_STORAGE$) ]]; then
+  echo "Unknown LXC_TEMPLATE_STORAGE, please check your storage name"; exit 0
+fi
+echo "Check Setting 'Rootfs Storage'"
+if [[ $LXC_ROOTFS_STORAGE != $(echo "$pvstorage" | grep $LXC_ROOTFS_STORAGE$) ]]; then
+  echo "Unknown LXC_ROOTFS_STORAGE, please check your storage name"; exit 0
+fi
+echo "Check Setting 'Sharefs Storage'"
+if [[ $LXC_SHAREFS_STORAGE != $(echo "$pvstorage" | grep $LXC_SHAREFS_STORAGE$) ]]; then
+  echo "Unknown LXC_SHAREFS_STORAGE, please check your storage name"; exit 0
+fi
+echo -e "Settings \e[0;92mOK\e[0m"
+
 OPTS=$(ls -d $PWD/src/*/ | grep -v __ | xargs basename -a)
 
 valid=0
