@@ -1,4 +1,5 @@
-# `zamba.conf` options reference
+# USE THIS FOLDER TO STORE YOUR OWN ZMB CONFIGS
+# Configuration options reference
 This is the reference of all config options you can set in `zamba.conf`
 <br>
 
@@ -48,7 +49,7 @@ Defines the amount of swap space in MB your LXC container is allowed to use (def
 LXC_SWAP="1024"
 ```
 ### LXC_HOSTNAME
-Defines the hostname of your LXC container
+Defines the hostname of your LXC container (Default: Name of installed Service)
 ```bash
 LXC_SWAP="zamba"
 ```
@@ -92,7 +93,7 @@ LXC_VLAN="80"
 ### LXC_PWD
 Defines the `root` password of your LXC container. Please use 'single quotation marks' to avoid unexpected behaviour.
 ```bash
-LXC_PWD="S3cr3tp@ssw0rd"
+LXC_PWD="Start!123"
 ```
 ### LXC_AUTHORIZED_KEY
 Defines an authorized_keys file to push into the LXC container.
@@ -103,7 +104,7 @@ LXC_AUTHORIZED_KEY="/root/.ssh/authorized_keys"
 ### LXC_TOOLSET
 Define your (administrative) tools, you always want to have installed into your LXC container
 ```bash
-LXC_TOOLSET="vim htop net-tools dnsutils mc sysstat lsb-release curl git gnupg2 apt-transport-https"
+LXC_TOOLSET="vim htop net-tools dnsutils sysstat mc"
 ```
 ### LXC_TIMEZONE
 Define the local timezone of your LXC container (default: Euroe/Berlin)
@@ -116,6 +117,13 @@ Define system language on LXC container (locales)
 LXC_LOCALE="de_DE.utf8"
 ```
 This parameter is not used yet, but will be integrated in future releases.
+
+### LXC_VIM_BG_DARK
+Set dark background for vim syntax highlighting (0 or 1)
+```bash
+LXC_VIM_BG_DARK=1
+```
+
 <br>
 
 ## Zamba Server Section
@@ -132,11 +140,6 @@ Defines the domain name in your Active Directory or Workgroup (AD DC, AD member,
 ```bash
 ZMB_DOMAIN="ZMB"
 ```
-### ZMB_DNS_BACKEND
-Defines the desired DNS server backend, supported are `SAMBA_INTERNAL` and `BIND9_DLZ` for more advanced usage
-```bash
-ZMB_DNS_BACKEND="SAMBA_INTERNAL"
-```
 ### ZMB_ADMIN_USER
 Defines the name of your domain administrator account (AD DC, AD member, standalone)
 ```bash
@@ -145,7 +148,7 @@ ZMB_ADMIN_USER="Administrator"
 ### ZMB_ADMIN_PASS
 Defines the domain administrator's password (AD DC, AD member).
 ```bash
-ZMB_ADMIN_PASS='1c@nd0@nyth1n9'
+ZMB_ADMIN_PASS='Start!123'
 ```
 Please use 'single quotation marks' to avoid unexpected behaviour.
 `zmb-ad` domain administrator has to meet the password complexity policy, if password is too weak, domain provisioning will fail.
@@ -168,22 +171,7 @@ PILER_FQDN="piler.zmb.rocks"
 ### PILER_SMARTHOST
 Defines the smarthost for piler mail archive
 ```bash
-PILER_SMARTHOST="10.10.80.20"
-```
-### PILER_VERSION
-Defines the version number of piler mail archive to install
-```bash
-PILER_VERSION="1.3.10"
-```
-### PILER_SPHINX_VERSION
-Defines the version of sphinx to install
-```bash
-PILER_SPHINX_VERSION="3.3.1"
-```
-### PILER_PHP_VERSION
-Defines the php version to install
-```bash
-PILER_PHP_VERSION="7.4"
+PILER_SMARTHOST="your.mailserver.tld"
 ```
 <br>
 
@@ -202,13 +190,67 @@ Define the FQDN for the Element Web virtual host
 ```bash
 MATRIX_ELEMENT_FQDN="element.zmb.rocks"
 ```
-### MATRIX_ELEMENT_VERSION
-Define the version of Element Web
+
+### MATRIX_ADMIN_USER
+Define the administrative user of matrix service
 ```bash
-MATRIX_ELEMENT_VERSION="v1.7.24"
+MATRIX_ADMIN_USER="admin"
 ```
-### MATRIX_JITSI_FQDN
-Define the FQDN for the Jitsi Meet virtual host
+
+### MATRIX_ADMIN_PASSWORD
+Define the admin password
 ```bash
-MATRIX_JITSI_FQDN="meet.zmb.rocks"
+MATRIX_ADMIN_PASSWORD="Start!123"
+```
+
+## Nextcloud-Section
+
+### NEXTCLOUD_FQDN
+Define the FQDN of your Nextcloud server
+```bash
+NEXTCLOUD_FQDN="nc1.zmb.rocks"
+```
+
+### NEXTCLOUD_ADMIN_USR
+The initial admin-user which will be configured
+```bash
+NEXTCLOUD_ADMIN_USR="zmb-admin"
+```
+
+### NEXTCLOUD_ADMIN_PWD
+Build a strong password for this user. Username and password will shown at the end of the instalation. 
+```bash
+NEXTCLOUD_ADMIN_PWD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
+```
+### NEXTCLOUD_DATA
+Defines the data directory, which will be createt under LXC_SHAREFS_MOUNTPOINT
+```bash
+NEXTCLOUD_DATA="nc_data"
+```
+### NEXTCLOUD_REVPROX
+Defines the trusted reverse proxy, which will enable the detection of source ip to fail2ban
+```bash
+NEXTCLOUD_REVPROX="192.168.100.254"
+```
+
+## Check_MK-Section
+
+### CMK_INSTANCE
+Define the name of your checkmk instance
+```bash
+CMK_INSTANCE=zmbrocks
+```
+
+### CMK_ADMIN_PW
+Define the password of user 'cmkadmin'
+```bash
+CMK_ADMIN_PW='Start!123'
+```
+
+### CMK_EDITION
+checkmk edition (raw or free)
+- raw = completely free
+- free = limited version of the enterprise edition (25 hosts, 1 instance)
+```bash
+CMK_EDITION=raw
 ```

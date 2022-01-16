@@ -6,17 +6,27 @@
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
 source /root/zamba.conf
+source /root/constants-service.conf
 
-sed -i "s|# $LXC_LOCALE|$LXC_LOCALE|" /etc/locale.gen
-cat << EOF > /etc/default/locale
-LANG="$LXC_LOCALE"
-LANGUAGE=$LXC_LOCALE
-EOF
-locale-gen $LXC_LOCALE
+ZMB_DNS_BACKEND="SAMBA_INTERNAL"
 
-if [[ $ZMB_DNS_BACKEND == "BIND9_DLZ" ]]; then
-  BINDNINE=bind9
-fi
+for f in ${OPTIONAL_FEATURES[@]}; do
+  if [[ "$f" == "wsdd" ]]; then
+    ADDITIONAL_PACKAGES="wsdd $ADDITIONAL_PACKAGES"
+    ADDITIONAL_SERVICES="wsdd $ADDITIONAL_SERVICES"
+    apt-key adv --fetch-keys https://pkg.ltec.ch/public/conf/ltec-ag.gpg.key
+    echo "deb https://pkg.ltec.ch/public/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/wsdd.list
+  elif [[ "$f" == "splitdns" ]]; then
+    ADDITIONAL_PACKAGES="nginx-full $ADDITIONAL_PACKAGES"
+    ADDITIONAL_SERVICES="nginx $ADDITIONAL_SERVICES"
+  elif [[ "$f" == "bind9dlz" ]]; then
+    ZMB_DNS_BACKEND="BIND9_DLZ"
+    ADDITIONAL_PACKAGES="bind9 $ADDITIONAL_PACKAGES"
+    ADDITIONAL_SERVICES="bind9 $ADDITIONAL_SERVICES"
+  else
+    echo "Unsupported optional feature $f"
+  fi
+done
 
 ## configure ntp
 cat << EOF > /etc/ntp.conf
@@ -52,9 +62,19 @@ EOF
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 # install required packages
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET acl attr ntpdate nginx-full rpl net-tools dnsutils ntp samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils $BINDNINE
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET $ADDITIONAL_PACKAGES acl attr ntpdate rpl net-tools dnsutils ntp samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils
 
-if [[ $ZMB_DNS_BACKEND == "BIND9_DLZ" ]]; then
+if [[ "$ADDITIONAL_PACKAGES" == *"nginx-full"* ]]; then
+  cat << EOF > /etc/nginx/sites-available/default
+server {
+    listen 80 default_server;
+    server_name _;
+    return 301 http://www.$LXC_DOMAIN\$request_uri;
+}
+EOF
+fi
+
+if  [[ "$ADDITIONAL_PACKAGES" == *"bind9"* ]]; then
   # configure bind dns service
   cat << EOF > /etc/default/bind9
 #
@@ -65,7 +85,7 @@ RESOLVCONF=no
 OPTIONS="-4 -u bind"
 EOF
 
-cat << EOF > /etc/bind/named.conf.local
+  cat << EOF > /etc/bind/named.conf.local
 //
 // Do any local configuration here
 //
@@ -101,9 +121,10 @@ EOF
   mkdir -p /var/lib/samba/bind-dns/dns
 fi
 
+
+
 # stop + disable samba services and remove default config
-systemctl stop smbd nmbd winbind
-systemctl disable smbd nmbd winbind
+systemctl disable --now smbd nmbd winbind systemd-resolved
 rm -f /etc/samba/smb.conf
 rm -f /etc/krb5.conf
 
@@ -113,7 +134,7 @@ samba-tool domain provision --use-rfc2307 --realm=$ZMB_REALM --domain=$ZMB_DOMAI
 cp /var/lib/samba/private/krb5.conf /etc/krb5.conf
 
 systemctl unmask samba-ad-dc
-systemctl enable samba-ad-dc $BINDNINE
-systemctl restart samba-ad-dc $BINDNINE
+systemctl enable samba-ad-dc
+systemctl restart samba-ad-dc $ADDITIONAL_SERVICES
 
 exit 0

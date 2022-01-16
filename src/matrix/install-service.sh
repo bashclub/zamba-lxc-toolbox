@@ -6,13 +6,7 @@
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
 source /root/zamba.conf
-
-sed -i "s|# $LXC_LOCALE|$LXC_LOCALE|" /etc/locale.gen
-cat << EOF > /etc/default/locale
-LANG="$LXC_LOCALE"
-LANGUAGE=$LXC_LOCALE
-EOF
-locale-gen $LXC_LOCALE
+source /root/constants-service.conf
 
 MRX_PKE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
@@ -20,13 +14,12 @@ ELE_DBNAME="synapse_db"
 ELE_DBUSER="synapse_user"
 ELE_DBPASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
-apt update && apt full-upgrade -y
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq nginx postgresql python3-psycopg2
 
-apt install -y $LXC_TOOLSET apt-transport-https gpg software-properties-common nginx postgresql python3-psycopg2
-
-wget wget -O /usr/share/keyrings/matrix-org-archive-keyring.gpg https://packages.matrix.org/debian/matrix-org-archive-keyring.gpg
+wget -O /usr/share/keyrings/matrix-org-archive-keyring.gpg https://packages.matrix.org/debian/matrix-org-archive-keyring.gpg
 echo "deb [signed-by=/usr/share/keyrings/matrix-org-archive-keyring.gpg] https://packages.matrix.org/debian/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/matrix-org.list
-apt update && apt install -y matrix-synapse-py3
+apt update
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq matrix-synapse-py3
 systemctl enable matrix-synapse
 
 ss -tulpen
@@ -94,7 +87,7 @@ cat > /etc/nginx/sites-available/$MATRIX_ELEMENT_FQDN <<EOF
 server {
     listen 80;
     listen [::]:80;
-    server_name $MATRIX_ELEMENT_FQDN;
+    server_name _;
     return 301 https://$MATRIX_ELEMENT_FQDN;
 }
 
@@ -114,6 +107,7 @@ server {
 
 EOF
 
+unlink /etc/nginx/sites-enabled/default
 ln -s /etc/nginx/sites-available/$MATRIX_ELEMENT_FQDN /etc/nginx/sites-enabled/$MATRIX_ELEMENT_FQDN
 
 systemctl restart nginx
@@ -143,19 +137,17 @@ EOF
 cd /
 sed -i "s|#registration_shared_secret: <PRIVATE STRING>|registration_shared_secret: \"$MRX_PKE\"|" /etc/matrix-synapse/homeserver.yaml
 sed -i "s|#public_baseurl: https://example.com/|public_baseurl: https://$MATRIX_FQDN/|" /etc/matrix-synapse/homeserver.yaml
+sed -i "s|server_name:|server_name: $MATRIX_FQDN|g" /etc/matrix-synapse/conf.d/server_name.yaml
 sed -i "s|#enable_registration: false|enable_registration: true|" /etc/matrix-synapse/homeserver.yaml
 sed -i "s|name: sqlite3|name: psycopg2|" /etc/matrix-synapse/homeserver.yaml
 sed -i "s|database: /var/lib/matrix-synapse/homeserver.db|database: $ELE_DBNAME\n    user: $ELE_DBUSER\n    password: $ELE_DBPASS\n    host: 127.0.0.1\n    cp_min: 5\n    cp_max: 10|" /etc/matrix-synapse/homeserver.yaml
 
 systemctl restart matrix-synapse
 
-register_new_matrix_user -c /etc/matrix-synapse/homeserver.yaml http://127.0.0.1:8008
+register_new_matrix_user -a -u $MATRIX_ADMIN_USER -p '$MATRIX_ADMIN_PASSWORD' -c /etc/matrix-synapse/homeserver.yaml http://127.0.0.1:8008
 
 #curl https://download.jitsi.org/jitsi-key.gpg.key | sh -c 'gpg --dearmor > /usr/share/keyrings/jitsi-keyring.gpg'
 #echo 'deb [signed-by=/usr/share/keyrings/jitsi-keyring.gpg] https://download.jitsi.org stable/' | tee /etc/apt/sources.list.d/jitsi-stable.list > /dev/null
 
 #apt update
 #apt install -y jitsi-meet
-
-
-

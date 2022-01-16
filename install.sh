@@ -15,78 +15,102 @@
 # Please adjust th settings in 'zamba.conf' to your needs before running the script
 
 ############### ZAMBA INSTALL SCRIPT ###############
+prog="$(basename "$0")"
+
+usage() {
+	cat >&2 <<-EOF
+	usage: $prog [-h] [-i CTID] [-s SERVICE] [-c CFGFILE]
+	  installs a preconfigured lxc container on your proxmox server
+    -i CTID      provide a container id instead of auto detection
+    -s SERVICE   provide the service name and skip the selection dialog
+    -c CFGFILE   use a different config file than 'zamba.conf'
+    -h           displays this help text
+  ---------------------------------------------------------------------------
+    (C) 2021     zamba-lxc-toolbox by bashclub (https://github.com/bashclub)
+  ---------------------------------------------------------------------------
+
+	EOF
+	exit $1
+}
+
+ctid=0
+service=ask
+config=$PWD/conf/zamba.conf
+verbose=0
+
+while getopts "hi:s:c:" opt; do
+  case $opt in
+    h) usage 0 ;;
+    i) ctid=$OPTARG ;;
+    s) service=$OPTARG ;;
+    c) config=$OPTARG ;;
+    *) usage 1 ;;
+  esac
+done
+shift $((OPTIND-1))
 
 # Load configuration file
-source $PWD/zamba.conf
+echo "Loading config file '$config'..."
+source $config
 
-LXC_MP="0"
-LXC_UNPRIVILEGED="1"
-LXC_NESTING="0"
+OPTS=$(ls -d $PWD/src/*/ | grep -v __ | xargs basename -a)
 
-select opt in zmb-standalone zmb-ad zmb-member mailpiler matrix debian-unpriv debian-priv quit; do
-  case $opt in
-    debian-unpriv)
-      echo "Debian-only LXC container unprivileged mode selected"
-      break
-      ;;
-    debian-priv)
-      echo "Debian-only LXC container privileged mode selected"
-      LXC_UNPRIVILEGED="0"
-      break
-      ;;
-    zmb-standalone)
-      echo "Configuring LXC container '$opt'!"
-      LXC_MP="1"
-      LXC_UNPRIVILEGED="0"
-      break
-      ;;
-    zmb-member)
-      echo "Configuring LXC container '$opt'!"
-      LXC_MP="1"
-      LXC_UNPRIVILEGED="0"
-      break
-      ;;
-    zmb-ad)
-      echo "Selected Zamba AD DC"
-      LXC_NESTING="1"
-      LXC_UNPRIVILEGED="0"
-      break
-      ;;
-    mailpiler)
-      echo "Configuring LXC container for '$opt'!"
-      LXC_NESTING="1"
-      break
-      ;;
-    matrix)
-      echo "Install Matrix chat server and element web service"
-      break
-      ;;
-    quit)
-      echo "Script aborted by user interaction."
+valid=0
+if [[ "$service" == "ask" ]]; then
+  select svc in $OPTS quit; do
+    if [[ "$svc" != "quit" ]]; then
+       for line in $(echo $OPTS); do
+        if [[ "$svc" == "$line" ]]; then
+          service=$svc
+          echo "Installation of $service selected."
+          valid=1
+          break
+        fi
+      done
+    else
+      echo "Selected 'quit' exiting without action..."
       exit 0
-      ;;
-    *)
-      echo "Invalid option! Exiting..."
-      exit 1
-      ;;
-    esac
-done
+    fi
+    if [[ "$valid" == "1" ]]; then
+      break
+    fi
+  done
+else
+  for line in $(echo $OPTS); do
+    if [[ "$service" == "$line" ]]; then
+      echo "Installation of $service selected."
+      valid=1
+      break
+    fi
+  done
+fi
+
+if [[ "$valid" != "1" ]]; then
+  echo "Invalid option, exiting..."
+  usage 1
+fi
+
+source $PWD/src/$service/constants-service.conf
 
 # CHeck is the newest template available, else download it.
-DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep debian-10-standard | cut -d'_' -f2)
-DEB_REP=$(pveam available --section system | grep debian-10-standard | cut -d'_' -f2)
+DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep $LXC_TEMPLATE_VERSION | cut -d'_' -f2)
+DEB_REP=$(pveam available --section system | grep $LXC_TEMPLATE_VERSION | cut -d'_' -f2)
 
 if [[ $DEB_LOC == $DEB_REP ]];
 then
-  echo "Newest Version of Debian 10 Standard $DEP_REP exists.";
+  echo "Newest Version of $LXC_TEMPLATE_VERSION $DEP_REP exists.";
 else
-  echo "Will now download newest Debian 10 Standard $DEP_REP.";
-  pveam download $LXC_TEMPLATE_STORAGE debian-10-standard_$DEB_REP\_amd64.tar.gz
+  echo "Will now download newest $LXC_TEMPLATE_VERSION $DEP_REP.";
+  pveam download $LXC_TEMPLATE_STORAGE "$LXC_TEMPLATE_VERSION"_$DEB_REP\_amd64.tar.gz
 fi
 
-# Get next free LXC-number
-LXC_LST=$( lxc-ls -1 | tail -1 )
-LXC_CHK=$((LXC_LST+1));
+if [ $ctid -gt 99 ]; then
+  LXC_CHK=$ctid
+else
+  # Get next free LXC-number
+  LXC_LST=$( lxc-ls -1 | tail -1 )
+  LXC_CHK=$((LXC_LST+1));
+fi
 
 if  [ $LXC_CHK -lt 100 ] || [ -f /etc/pve/qemu-server/$LXC_CHK.conf ]; then
   LXC_NBR=$(pvesh get /cluster/nextid);
@@ -96,15 +120,11 @@ fi
 echo "Will now create LXC Container $LXC_NBR!";
 
 # Create the container
-pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/debian-10-standard_$DEB_REP\_amd64.tar.gz -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
+pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/"$LXC_TEMPLATE_VERSION"_$DEB_REP\_amd64.tar.gz -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
 sleep 2;
 
 # Check vlan configuration
-if [[ $LXC_VLAN != "" ]];then
-  VLAN=",tag=$LXC_VLAN"
-else
- VLAN=""
-fi
+if [[ $LXC_VLAN != "" ]];then VLAN=",tag=$LXC_VLAN"; else VLAN=""; fi
 # Reconfigure conatiner
 PVE_VER=$(pveversion | grep 'pve-manager' | cut -d'/' -f2 | sed 's/[^0-9]//g')
 pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME -onboot 1 -features nesting=$LXC_NESTING;
@@ -129,24 +149,23 @@ PS3="Select the Server-Function: "
 pct start $LXC_NBR;
 sleep 5;
 # Set the root password and key
-echo "Setting root password"
 echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
-echo "Creating /root/.ssh"
 lxc-attach -n$LXC_NBR mkdir /root/.ssh;
-echo "Copying authorized_keys"
 pct push $LXC_NBR $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
-echo "Copying sources.list"
-pct push $LXC_NBR ./sources.list /etc/apt/sources.list
-echo "Copying zamba.conf"
-pct push $LXC_NBR ./zamba.conf /root/zamba.conf
-echo "Copying install script"
-pct push $LXC_NBR ./$opt.sh /root/$opt.sh
-echo "Install '$opt'!"
-lxc-attach -n$LXC_NBR bash /root/$opt.sh
+pct push $LXC_NBR $config /root/zamba.conf
+pct push $LXC_NBR $PWD/src/constants.conf /root/constants.conf
+pct push $LXC_NBR $PWD/src/lxc-base.sh /root/lxc-base.sh
+pct push $LXC_NBR $PWD/src/$service/install-service.sh /root/install-service.sh
+pct push $LXC_NBR $PWD/src/$service/constants-service.conf /root/constants-service.conf
 # timezone switch added in Version 6.3
 if [ $PVE_VER -lt 630 ]; then echo "echo "$LXC_TIMEZONE" > /etc/timezone" | pct enter $LXC_NBR; fi
 
-if [[ $opt == "zmb-ad" ]]; then
+echo "Installing basic container setup..."
+lxc-attach -n$LXC_NBR bash /root/lxc-base.sh
+echo "Install '$service'!"
+lxc-attach -n$LXC_NBR bash /root/install-service.sh
+
+if [[ $service == "zmb-ad" ]]; then
   pct stop $LXC_NBR
   pct set $LXC_NBR \-nameserver $(echo $LXC_IP | cut -d'/' -f 1)
   pct start $LXC_NBR
