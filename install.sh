@@ -49,10 +49,6 @@ while getopts "hi:s:c:" opt; do
 done
 shift $((OPTIND-1))
 
-# Load configuration file
-echo "Loading config file '$config'..."
-source $config
-
 OPTS=$(ls -d $PWD/src/*/ | grep -v __ | xargs basename -a)
 
 valid=0
@@ -89,6 +85,10 @@ if [[ "$valid" != "1" ]]; then
   echo "Invalid option, exiting..."
   usage 1
 fi
+
+# Load configuration file
+echo "Loading config file '$config'..."
+source $config
 
 source $PWD/src/$service/constants-service.conf
 
