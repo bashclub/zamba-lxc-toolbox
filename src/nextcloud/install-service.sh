@@ -375,7 +375,7 @@ array (
 'knowledgebaseenabled' => false,
 'logfile' => '/var/$NEXTCLOUD_DATA/nextcloud.log',
 'loglevel' => 2,
-'logtimezone' => 'Europe/Berlin',
+'logtimezone' => '$LXC_TIMEZONE',
 'log_rotate_size' => 104857600,
 'maintenance' => false,
 'memcache.local' => '\OC\Memcache\APCu',
