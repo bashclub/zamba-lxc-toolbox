@@ -21,7 +21,7 @@ echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" 
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends tree locate screen zip ffmpeg ghostscript libfile-fcntllock-perl libfuse2 socat fail2ban ldap-utils cifs-utils redis-server imagemagick \
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends tree locate screen zip ffmpeg ghostscript libfile-fcntllock-perl libfuse2 socat fail2ban ldap-utils cifs-utils redis-server imagemagick libmagickcore-6.q16-6-extra \
 postgresql-13 nginx php$NEXTCLOUD_PHP_VERSION-{fpm,gd,mysql,pgsql,curl,xml,zip,intl,mbstring,bz2,ldap,apcu,bcmath,gmp,imagick,igbinary,redis,dev,smbclient,cli,common,opcache,readline}
 
 timedatectl set-timezone Europe/Berlin
