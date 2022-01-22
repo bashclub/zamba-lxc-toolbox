@@ -100,9 +100,9 @@ ZMB_SHARE="share"
 ############### Mailpiler-Section ###############
 
 # Defines the (public) FQDN of your piler mail archive
-PILER_FQDN="piler.zmb.rocks"
+PILER_FQDN="mailpiler.zmb.rocks"
 # Defines the smarthost for piler mail archive
-PILER_SMARTHOST="your.mailserver.tld"
+PILER_SMARTHOST="mail.zmb.rocks"
 
 ############### Matrix-Section ###############
 
@@ -121,7 +121,7 @@ MATRIX_ADMIN_PASSWORD="Start!123"
 ############### Nextcloud-Section ###############
 
 # Define the FQDN of your Nextcloud server
-NEXTCLOUD_FQDN="nc1.zmb.rocks"
+NEXTCLOUD_FQDN="nextcloud.zmb.rocks"
 
 # The initial admin-user which will be configured
 NEXTCLOUD_ADMIN_USR="zmb-admin"
