@@ -49,13 +49,13 @@ while getopts "hi:s:c:" opt; do
 done
 shift $((OPTIND-1))
 
-OPTS=$(ls -d $PWD/src/*/ | grep -v __ | xargs basename -a)
+OPTS=$(find src/ -maxdepth 1 -mindepth 1 -type d -exec basename -a {} + | sort -n)
 
 valid=0
 if [[ "$service" == "ask" ]]; then
   select svc in $OPTS quit; do
     if [[ "$svc" != "quit" ]]; then
-       for line in $(echo $OPTS); do
+       for line in $OPTS; do
         if [[ "$svc" == "$line" ]]; then
           service=$svc
           echo "Installation of $service selected."
@@ -72,7 +72,7 @@ if [[ "$service" == "ask" ]]; then
     fi
   done
 else
-  for line in $(echo $OPTS); do
+  for line in $OPTS; do
     if [[ "$service" == "$line" ]]; then
       echo "Installation of $service selected."
       valid=1
@@ -88,23 +88,29 @@ fi
 
 # Load configuration file
 echo "Loading config file '$config'..."
-source $config
+if [ ! -e "$config" ]; then
+  echo "Configuration files does not exist"
+  exit 1
+fi
 
-source $PWD/src/$service/constants-service.conf
+# shellcheck source=conf/zamba.conf.example
+source "$config"
+
+# shellcheck source=src/zmb-standalone/constants-service.conf
+source "$PWD/src/$service/constants-service.conf"
 
 # CHeck is the newest template available, else download it.
 DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep $LXC_TEMPLATE_VERSION | cut -d'_' -f2)
 DEB_REP=$(pveam available --section system | grep $LXC_TEMPLATE_VERSION | cut -d'_' -f2)
 
-if [[ $DEB_LOC == $DEB_REP ]];
-then
-  echo "Newest Version of $LXC_TEMPLATE_VERSION $DEP_REP exists.";
+if [[ $DEB_LOC == "$DEB_REP" ]]; then
+  echo "Newest Version of $LXC_TEMPLATE_VERSION $DEB_REP exists.";
 else
-  echo "Will now download newest $LXC_TEMPLATE_VERSION $DEP_REP.";
-  pveam download $LXC_TEMPLATE_STORAGE "$LXC_TEMPLATE_VERSION"_$DEB_REP\_amd64.tar.gz
+  echo "Will now download newest $LXC_TEMPLATE_VERSION $DEB_REP.";
+  pveam download $LXC_TEMPLATE_STORAGE "${LXC_TEMPLATE_VERSION}_${DEB_REP}\_amd64.tar.gz"
 fi
 
-if [ $ctid -gt 99 ]; then
+if [ "$ctid" -gt 99 ]; then
   LXC_CHK=$ctid
 else
   # Get next free LXC-number
@@ -120,15 +126,15 @@ fi
 echo "Will now create LXC Container $LXC_NBR!";
 
 # Create the container
-pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/"$LXC_TEMPLATE_VERSION"_$DEB_REP\_amd64.tar.gz -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
+pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED "$LXC_TEMPLATE_STORAGE:vztmpl/${LXC_TEMPLATE_VERSION}_${DEB_REP}\_amd64.tar.gz" -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
 sleep 2;
 
 # Check vlan configuration
 if [[ $LXC_VLAN != "" ]];then VLAN=",tag=$LXC_VLAN"; else VLAN=""; fi
 # Reconfigure conatiner
-pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING;
+pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname "$LXC_HOSTNAME" -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING;
 if [ $LXC_DHCP == true ]; then
- pct set $LXC_NBR -net0 name=eth0,bridge=$LXC_BRIDGE,ip=dhcp,type=veth$VLAN;
+ pct set $LXC_NBR -net0 "name=eth0,bridge=$LXC_BRIDGE,ip=dhcp,type=veth$VLAN;"
 else
  pct set $LXC_NBR -net0 name=eth0,bridge=$LXC_BRIDGE,firewall=1,gw=$LXC_GW,ip=$LXC_IP,type=veth$VLAN -nameserver $LXC_DNS -searchdomain $LXC_DOMAIN;
 fi
