@@ -143,7 +143,7 @@ cat >> /usr/local/etc/piler/config-site.php <<EOF
 \$config['ENABLE_ON_THE_FLY_VERIFICATION'] = 1;
 
 // general settings.
-\$config['TIMEZONE'] = 'Europe/Berlin';
+\$config['TIMEZONE'] = '$LXC_TIMEZONE';
 
 // authentication
 // Enable authentication against an imap server

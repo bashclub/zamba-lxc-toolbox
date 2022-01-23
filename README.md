@@ -5,7 +5,7 @@ Zamba LXC Toolbox is a collection of scripts to easily install Debian LXC contai
 The main feature is `Zamba`, the fusion of ZFS and Samba in three different flavours (standalone, active directory dc or active directory member), preconfigured to access ZFS snapshots by "Windows Previous Versions" to easily recover encrypted by ransomware files, accidently deleted files or just to revert changes.
 The package also provides LXC container installers for `mailpiler`, `matrix-synapse` + `element-web` and more services will follow in future releases.
 ### Requirements
-Proxmox VE Server with at least one configured ZFS Pool.
+Proxmox VE Server (>=6.30) with at least one configured ZFS Pool.
 ### Included services:
 - `checkmk` => Check_MK 2.0 Monitoring Server
 - `debian-priv` => Debian privileged container with basic toolset

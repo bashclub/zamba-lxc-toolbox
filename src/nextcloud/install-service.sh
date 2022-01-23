@@ -21,10 +21,10 @@ echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" 
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq tree locate screen zip ffmpeg ghostscript libfile-fcntllock-perl libfuse2 socat fail2ban ldap-utils nfs-common cifs-utils redis-server imagemagick \
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends sudo tree locate screen zip ffmpeg ghostscript libfile-fcntllock-perl libfuse2 socat fail2ban ldap-utils cifs-utils redis-server imagemagick libmagickcore-6.q16-6-extra \
 postgresql-13 nginx php$NEXTCLOUD_PHP_VERSION-{fpm,gd,mysql,pgsql,curl,xml,zip,intl,mbstring,bz2,ldap,apcu,bcmath,gmp,imagick,igbinary,redis,dev,smbclient,cli,common,opcache,readline}
 
-timedatectl set-timezone Europe/Berlin
+timedatectl set-timezone $LXC_TIMEZONE
 mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$NEXTCLOUD_DATA /var/www
 chown -R www-data:www-data /$LXC_SHAREFS_MOUNTPOINT/$NEXTCLOUD_DATA /var/www
 
@@ -60,14 +60,14 @@ sed -i "s/max_execution_time =.*/max_execution_time = 3600/" /etc/php/$NEXTCLOUD
 sed -i "s/max_input_time =.*/max_input_time = 3600/" /etc/php/$NEXTCLOUD_PHP_VERSION/cli/php.ini
 sed -i "s/post_max_size =.*/post_max_size = 10240M/" /etc/php/$NEXTCLOUD_PHP_VERSION/cli/php.ini
 sed -i "s/upload_max_filesize =.*/upload_max_filesize = 10240M/" /etc/php/$NEXTCLOUD_PHP_VERSION/cli/php.ini
-sed -i "s/;date.timezone.*/date.timezone = Europe\/\Berlin/" /etc/php/$NEXTCLOUD_PHP_VERSION/cli/php.ini
+sed -i "s|;date.timezone.*|date.timezone = $LXC_TIMEZONE|" /etc/php/$NEXTCLOUD_PHP_VERSION/cli/php.ini
 sed -i "s/memory_limit = 128M/memory_limit = 1024M/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/output_buffering =.*/output_buffering = 'Off'/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/max_execution_time =.*/max_execution_time = 3600/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/max_input_time =.*/max_input_time = 3600/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/post_max_size =.*/post_max_size = 10240M/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/upload_max_filesize =.*/upload_max_filesize = 10240M/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
-sed -i "s/;date.timezone.*/date.timezone = Europe\/\Berlin/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
+sed -i "s|;date.timezone.*|date.timezone = $LXC_TIMEZONE|" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/;session.cookie_secure.*/session.cookie_secure = True/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/;opcache.enable=.*/opcache.enable=1/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/;opcache.enable_cli=.*/opcache.enable_cli=1/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
@@ -375,7 +375,7 @@ array (
 'knowledgebaseenabled' => false,
 'logfile' => '/var/$NEXTCLOUD_DATA/nextcloud.log',
 'loglevel' => 2,
-'logtimezone' => 'Europe/Berlin',
+'logtimezone' => '$LXC_TIMEZONE',
 'log_rotate_size' => 104857600,
 'maintenance' => false,
 'memcache.local' => '\OC\Memcache\APCu',

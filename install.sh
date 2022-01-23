@@ -49,10 +49,6 @@ while getopts "hi:s:c:" opt; do
 done
 shift $((OPTIND-1))
 
-# Load configuration file
-echo "Loading config file '$config'..."
-source $config
-
 # Check config Settings
 echo "Check Setting 'Timezone'"
 if [[ $LXC_TIMEZONE != $(timedatectl list-timezones | grep $LXC_TIMEZONE) ]]; then
@@ -109,6 +105,10 @@ if [[ "$valid" != "1" ]]; then
   echo "Invalid option, exiting..."
   usage 1
 fi
+
+# Load configuration file
+echo "Loading config file '$config'..."
+source $config
 
 source $PWD/src/$service/constants-service.conf
 
