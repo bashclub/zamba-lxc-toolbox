@@ -30,12 +30,13 @@ usage() {
   ---------------------------------------------------------------------------
 
 	EOF
-	exit $1
+	exit "$1"
 }
 
 ctid=0
 service=ask
 config=$PWD/conf/zamba.conf
+# TODO this appears unused
 verbose=0
 
 while getopts "hi:s:c:" opt; do
@@ -136,7 +137,7 @@ pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname "$LXC_HOSTNAME" -onb
 if [ $LXC_DHCP == true ]; then
  pct set $LXC_NBR -net0 "name=eth0,bridge=$LXC_BRIDGE,ip=dhcp,type=veth$VLAN;"
 else
- pct set $LXC_NBR -net0 name=eth0,bridge=$LXC_BRIDGE,firewall=1,gw=$LXC_GW,ip=$LXC_IP,type=veth$VLAN -nameserver $LXC_DNS -searchdomain $LXC_DOMAIN;
+ pct set $LXC_NBR -net0 "name=eth0,bridge=$LXC_BRIDGE,firewall=1,gw=$LXC_GW,ip=$LXC_IP,type=veth$VLAN" -nameserver $LXC_DNS -searchdomain $LXC_DOMAIN;
 fi
 sleep 2
 
@@ -153,11 +154,11 @@ sleep 5;
 echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
 lxc-attach -n$LXC_NBR mkdir /root/.ssh;
 pct push $LXC_NBR $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
-pct push $LXC_NBR $config /root/zamba.conf
-pct push $LXC_NBR $PWD/src/constants.conf /root/constants.conf
-pct push $LXC_NBR $PWD/src/lxc-base.sh /root/lxc-base.sh
-pct push $LXC_NBR $PWD/src/$service/install-service.sh /root/install-service.sh
-pct push $LXC_NBR $PWD/src/$service/constants-service.conf /root/constants-service.conf
+pct push $LXC_NBR "$config" /root/zamba.conf
+pct push $LXC_NBR "$PWD/src/constants.conf" /root/constants.conf
+pct push $LXC_NBR "$PWD/src/lxc-base.sh" /root/lxc-base.sh
+pct push $LXC_NBR "$PWD/src/$service/install-service.sh" /root/install-service.sh
+pct push $LXC_NBR "$PWD/src/$service/constants-service.conf" /root/constants-service.conf
 
 echo "Installing basic container setup..."
 lxc-attach -n$LXC_NBR bash /root/lxc-base.sh
@@ -166,6 +167,8 @@ lxc-attach -n$LXC_NBR bash /root/install-service.sh
 
 if [[ $service == "zmb-ad" ]]; then
   pct stop $LXC_NBR
-  pct set $LXC_NBR \-nameserver $(echo $LXC_IP | cut -d'/' -f 1)
+  # TODO is the \ added to escape the dash?
+  # shellcheck disable=SC1001
+  pct set $LXC_NBR \-nameserver "$(echo $LXC_IP | cut -d'/' -f 1)"
   pct start $LXC_NBR
 fi
