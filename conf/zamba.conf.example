@@ -8,7 +8,6 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
-
 ############### Linux Container Section ###############
 
 # Defines the Proxmox storage where your LXC container template are stored (default: local)
@@ -126,7 +125,8 @@ NEXTCLOUD_FQDN="nextcloud.zmb.rocks"
 # The initial admin-user which will be configured
 NEXTCLOUD_ADMIN_USR="zmb-admin"
 
-# Build a strong password for this user. Username and password will shown at the end of the instalation. 
+# Build a strong password for this user. Username and password will shown at the end of the instalation
+# TODO this command makes the install script terminate early
 NEXTCLOUD_ADMIN_PWD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
 
 # Defines the data directory, which will be createt under LXC_SHAREFS_MOUNTPOINT

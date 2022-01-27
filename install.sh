@@ -34,6 +34,10 @@ usage() {
 	exit "$1"
 }
 
+random_string() {
+	LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c32
+}
+
 ctid=0
 service=ask
 config=$PWD/conf/zamba.conf
@@ -109,7 +113,7 @@ if [[ $DEB_LOC == "$DEB_REP" ]]; then
   echo "Newest Version of $LXC_TEMPLATE_VERSION $DEB_REP exists.";
 else
   echo "Will now download newest $LXC_TEMPLATE_VERSION $DEB_REP.";
-  pveam download $LXC_TEMPLATE_STORAGE "${LXC_TEMPLATE_VERSION}_${DEB_REP}\_amd64.tar.gz"
+  pveam download $LXC_TEMPLATE_STORAGE "${LXC_TEMPLATE_VERSION}_${DEB_REP}_amd64.tar.gz"
 fi
 
 if [ "$ctid" -gt 99 ]; then
@@ -128,7 +132,7 @@ fi
 echo "Will now create LXC Container $LXC_NBR!";
 
 # Create the container
-pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED "$LXC_TEMPLATE_STORAGE:vztmpl/${LXC_TEMPLATE_VERSION}_${DEB_REP}\_amd64.tar.gz" -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
+pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED "$LXC_TEMPLATE_STORAGE:vztmpl/${LXC_TEMPLATE_VERSION}_${DEB_REP}_amd64.tar.gz" -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
 sleep 2;
 
 # Check vlan configuration
@@ -136,7 +140,7 @@ if [[ $LXC_VLAN != "" ]];then VLAN=",tag=$LXC_VLAN"; else VLAN=""; fi
 # Reconfigure conatiner
 pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname "$LXC_HOSTNAME" -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING;
 if [ $LXC_DHCP == true ]; then
- pct set $LXC_NBR -net0 "name=eth0,bridge=$LXC_BRIDGE,ip=dhcp,type=veth$VLAN;"
+ pct set $LXC_NBR -net0 "name=eth0,bridge=$LXC_BRIDGE,ip=dhcp,type=veth$VLAN"
 else
  pct set $LXC_NBR -net0 "name=eth0,bridge=$LXC_BRIDGE,firewall=1,gw=$LXC_GW,ip=$LXC_IP,type=veth$VLAN" -nameserver $LXC_DNS -searchdomain $LXC_DOMAIN;
 fi
