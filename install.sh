@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # This script will create and fire up a standard debian buster lxc container on your Proxmox VE.
 # On a Proxmox cluster, the script will create the container on the local node, where it's executed.
