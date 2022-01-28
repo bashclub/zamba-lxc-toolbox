@@ -5,6 +5,11 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+random_string() {
+  set +o pipefail
+	LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c32
+}
+
 # load configuration
 echo "Loading configuration..."
 source /root/zamba.conf

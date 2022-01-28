@@ -126,7 +126,6 @@ NEXTCLOUD_FQDN="nextcloud.zmb.rocks"
 NEXTCLOUD_ADMIN_USR="zmb-admin"
 
 # Build a strong password for this user. Username and password will shown at the end of the instalation
-# TODO this command makes the install script terminate early
 NEXTCLOUD_ADMIN_PWD="$(random_string)"
 
 # Defines the data directory, which will be createt under LXC_SHAREFS_MOUNTPOINT

@@ -35,6 +35,7 @@ usage() {
 }
 
 random_string() {
+  set +o pipefail
 	LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c32
 }
 
