@@ -132,7 +132,7 @@ fi
 echo "Will now create LXC Container $LXC_NBR!";
 
 # Create the container
-pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED "$LXC_TEMPLATE_STORAGE:vztmpl/${LXC_TEMPLATE_VERSION}_${DEB_REP}_amd64.tar.gz" -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
+pct create $LXC_NBR --password $LXC_PWD -unprivileged $LXC_UNPRIVILEGED "$LXC_TEMPLATE_STORAGE:vztmpl/${LXC_TEMPLATE_VERSION}_${DEB_REP}_amd64.tar.gz" -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
 sleep 2;
 
 # Check vlan configuration
@@ -155,9 +155,8 @@ PS3="Select the Server-Function: "
 
 pct start $LXC_NBR;
 sleep 5;
-# Set the root password and key
-echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
-lxc-attach -n$LXC_NBR mkdir /root/.ssh;
+# Set the ssh key for root user and upload scripts
+pct exec $LXC_NBR -- mkdir /root/.ssh
 pct push $LXC_NBR $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
 pct push $LXC_NBR "$config" /root/zamba.conf
 pct push $LXC_NBR "$PWD/src/constants.conf" /root/constants.conf
@@ -171,9 +170,10 @@ echo "Install '$service'!"
 lxc-attach -n$LXC_NBR bash /root/install-service.sh
 
 if [[ $service == "zmb-ad" ]]; then
+  LXC_IP=$(pct exec $LXC_NBR -- hostname -I | awk '{print $1}')
   pct stop $LXC_NBR
   # TODO is the \ added to escape the dash?
   # shellcheck disable=SC1001
-  pct set $LXC_NBR \-nameserver "$(echo $LXC_IP | cut -d'/' -f 1)"
+  pct set $LXC_NBR \-nameserver "$(echo "$LXC_IP" | cut -d'/' -f 1)"
   pct start $LXC_NBR
 fi
