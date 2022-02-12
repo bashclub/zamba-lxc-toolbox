@@ -147,3 +147,15 @@ CMK_ADMIN_PW='Start!123'
 # raw = completely free
 # free = limited version of the enterprise edition (25 hosts, 1 instance)
 CMK_EDITION=raw
+
+############### Kopano-Section ###############
+
+# Define the FQDN of your Nextcloud server
+KOPANO_FQDN="kopano.zmb.rocks"
+
+# Defines the trusted reverse proxy, which will enable the detection of source ip to fail2ban
+KOPANO_MAILGW="192.168.100.254"
+
+# Kopano test- or subscription-key offerd from 
+# https://kopano.com/downloads-demo/?demo=Kopano+Groupware&headline=Packages&target=Debian+10
+KOPANO_REPKEY="1234567890abcdefghijklmno"
