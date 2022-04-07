@@ -51,7 +51,7 @@ LXC_SWAP="1024"
 ### LXC_HOSTNAME
 Defines the hostname of your LXC container (Default: Name of installed Service)
 ```bash
-LXC_SWAP="zamba"
+LXC_HOSTNAME="zamba"
 ```
 ### LXC_DOMAIN
 Defines the domain name / search domain of your LXC container
