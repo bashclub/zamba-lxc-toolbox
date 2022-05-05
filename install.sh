@@ -93,15 +93,16 @@ source $config
 source $PWD/src/$service/constants-service.conf
 
 # CHeck is the newest template available, else download it.
-DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep $LXC_TEMPLATE_VERSION | cut -d'_' -f2)
-DEB_REP=$(pveam available --section system | grep $LXC_TEMPLATE_VERSION | cut -d'_' -f2)
+DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep $LXC_TEMPLATE_VERSION | tail -1 | cut -d'_' -f2)
+DEB_REP=$(pveam available --section system | grep $LXC_TEMPLATE_VERSION | tail -1 | cut -d'_' -f2)
+TMPL_NAME=$(pveam available --section system | grep $LXC_TEMPLATE_VERSION | tail -1 | cut -d' ' -f11)
 
 if [[ $DEB_LOC == $DEB_REP ]];
 then
   echo "Newest Version of $LXC_TEMPLATE_VERSION $DEP_REP exists.";
 else
   echo "Will now download newest $LXC_TEMPLATE_VERSION $DEP_REP.";
-  pveam download $LXC_TEMPLATE_STORAGE "$LXC_TEMPLATE_VERSION"_$DEB_REP\_amd64.tar.gz
+  pveam download $LXC_TEMPLATE_STORAGE $TMPL_NAME
 fi
 
 if [ $ctid -gt 99 ]; then
@@ -120,7 +121,7 @@ fi
 echo "Will now create LXC Container $LXC_NBR!";
 
 # Create the container
-pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/"$LXC_TEMPLATE_VERSION"_$DEB_REP\_amd64.tar.gz -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
+pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
 sleep 2;
 
 # Check vlan configuration
