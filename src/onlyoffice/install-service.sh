@@ -1,7 +1,15 @@
+#!/bin/bash
+
+# Authors:
+# (C) 2021 Idea an concept by Christian Zengel <christian@sysops.de>
+# (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
+# (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
+
+source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-ONLYOFFICE_DB_PASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+ONLYOFFICE_DB_PASS=$(random_password)
 
 apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys CB2DE8E5
 echo "deb https://download.onlyoffice.com/repo/debian squeeze main" > /etc/apt/sources.list.d/onlyoffice.list

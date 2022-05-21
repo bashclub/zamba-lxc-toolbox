@@ -5,12 +5,13 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
 webroot=/var/www/html
 
-MYSQL_PASSWORD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)"
+MYSQL_PASSWORD="$(random_password)"
 
 apt update
 

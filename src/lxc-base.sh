@@ -8,6 +8,7 @@ set -euo pipefail
 
 # load configuration
 echo "Loading configuration..."
+source /root/functions.sh
 source /root/zamba.conf
 source /root/constants.conf
 source /root/constants-service.conf

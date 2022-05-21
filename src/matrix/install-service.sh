@@ -5,14 +5,15 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-MRX_PKE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+MRX_PKE=$(random_password)
 
 ELE_DBNAME="synapse_db"
 ELE_DBUSER="synapse_user"
-ELE_DBPASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+ELE_DBPASS=$(random_password)
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq nginx postgresql python3-psycopg2
 

@@ -5,6 +5,7 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
@@ -83,10 +84,11 @@ SSL_MODE=disable
 APP_DATA_PATH    = /${LXC_SHAREFS_MOUNTPOINT}/gitea
 DOMAIN           = ${LXC_HOSTNAME}.${LXC_DOMAIN}
 SSH_DOMAIN       = ${LXC_HOSTNAME}.${LXC_DOMAIN}
+HTTP_HOST        = localhost
 HTTP_PORT        = 3000
 ROOT_URL         = http://${LXC_HOSTNAME}.${LXC_DOMAIN}/
 DISABLE_SSH      = false
-SSH_PORT         = 11122
+SSH_PORT         = 22
 SSH_LISTEN_PORT  = 22
 EOF
 
@@ -136,24 +138,11 @@ server {
 
     add_header Strict-Transport-Security "max-age=31536000" always;
 
-    location = /robots.txt  {
-        access_log off;
-        log_not_found off;
-    }
-
-    location = /favicon.ico {
-        access_log off;
-        log_not_found off;
-    }
-
     access_log /var/log/nginx/gitea.access.log;
     error_log  /var/log/nginx/gitea.error.log;
 
     client_max_body_size 50M;
 
-    location ~ ^/(assets/|robots.txt|humans.txt|favicon.ico|apple-touch-icon.png) {
-    expires max;
-    }
     location / {
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header Host \$host;

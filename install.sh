@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # This script will create and fire up a standard debian buster lxc container on your Proxmox VE.
 # On a Proxmox cluster, the script will create the container on the local node, where it's executed.
@@ -15,7 +16,7 @@
 # Please adjust th settings in 'zamba.conf' to your needs before running the script
 
 ############### ZAMBA INSTALL SCRIPT ###############
-prog="$(basename "$0")"
+prog="$(basename $0)"
 
 usage() {
 	cat >&2 <<-EOF
@@ -36,7 +37,6 @@ usage() {
 ctid=0
 service=ask
 config=$PWD/conf/zamba.conf
-verbose=0
 
 while getopts "hi:s:c:" opt; do
   case $opt in
@@ -49,13 +49,13 @@ while getopts "hi:s:c:" opt; do
 done
 shift $((OPTIND-1))
 
-OPTS=$(ls -d $PWD/src/*/ | grep -v __ | xargs basename -a)
+OPTS=$(find src/ -maxdepth 1 -mindepth 1 -type d -exec basename -a {} + | sort -n)
 
 valid=0
 if [[ "$service" == "ask" ]]; then
   select svc in $OPTS quit; do
     if [[ "$svc" != "quit" ]]; then
-       for line in $(echo $OPTS); do
+       for line in $OPTS; do
         if [[ "$svc" == "$line" ]]; then
           service=$svc
           echo "Installation of $service selected."
@@ -72,7 +72,7 @@ if [[ "$service" == "ask" ]]; then
     fi
   done
 else
-  for line in $(echo $OPTS); do
+  for line in $OPTS; do
     if [[ "$service" == "$line" ]]; then
       echo "Installation of $service selected."
       valid=1
@@ -88,9 +88,16 @@ fi
 
 # Load configuration file
 echo "Loading config file '$config'..."
-source $config
+if [ ! -e "$config" ]; then
+  echo "Configuration files does not exist"
+  exit 1
+fi
 
-source $PWD/src/$service/constants-service.conf
+source "src/functions.sh"
+
+source "$config"
+
+source "$PWD/src/$service/constants-service.conf"
 
 # CHeck is the newest template available, else download it.
 DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep $LXC_TEMPLATE_VERSION | tail -1 | cut -d'_' -f2)
@@ -99,7 +106,7 @@ TMPL_NAME=$(pveam available --section system | grep $LXC_TEMPLATE_VERSION | tail
 
 if [[ $DEB_LOC == $DEB_REP ]];
 then
-  echo "Newest Version of $LXC_TEMPLATE_VERSION $DEP_REP exists.";
+  echo "Newest Version of $LXC_TEMPLATE_VERSION $DEB_REP exists.";
 else
   echo "Will now download newest $LXC_TEMPLATE_VERSION $DEP_REP.";
   pveam download $LXC_TEMPLATE_STORAGE $TMPL_NAME
@@ -121,17 +128,17 @@ fi
 echo "Will now create LXC Container $LXC_NBR!";
 
 # Create the container
-pct create $LXC_NBR -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
+pct create $LXC_NBR --password $LXC_PWD -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
 sleep 2;
 
 # Check vlan configuration
-if [[ $LXC_VLAN != "" ]];then VLAN=",tag=$LXC_VLAN"; else VLAN=""; fi
+if [[ $LXC_VLAN != "NONE" ]];then VLAN=",tag=$LXC_VLAN"; else VLAN=""; fi
 # Reconfigure conatiner
 pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING;
 if [ $LXC_DHCP == true ]; then
- pct set $LXC_NBR -net0 name=eth0,bridge=$LXC_BRIDGE,ip=dhcp,type=veth$VLAN;
+ pct set $LXC_NBR -net0 "name=eth0,bridge=$LXC_BRIDGE,ip=dhcp,type=veth$VLAN"
 else
- pct set $LXC_NBR -net0 name=eth0,bridge=$LXC_BRIDGE,firewall=1,gw=$LXC_GW,ip=$LXC_IP,type=veth$VLAN -nameserver $LXC_DNS -searchdomain $LXC_DOMAIN;
+ pct set $LXC_NBR -net0 "name=eth0,bridge=$LXC_BRIDGE,firewall=1,gw=$LXC_GW,ip=$LXC_IP,type=veth$VLAN" -nameserver $LXC_DNS -searchdomain $LXC_DOMAIN
 fi
 sleep 2
 
@@ -144,15 +151,15 @@ PS3="Select the Server-Function: "
 
 pct start $LXC_NBR;
 sleep 5;
-# Set the root password and key
-echo -e "$LXC_PWD\n$LXC_PWD" | lxc-attach -n$LXC_NBR passwd;
-lxc-attach -n$LXC_NBR mkdir /root/.ssh;
+# Set the root ssh key
+pct exec $LXC_NBR -- mkdir /root/.ssh
 pct push $LXC_NBR $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
-pct push $LXC_NBR $config /root/zamba.conf
-pct push $LXC_NBR $PWD/src/constants.conf /root/constants.conf
-pct push $LXC_NBR $PWD/src/lxc-base.sh /root/lxc-base.sh
-pct push $LXC_NBR $PWD/src/$service/install-service.sh /root/install-service.sh
-pct push $LXC_NBR $PWD/src/$service/constants-service.conf /root/constants-service.conf
+pct push $LXC_NBR "$config" /root/zamba.conf
+pct push $LXC_NBR "$PWD/src/functions.sh" /root/functions.sh
+pct push $LXC_NBR "$PWD/src/constants.conf" /root/constants.conf
+pct push $LXC_NBR "$PWD/src/lxc-base.sh" /root/lxc-base.sh
+pct push $LXC_NBR "$PWD/src/$service/install-service.sh" /root/install-service.sh
+pct push $LXC_NBR "$PWD/src/$service/constants-service.conf" /root/constants-service.conf
 
 echo "Installing basic container setup..."
 lxc-attach -n$LXC_NBR bash /root/lxc-base.sh
@@ -161,6 +168,7 @@ lxc-attach -n$LXC_NBR bash /root/install-service.sh
 
 if [[ $service == "zmb-ad" ]]; then
   pct stop $LXC_NBR
-  pct set $LXC_NBR \-nameserver $(echo $LXC_IP | cut -d'/' -f 1)
+  ## set nameserver, ${LXC_IP%/*} extracts the ip address from cidr format
+  pct set $LXC_NBR -nameserver ${LXC_IP%/*}
   pct start $LXC_NBR
 fi
