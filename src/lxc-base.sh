@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Authors:
 # (C) 2021 Idea an concept by Christian Zengel <christian@sysops.de>
@@ -29,7 +30,7 @@ deb http://ftp.de.debian.org/debian bullseye main contrib
 deb http://ftp.de.debian.org/debian bullseye-updates main contrib
 
 # security updates
-deb http://security.debian.org bullseye-security main contrib
+deb http://ftp.de.debian.org/debian-security bullseye-security main contrib
 EOF
 
 elif [ "$LXC_TEMPLATE_VERSION" == "debian-10-standard" ] ; then
@@ -40,7 +41,7 @@ deb http://ftp.de.debian.org/debian buster main contrib
 deb http://ftp.de.debian.org/debian buster-updates main contrib
 
 # security updates
-deb http://security.debian.org buster/updates main contrib
+deb http://ftp.de.debian.org/debian-security buster/updates main contrib
 EOF
 else echo "LXC Debian Version false. Please check configuration files!" ; exit
 fi
