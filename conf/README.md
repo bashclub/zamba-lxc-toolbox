@@ -220,7 +220,7 @@ NEXTCLOUD_ADMIN_USR="zmb-admin"
 ### NEXTCLOUD_ADMIN_PWD
 Build a strong password for this user. Username and password will shown at the end of the instalation. 
 ```bash
-NEXTCLOUD_ADMIN_PWD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
+NEXTCLOUD_ADMIN_PWD="$(random_password)"
 ```
 ### NEXTCLOUD_DATA
 Defines the data directory, which will be createt under LXC_SHAREFS_MOUNTPOINT
