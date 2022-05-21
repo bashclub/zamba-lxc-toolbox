@@ -57,7 +57,7 @@ LXC_DNS="192.168.100.254"
 LXC_BRIDGE="vmbr0"
 
 # Defines the vlan id of the LXC container's network interface, if the network adapter should be connected untagged, just leave the value empty.
-LXC_VLAN=
+LXC_VLAN=NONE
 
 # Defines the `root` password of your LXC container. Please use 'single quatation marks' to avoid unexpected behaviour.
 LXC_PWD='Start!123'
@@ -126,8 +126,8 @@ NEXTCLOUD_FQDN="nextcloud.zmb.rocks"
 # The initial admin-user which will be configured
 NEXTCLOUD_ADMIN_USR="zmb-admin"
 
-# Build a strong password for this user. Username and password will shown at the end of the instalation. 
-NEXTCLOUD_ADMIN_PWD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
+# Build a strong password for this user. Username and password will shown at the end of the installation. 
+NEXTCLOUD_ADMIN_PWD="$(random_password)"
 
 # Defines the data directory, which will be createt under LXC_SHAREFS_MOUNTPOINT
 NEXTCLOUD_DATA="nc_data"
