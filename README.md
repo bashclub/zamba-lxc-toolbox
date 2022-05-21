@@ -10,6 +10,7 @@ Proxmox VE Server (>=6.30) with at least one configured ZFS Pool.
 - `checkmk` => Check_MK 2.0 Monitoring Server
 - `debian-priv` => Debian privileged container with basic toolset
 - `debian-unpriv` => Debian unprivileged container with basic toolset
+- `gitea`=> Lightweight and fast self-hosted git service [gitea.io](https://gitea.io)
 - `kopano-core` => Kopano Core Grouoware [kopano.io](https://kopano.io/)
 - `mailpiler` => mailpiler mail archive [mailpiler.org](https://www.mailpiler.org/)
 - `matrix` => Matrix Synapse Homeserver [matrix.org](https://matrix.org/docs/projects/server/synapse) with Element Web [Element on github](https://github.com/vector-im/element-web)
@@ -20,6 +21,7 @@ Proxmox VE Server (>=6.30) with at least one configured ZFS Pool.
 - `urbackup` => UrBackup Server [urbackup.org](https://urbackup.org)
 - `zammad` => Zammad Helpdesk and Ticketing Software [zammad.org](https://zammad.org/)
 - `zmb-ad` => ZMB (Samba) Active Directory Domain Controller, DNS Backends `SAMBA_INTERNAL` and `BIND9_DLZ` are supported
+- `zmb-ad-join` => Additional Active Directory Domain Controller joining an existing Domain
 - `zmb-member` => ZMB (Samba) AD member with ZFS volume snapshot support (previous versions)
 - `zmb-standalone` => ZMB (Samba) standalone server with ZFS volume snapshot support (previous versions)
 ## Usage
