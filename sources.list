@@ -1,6 +1,0 @@
-deb http://ftp.de.debian.org/debian buster main contrib
-
-deb http://ftp.de.debian.org/debian buster-updates main contrib
-
-# security updates
-deb http://security.debian.org buster/updates main contrib
