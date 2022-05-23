@@ -19,6 +19,7 @@ Proxmox VE Server (>=6.30) with at least one configured ZFS Pool.
 - `open3a` => Open3a web based accounting software [open3a.de](https://open3a.de)
 - `proxmox-pbs` => Proxmox Backup Server [proxmox.com](https://proxmox.com/en/proxmox-backup-server)
 - `urbackup` => UrBackup Server [urbackup.org](https://urbackup.org)
+- `zabbix` => Zabbix Monitoring server [zabbix.com](https://www.zabbix.com)
 - `zammad` => Zammad Helpdesk and Ticketing Software [zammad.org](https://zammad.org/)
 - `zmb-ad` => ZMB (Samba) Active Directory Domain Controller, DNS Backends `SAMBA_INTERNAL` and `BIND9_DLZ` are supported
 - `zmb-ad-join` => Additional Active Directory Domain Controller joining an existing Domain
