@@ -161,6 +161,8 @@ psql -c "CREATE DATABASE ${ZABBIX_DB_NAME} ENCODING UTF8 TEMPLATE template0 OWNE
 echo "Postgres User ${ZABBIX_DB_USR} and database ${ZABBIX_DB_NAME} created."
 EOF
 
+sed -i "s/false/true/g" /usr/share/zabbix/include/locales.inc.php
+
 zcat /usr/share/doc/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql zabbix 
 
 echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_server.conf
