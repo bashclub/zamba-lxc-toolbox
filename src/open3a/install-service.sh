@@ -8,7 +8,7 @@
 source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
-
+LXC_IP=$(hostname -I)
 webroot=/var/www/html
 
 MYSQL_PASSWORD="$(random_password)"
@@ -69,5 +69,13 @@ chmod +x /etc/cron.daily/open3a-backup
 
 systemctl enable --now php7.4-fpm
 systemctl restart php7.4-fpm nginx
+
+cat << EOF >/var/www/html/system/DBData/Installation.pfdb.php
+<?php echo "This is a database-file."; /*
+host&%%%&user&%%%&password&%%%&datab&%%%&httpHost
+varchar(40)&%%%&varchar(20)&%%%&varchar(20)&%%%&varchar(30)&%%%&varchar(40)                                                                                         
+localhost                               &%%%&open3a              &%%%&$MYSQL_PASSWORD&%%%&open3a                        &%%%&*                                       %%&&&
+*/ ?>
+EOF
 
 echo -e "Your open3a installation is now complete. Please continue with setup in your Browser:\nURL:\t\thttp://$(echo $LXC_IP | cut -d'/' -f1)\nLogin:\t\tAdmin\nPassword:\tAdmin\n\nMysql-Settings:\nServer:\t\tlocalhost\nUser:\t\topen3a\nPassword:\t$MYSQL_PASSWORD\nDatabase:\topen3a"
