@@ -11,8 +11,6 @@ source /root/constants-service.conf
 LXC_IP=$(hostname -I)
 webroot=/var/www/html
 
-MYSQL_PASSWORD="$(random_password_open3a)"
-
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq unzip sudo nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd
