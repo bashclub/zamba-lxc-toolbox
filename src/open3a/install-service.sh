@@ -11,7 +11,7 @@ source /root/constants-service.conf
 LXC_IP=$(hostname -I)
 webroot=/var/www/html
 
-MYSQL_PASSWORD="$(random_password)"
+MYSQL_PASSWORD="$(random_password_open3a)"
 
 apt update
 
