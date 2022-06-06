@@ -4,10 +4,5 @@
 
 random_password() {
     set +o pipefail
-    C_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c32
-}
-
-random_password_open3a() {
-    set +o pipefail
-    C_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c20
-}
+    C_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c$LXC_RANDOMPWD
+    }
