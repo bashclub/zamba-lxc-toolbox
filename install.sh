@@ -161,6 +161,9 @@ pct push $LXC_NBR "$PWD/src/lxc-base.sh" /root/lxc-base.sh
 pct push $LXC_NBR "$PWD/src/$service/install-service.sh" /root/install-service.sh
 pct push $LXC_NBR "$PWD/src/$service/constants-service.conf" /root/constants-service.conf
 
+echo "Set ServerName \"${service}\" to LXC_HOSTNAME in LXC \"$LXC_NBR\""
+pct exec $LXC_NBR -- sed -i "s,.{service},$service," /root/zamba.conf
+
 echo "Installing basic container setup..."
 lxc-attach -n$LXC_NBR bash /root/lxc-base.sh
 echo "Install '$service'!"
