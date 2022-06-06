@@ -11,6 +11,9 @@
 
 ############### Linux Container Section ###############
 
+# Defines the default password length
+LXC_RANDOMPWD=32
+
 # Defines the Proxmox storage where your LXC container template are stored (default: local)
 LXC_TEMPLATE_STORAGE="local"
 
