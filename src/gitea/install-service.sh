@@ -19,8 +19,6 @@ apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq postgresql nginx git ssl-cert unzip zip
 
-timedatectl set-timezone ${LXC_TIMEZONE}
-
 systemctl enable --now postgresql
 
 su - postgres <<EOF
