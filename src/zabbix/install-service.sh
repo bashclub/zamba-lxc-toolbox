@@ -30,8 +30,8 @@ server {
 
         server_tokens off;
 
-        access_log /var/log/nginx/gitea.access.log;
-        error_log /var/log/nginx/gitea.error.log;
+        access_log /var/log/nginx/zabbix.access.log;
+        error_log /var/log/nginx/zabbix.error.log;
 
         location /.well-known/ {
         }
@@ -156,14 +156,14 @@ timedatectl set-timezone ${LXC_TIMEZONE}
 systemctl enable --now postgresql
 
 su - postgres <<EOF
-psql -c "CREATE USER ZABBIX WITH PASSWORD '${ZABBIX_DB_PWD}';"
+psql -c "CREATE USER ${ZABBIX_DB_USR} WITH PASSWORD '${ZABBIX_DB_PWD}';"
 psql -c "CREATE DATABASE ${ZABBIX_DB_NAME} ENCODING UTF8 TEMPLATE template0 OWNER ${ZABBIX_DB_USR};"
 echo "Postgres User ${ZABBIX_DB_USR} and database ${ZABBIX_DB_NAME} created."
 EOF
 
 sed -i "s/false/true/g" /usr/share/zabbix/include/locales.inc.php
 
-zcat /usr/share/doc/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql zabbix 
+zcat /usr/share/doc/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql ${ZABBIX_DB_NAME}
 
 echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_server.conf
 
