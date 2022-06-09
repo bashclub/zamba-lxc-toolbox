@@ -20,11 +20,12 @@ prog="$(basename $0)"
 
 usage() {
 	cat >&2 <<-EOF
-	usage: $prog [-h] [-i CTID] [-s SERVICE] [-c CFGFILE]
+	usage: $prog [-h] [-d] [-i CTID] [-s SERVICE] [-c CFGFILE]
 	  installs a preconfigured lxc container on your proxmox server
     -i CTID      provide a container id instead of auto detection
     -s SERVICE   provide the service name and skip the selection dialog
     -c CFGFILE   use a different config file than 'zamba.conf'
+    -d           Debug mode inside LXC container
     -h           displays this help text
   ---------------------------------------------------------------------------
     (C) 2021     zamba-lxc-toolbox by bashclub (https://github.com/bashclub)
@@ -37,13 +38,15 @@ usage() {
 ctid=0
 service=ask
 config=$PWD/conf/zamba.conf
+debug=0
 
-while getopts "hi:s:c:" opt; do
+while getopts "hi:s:c:d" opt; do
   case $opt in
     h) usage 0 ;;
     i) ctid=$OPTARG ;;
     s) service=$OPTARG ;;
     c) config=$OPTARG ;;
+    d) debug=1 ;;
     *) usage 1 ;;
   esac
 done
@@ -161,10 +164,12 @@ pct push $LXC_NBR "$PWD/src/lxc-base.sh" /root/lxc-base.sh
 pct push $LXC_NBR "$PWD/src/$service/install-service.sh" /root/install-service.sh
 pct push $LXC_NBR "$PWD/src/$service/constants-service.conf" /root/constants-service.conf
 
+if [ $debug -gt 0 ]; then dbg=-vx; else dbg=""; fi
+
 echo "Installing basic container setup..."
-lxc-attach -n$LXC_NBR bash /root/lxc-base.sh
+pct exec $LXC_NBR -- su - root -c "bash $dbg /root/lxc-base.sh"
 echo "Install '$service'!"
-lxc-attach -n$LXC_NBR bash /root/install-service.sh
+pct exec $LXC_NBR -- su - root -c "bash $dbg /root/install-service.sh"
 
 if [[ $service == "zmb-ad" ]]; then
   pct stop $LXC_NBR
