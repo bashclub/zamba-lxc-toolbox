@@ -159,3 +159,10 @@ KOPANO_MAILGW="192.168.100.254"
 # Kopano test- or subscription-key offerd from 
 # https://kopano.com/downloads-demo/?demo=Kopano+Groupware&headline=Packages&target=Debian+10
 KOPANO_REPKEY="1234567890abcdefghijklmno"
+
+############### Tactical-RMM Section ###############
+
+rmmdomain=api.${LXC_DOMAIN}
+frontenddomain=${LXC_HOSTNAME}.${LXC_DOMAIN}
+meshdomain=mesh.${LXC_DOMAIN}
+adminemail=rmm@${LXC_DOMAIN}
