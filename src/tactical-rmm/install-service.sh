@@ -709,4 +709,4 @@ printf >&2 "Django admin url (disabled by default): https://${rmmdomain}/${ADMIN
 printf >&2 "MeshCentral username: ${meshusername}\n"
 printf >&2 "MeshCentral password: ${MESHPASSWD}\n\n"
 
-printf >&2 "Please run 'register-rmm-admin' to create an administrative rmm user.\n\n"
+printf >&2 "Please run 'pct exec {container id} -- su - root -c register-rmm-admin' to create an administrative rmm user.\n\n"
