@@ -56,7 +56,7 @@ CREATE DATABASE IF NOT EXISTS open3a;
 GRANT ALL PRIVILEGES ON open3a . * TO 'open3a'@'localhost';"
 
 cd $webroot
-wget https://www.open3a.de/download/open3A%203.5.zip -O $webroot/open3a.zip
+wget https://www.open3a.de/download/open3A%203.6.zip -O $webroot/open3a.zip
 unzip open3a.zip
 rm open3a.zip
 chmod 666 system/DBData/Installation.pfdb.php
