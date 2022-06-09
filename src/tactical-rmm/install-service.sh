@@ -697,8 +697,8 @@ printf >&2 "\n"
 echo -ne "Username: "
 read djangousername
 python manage.py createsuperuser --username \${djangousername} --email ${adminemail}
-RANDBASE=\$(python manage.py generate_totp)
-python manage.py generate_barcode \${RANDBASE} \${djangousername} ${frontenddomain}
+#RANDBASE=\$(python manage.py generate_totp)
+#python manage.py generate_barcode \${RANDBASE} \${djangousername} ${frontenddomain}
 deactivate
 EOF
 chmod +x /usr/local/bin/register-rmm-admin
