@@ -16,7 +16,9 @@ webroot=/var/www/bookstack/public
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq zip unzip sudo nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd php-tokenizer php-xml php-dompdf php-curl php-ldap php-tidy php-zip
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq zip unzip sudo nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd php-tokenizer php-xml php-dompdf php-curl php-ldap php-tidy php-zip redis-server
+wget -O /opt/wkhtmltox_0.12.6-1.buster_amd64.deb https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_amd64.deb
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq /opt/wkhtmltox_0.12.6-1.buster_amd64.deb
 
 mkdir /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/open3a.key -out /etc/nginx/ssl/open3a.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
@@ -36,6 +38,7 @@ server {
 
     client_max_body_size 100M;
     fastcgi_buffers 64 4K;
+    client_body_timeout 120s;
 
     listen 443 http2 ssl default_server;
     listen [::]:443 http2 ssl default_server;
@@ -103,6 +106,10 @@ CREATE DATABASE IF NOT EXISTS bookstack;
 GRANT ALL PRIVILEGES ON bookstack.* TO 'bookstack'@'localhost' IDENTIFIED BY '$BOOKSTACK_DB_PWD';
 FLUSH PRIVILEGES;"
 
+sed -i "s/post_max_size = 8M/post_max_size = 100M/g" /etc/php/7.4/fpm/php.ini
+sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 100M/g" /etc/php/7.4/fpm/php.ini
+sed -i "s/memory_limit = 128M/memory_limit = 512M/g" /etc/php/7.4/fpm/php.ini
+
 EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')"
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 ACTUAL_CHECKSUM="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
@@ -133,15 +140,45 @@ sed -i.bak 's/DB_DATABASE=.*$/DB_DATABASE=bookstack/' .env
 sed -i.bak 's/DB_USERNAME=.*$/DB_USERNAME=bookstack/' .env
 sed -i.bak "s/DB_PASSWORD=.*\$/DB_PASSWORD=$BOOKSTACK_DB_PWD/" .env
 
+cat << EOF >> .env
+QUEUE_CONNECTION=database
+STORAGE_TYPE=local_secure
+APP_LANG=de_informal
+FILE_UPLOAD_SIZE_LIMIT=100
+SESSION_SECURE_COOKIE=true
+CACHE_DRIVER=redis
+SESSION_DRIVER=redis
+REDIS_SERVERS=127.0.0.1:6379:0
+WKHTMLTOPDF=/usr/local/bin/wkhtmltopdf
+ALLOW_UNTRUSTED_SERVER_FETCHING=true
+EOF
 
 # Generate the application key
 php artisan key:generate --no-interaction --force
 # Migrate the databases
 php artisan migrate --no-interaction --force
 
+php artisan bookstack:db-utf8mb4 > dbupgrade.sql
+mysql -u root < dbupgrade.sql
+
 chown www-data:www-data -R bootstrap/cache public/uploads storage && chmod -R 755 bootstrap/cache public/uploads storage
 
-systemctl enable --now php7.4-fpm
-systemctl restart php7.4-fpm nginx
+cat << EOF > /etc/systemd/system/bookstack-queue.service
+[Unit]
+Description=BookStack Queue Worker
+
+[Service]
+User=www-data
+Group=www-data
+Restart=always
+ExecStart=/usr/bin/php /var/www/bookstack/artisan queue:work --sleep=3 --tries=1 --max-time=3600
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now bookstack-queue php7.4-fpm nginx redis-server
+systemctl restart php7.4-fpm nginx bookstack-queue redis-server
 
 echo -e "Your bookstack installation is now complete. Please continue with setup in your Browser:\nURL:\t\thttp://$(echo $LXC_IP | cut -d'/' -f1)\nLogin:\t\tadmin@admin.com\nPassword:\tpassword\n\n"
