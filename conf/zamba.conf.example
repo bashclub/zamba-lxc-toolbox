@@ -81,6 +81,9 @@ LXC_LOCALE="de_DE.UTF-8"
 # Set dark background for vim syntax highlighting (0 or 1)
 LXC_VIM_BG_DARK=1
 
+# Default random password length
+LXC_RANDOMPWD=32
+
 ############### Zamba-Server-Section ###############
 
 # Defines the REALM for the Active Directory (AD DC, AD member)
@@ -166,3 +169,4 @@ rmmdomain=api.${LXC_DOMAIN}
 frontenddomain=${LXC_HOSTNAME}.${LXC_DOMAIN}
 meshdomain=mesh.${LXC_DOMAIN}
 adminemail=rmm@${LXC_DOMAIN}
+
