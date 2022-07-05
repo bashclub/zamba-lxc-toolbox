@@ -158,6 +158,8 @@ sleep 5;
 pct exec $LXC_NBR -- mkdir /root/.ssh
 pct push $LXC_NBR $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
 pct push $LXC_NBR "$config" /root/zamba.conf
+pct exec $LXC_NBR -- sed -i "s,\${service},${service}," /root/zamba.conf
+pct exec $LXC_NBR -- echo "LXC_NBR=$LXC_NBR" /root/zamba.conf
 pct push $LXC_NBR "$PWD/src/functions.sh" /root/functions.sh
 pct push $LXC_NBR "$PWD/src/constants.conf" /root/constants.conf
 pct push $LXC_NBR "$PWD/src/lxc-base.sh" /root/lxc-base.sh
