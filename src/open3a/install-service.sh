@@ -11,6 +11,7 @@ source /root/constants-service.conf
 
 webroot=/var/www/html
 
+LXC_RANDOMPWD=20
 MYSQL_PASSWORD="$(random_password)"
 
 apt update
@@ -66,6 +67,14 @@ chown -R www-data:www-data $webroot
 
 echo "sudo -u www-data /usr/bin/php $webroot/plugins/Installation/backup.php; for backup in \$(ls -r1 $webroot/system/Backup/*.gz | /bin/grep -v \$(date +%Y%m%d)); do /bin/rm \$backup;done" > /etc/cron.daily/open3a-backup
 chmod +x /etc/cron.daily/open3a-backup
+
+cat << EOF >/var/www/html/system/DBData/Installation.pfdb.php
+<?php echo "This is a database-file."; /*
+host&%%%&user&%%%&password&%%%&datab&%%%&httpHost
+varchar(40)&%%%&varchar(20)&%%%&varchar(20)&%%%&varchar(30)&%%%&varchar(40)                                                                                         
+localhost                               &%%%&open3a              &%%%&$MYSQL_PASSWORD&%%%&open3a                        &%%%&*                                       %%&&&
+*/ ?>
+EOF
 
 systemctl enable --now php7.4-fpm
 systemctl restart php7.4-fpm nginx
