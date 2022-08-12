@@ -16,7 +16,6 @@ sudo -u www-data php8.0 /var/www/nextcloud/occ db:add-missing-columns
 
 sudo -u www-data php8.0 /var/www/nextcloud/occ db:convert-filecache-bigint
 
-#sudo -u www-data php8.0 /var/www/nextcloud/occ files:scan --all
 sudo -u www-data php8.0 /var/www/nextcloud/occ files:scan-app-data
 sudo -u www-data php8.0 /var/www/nextcloud/occ app:update --all
 
