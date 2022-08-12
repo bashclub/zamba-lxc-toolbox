@@ -1,3 +1,8 @@
+#!/bin/sh
+
+
+#place in /etc/cron.daily and make executable with chmod +x  /etc/cron.daily/updatenc
+
 sudo -u www-data php8.0 /var/www/nextcloud/updater/updater.phar --no-backup --no-interaction
 
 sudo -u www-data php8.0 /var/www/nextcloud/occ status
