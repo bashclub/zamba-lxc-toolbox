@@ -1,27 +1,17 @@
-#!/bin/sh
+#!/bin/bash
+#
+# Update nextcloud
+# place in /etc/cron.daily and make executable with chmod +x  /etc/cron.daily/updatenc
+user=www-data
+phpversion=php8.0
+path=/var/www/nextcloud
 
+alias ncc="sudo -u $user $phpversion $path/occ"
+alias updater="sudo -u $user $phpversion $path/updater/updater.phar"
 
-#place in /etc/cron.daily and make executable with chmod +x  /etc/cron.daily/updatenc
+updater --no-backup --no-interaction
 
-sudo -u www-data php8.0 /var/www/nextcloud/updater/updater.phar --no-backup --no-interaction
-
-sudo -u www-data php8.0 /var/www/nextcloud/occ status
-sudo -u www-data php8.0 /var/www/nextcloud/occ -V
-
-sudo -u www-data php8.0 /var/www/nextcloud/occ db:add-missing-primary-keys
-
-sudo -u www-data php8.0 /var/www/nextcloud/occ db:add-missing-indices
-
-sudo -u www-data php8.0 /var/www/nextcloud/occ db:add-missing-columns
-
-sudo -u www-data php8.0 /var/www/nextcloud/occ db:convert-filecache-bigint
-
-sudo -u www-data php8.0 /var/www/nextcloud/occ files:scan-app-data
-sudo -u www-data php8.0 /var/www/nextcloud/occ app:update --all
-
-sudo -u www-data php8.0 /var/www/nextcloud/occ upgrade
-
-/usr/sbin/service php8.0-fpm restart
-/usr/sbin/service nginx restart
-
-sudo -u www-data php8.0 /var/www/nextcloud/occ -V
+subcommands=("db:add-missing-primary-keys" "db:add-missing-indices" "db:add-missing-columns" "db:convert-filecache-bigint" "files:scan-app-data" "--quiet --all app:update" "upgrade")
+for cmd in ${subcommands[@]}; do
+  ncc -n $cmd
+done
