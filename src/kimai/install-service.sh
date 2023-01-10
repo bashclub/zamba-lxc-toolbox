@@ -151,7 +151,7 @@ cat << EOF >> .env
 # For MariaDB it would be "serverVersion=mariadb-10.5.8":
 #    DATABASE_URL=mysql://user:password@127.0.0.1:3306/database?charset=utf8&serverVersion=mariadb-10.5.8
 #
-DATABASE_URL=mysql://kimai:$KIMAI_DB_PWD@localhost:3306/kimai?charset=utf8&serverVersion=5.7
+DATABASE_URL=mysql://kimai:$KIMAI_DB_PWD@localhost:3306/kimai?charset=utf8&serverVersion=mariadb-10.5.18
 
 #================================================================================
 # The full documentation can be found at https://www.kimai.org/documentation/emails.html
@@ -191,4 +191,4 @@ systemctl daemon-reload
 systemctl enable --now php8.1-fpm nginx
 systemctl restart php8.1-fpm nginx
 
-echo -e "Your kimai installation is now complete. Please continue with setup in your Browser:\nURL:\t\thttp://$(echo ${LXC_IP} | cut -d'/' -f1)\nLogin:\t\tadmin@${LXC_DOMAIN}\n\nPassword:\t${LXC_PWD}\n\n"
+echo -e "Your kimai installation is now complete. Please continue with setup in your Browser.\nURL:\t\thttp://$(echo ${LXC_IP} | cut -d'/' -f1)\nLogin:\t\tadmin@${LXC_DOMAIN}\nPassword:\t${LXC_PWD}\n\n"
