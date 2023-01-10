@@ -17,7 +17,13 @@ echo "deb https://pkg.ltec.ch/public/ $(lsb_release -cs) main" > /etc/apt/source
 echo "deb http://ftp.de.debian.org/debian $(lsb_release -cs)-backports main contrib" > /etc/apt/sources.list.d/$(lsb_release -cs)-backports.list
 
 cat << EOF > /etc/apt/preferences.d/samba
-Package: samba*
+Package: samba
+Pin: release a=$(lsb_release -cs)-backports
+Pin-Priority: 900
+EOF
+
+cat << EOF > /etc/apt/preferences.d/winbind
+Package: winbind
 Pin: release a=$(lsb_release -cs)-backports
 Pin-Priority: 900
 EOF
