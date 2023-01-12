@@ -15,7 +15,34 @@ wget -O /etc/apt/sources.list.d/zammad.list https://dl.packager.io/srv/zammad/za
 echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" > /etc/apt/sources.list.d/elastic-7.x.list
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install ssl-cert zammad
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install ssl-cert nginx-full postgresql zammad
+
+
+cat << EOF >>/etc/hosts
+0.0.0.0 image.zammad.com
+0.0.0.0 images.zammad.com
+0.0.0.0 geo.zammad.com
+0.0.0.0 www.zammad.com
+0.0.0.0 www.zammad.org
+0.0.0.0 www.zammad.net
+0.0.0.0 www.zammad.de
+0.0.0.0 zammad.com
+0.0.0.0 zammad.org
+0.0.0.0 zammad.net
+0.0.0.0 zammad.de
+#
+127.0.0.1 elasticsearch
+0.0.0.0 geoip.elastic.co
+EOF
+
+# Java set startup environment 
+mkdir -p /etc/elasticsearch/jvm.options.d
+cat << EOF >>/etc/elasticsearch/jvm.options.d/msmx-size.options
+# INFO: https://www.elastic.co/guide/en/elasticsearch/reference/master/advanced-configuration.html#set-jvm-heap-size
+# max 50% of total RAM - 2G Ram then set Xms and Xmx 1g
+-Xms1g
+-Xmx1g
+EOF
 
 # configurwe nginx
 rm -f /etc/nginx/sites-enabled/default
@@ -66,7 +93,16 @@ server {
     ssl_stapling_verify on;
 
     resolver 1.1.1.1 1.0.0.1;
-
+#
+#  https://webdock.io/en/docs/how-guides/security-guides/how-to-configure-security-headers-in-nginx-and-apache
+#
+    add_header Strict-Transport-Security 'max-age=31536000; includeSubDomains; preload';
+    add_header Content-Security-Policy "default-src 'self'; font-src *;img-src * data:; script-src *; style-src *";
+    add_header Referrer-Policy "strict-origin";
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Permissions-Policy "geolocation=(),midi=(),sync-xhr=(),microphone=(),camera=(),magnetometer=(),gyroscope=(),fullscreen=(self),payment=()";
     add_header Strict-Transport-Security "max-age=31536000" always;
 
     location = /robots.txt  {
@@ -118,6 +154,17 @@ server {
 }
 EOF
 
+ln -sf /etc/nginx/sites-available/zammad.conf /etc/nginx/sites-enabled/
+
 openssl dhparam -out /etc/nginx/dhparam.pem 4096
 
-systemctl restart nginx
+systemctl enable elasticsearch.service
+systemctl restart nginx elasticsearch.service
+
+# Elasticsearch conntact to Zammad
+/usr/share/elasticsearch/bin/elasticsearch-plugin install -b ingest-attachment
+zammad run rails r "Setting.set('es_url', 'http://localhost:9200')"
+zammad run rails r "Setting.set('es_index', Socket.gethostname.downcase + '_zammad')"
+zammad run rails r "User.find_by(email: 'nicole.braun@zammad.org').destroy"
+systemctl restart elasticsearch.service
+zammad run rake searchindex:rebuild
