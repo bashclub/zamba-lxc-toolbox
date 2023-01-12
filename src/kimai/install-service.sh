@@ -140,7 +140,7 @@ export COMPOSER_ALLOW_SUPERUSER=1
 /usr/local/bin/composer install --optimize-autoloader -n
 
 # Copy and update kimai environment variables
-cat << EOF >> .env
+cat << EOF > .env
 # For more infos about the variables, see .env.dist
 DATABASE_URL=mysql://kimai:$KIMAI_DB_PWD@localhost:3306/kimai?charset=utf8&serverVersion=mariadb-10.5.8
 MAILER_FROM=admin@$LXC_DOMAIN
