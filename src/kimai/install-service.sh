@@ -19,12 +19,13 @@ echo "deb https://packages.sury.org/php/ $(lsb_release -cs) main" | tee /etc/apt
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq zip unzip sudo nginx-full mariadb-server mariadb-client php8.1 php8.1-intl php8.1-cli php8.1-fpm php8.1-mysql php8.1-xml php8.1-mbstring php8.1-gd php8.1-tokenizer php8.1-zip
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq zip unzip sudo nginx-full mariadb-server mariadb-client php8.1 php8.1-intl php8.1-cli php8.1-fpm php8.1-mysql php8.1-xml php8.1-mbstring php8.1-gd php8.1-tokenizer php8.1-zip php8.1-opcache php8.1-curl
 
 mkdir /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/kimai.key -out /etc/nginx/ssl/kimai.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
 
 PHP_VERSION=$(php -v | head -1 | cut -d ' ' -f2)
+PHP_VERSION=${PHP_VERSION:0:3}
 
 cat << EOF > /etc/nginx/sites-available/default
 server {
@@ -37,7 +38,7 @@ server {
 
 server {
 
-    client_max_body_size 100M;
+    client_max_body_size 2M;
     fastcgi_buffers 64 4K;
     client_body_timeout 120s;
 
@@ -61,7 +62,7 @@ server {
 
     location ~ \.php$ {
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_pass unix:/run/php/php${PHP_VERSION:0:3}-fpm.sock;
+        fastcgi_pass unix:/run/php/php${PHP_VERSION}-fpm.sock;
         fastcgi_index index.php;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
@@ -107,9 +108,14 @@ CREATE DATABASE IF NOT EXISTS kimai;
 GRANT ALL PRIVILEGES ON kimai.* TO 'kimai'@'localhost' IDENTIFIED BY '$KIMAI_DB_PWD';
 FLUSH PRIVILEGES;"
 
-sed -i "s/post_max_size = 8M/post_max_size = 100M/g" /etc/php/8.1/fpm/php.ini
-sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 100M/g" /etc/php/8.1/fpm/php.ini
-sed -i "s/memory_limit = 128M/memory_limit = 512M/g" /etc/php/8.1/fpm/php.ini
+sed -i "s/post_max_size = 8M/post_max_size = 2M/g" /etc/php/${PHP_VERSION}/fpm/php.ini
+sed -i "s/memory_limit = 128M/memory_limit = 512M/g" /etc/php/${PHP_VERSION}/fpm/php.ini
+sed -i "s/;opcache.enable=1/opcache.enable=1/g" /etc/php/${PHP_VERSION}/fpm/php.ini
+sed -i "s/;opcache.memory_consumption=128/opcache.memory_consumption=256/g" /etc/php/${PHP_VERSION}/fpm/php.ini
+sed -i "s/opcache.interned_strings_buffer=8/opcache.interned_strings_buffer=24/g" /etc/php/${PHP_VERSION}/fpm/php.ini
+sed -i "s/;opcache.max_accelerated_files=10000/opcache.max_accelerated_files=100000/g" /etc/php/${PHP_VERSION}/fpm/php.ini
+sed -i "s/;opcache.validate_timestamps=1/opcache.validate_timestamps=0/g" /etc/php/${PHP_VERSION}/fpm/php.ini
+sed -i "s/session.gc_maxlifetime = 1440/session.gc_maxlifetime = 604800/g" /etc/php/${PHP_VERSION}/fpm/php.ini
 
 EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')"
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
@@ -135,47 +141,12 @@ export COMPOSER_ALLOW_SUPERUSER=1
 
 # Copy and update kimai environment variables
 cat << EOF >> .env
-#================================================================================
-# Configure your database connection and set the correct server version.
-#
-# You have to replace the following values with your defaults:
-# - the version "5.7"
-# - the database username "user"
-# - the database password "password"
-# - the database schema name "database"
-# - you might have to adapt port "3306" and server IP "127.0.0.1" as well
-#
-# For MySQL that would be "serverVersion=5.7" as in:
-#    DATABASE_URL=mysql://user:password@127.0.0.1:3306/database?charset=utf8&serverVersion=5.7
-#
-# For MariaDB it would be "serverVersion=mariadb-10.5.8":
-#    DATABASE_URL=mysql://user:password@127.0.0.1:3306/database?charset=utf8&serverVersion=mariadb-10.5.8
-#
-DATABASE_URL=mysql://kimai:$KIMAI_DB_PWD@localhost:3306/kimai?charset=utf8&serverVersion=5.7
-
-#================================================================================
-# The full documentation can be found at https://www.kimai.org/documentation/emails.html
-#
-# Email will be sent with this address as sender:
-MAILER_FROM=kimai@example.com
-# Email connection (disabled by default) - see documentation for the format
+# For more infos about the variables, see .env.dist
+DATABASE_URL=mysql://kimai:$KIMAI_DB_PWD@localhost:3306/kimai?charset=utf8&serverVersion=mariadb-10.5.8
+MAILER_FROM=admin@$LXC_DOMAIN
 MAILER_URL=null://null
-
-#================================================================================
-# Running behind reverse proxies? Try these:
-# TRUSTED_PROXIES=127.0.0.1,127.0.0.2
-# TRUSTED_HOSTS=localhost,example.com
-
-#================================================================================
-# do not change, unless you are developing for Kimai
 APP_ENV=prod
-
-#================================================================================
-# should be changed to a unique character sequence, used for hashing cookies
 APP_SECRET=$(random_password)
-
-#================================================================================
-# unlikely, that you need to change this one
 CORS_ALLOW_ORIGIN=^https?://localhost(:[0-9]+)?$
 EOF
 
@@ -188,7 +159,7 @@ bin/console kimai:install -n
 bin/console kimai:user:create admin admin@$LXC_DOMAIN ROLE_SUPER_ADMIN $LXC_PWD
 
 systemctl daemon-reload
-systemctl enable --now php8.1-fpm nginx
-systemctl restart php8.1-fpm nginx
+systemctl enable --now php${PHP_VERSION}-fpm nginx
+systemctl restart php${PHP_VERSION}-fpm nginx
 
 echo -e "Your kimai installation is now complete. Please continue with setup in your Browser:\nURL:\t\thttp://$(echo ${LXC_IP} | cut -d'/' -f1)\nLogin:\t\tadmin@${LXC_DOMAIN}\n\nPassword:\t${LXC_PWD}\n\n"
