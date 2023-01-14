@@ -7,7 +7,8 @@ The package also provides LXC container installers for `mailpiler`, `matrix-syna
 ### Requirements
 Proxmox VE Server (>=6.30) with at least one configured ZFS Pool.
 ### Included services:
-- `checkmk` => Check_MK 2.0 Monitoring Server
+- `bookstack` => Bookstack wiki software [bookstackapp.com](https://www.bookstackapp.com/)
+- `checkmk` => Check_MK 2.0 Monitoring Server [checkmk.com](https://checkmk.com/)
 - `debian-priv` => Debian privileged container with basic toolset
 - `debian-unpriv` => Debian unprivileged container with basic toolset
 - `gitea`=> Lightweight and fast self-hosted git service [gitea.io](https://gitea.io)
@@ -19,6 +20,7 @@ Proxmox VE Server (>=6.30) with at least one configured ZFS Pool.
 - `onlyoffice` => OnlyOffice [onlyoffice.com](https://onlyoffice.com)
 - `open3a` => Open3a web based accounting software [open3a.de](https://open3a.de)
 - `proxmox-pbs` => Proxmox Backup Server [proxmox.com](https://proxmox.com/en/proxmox-backup-server)
+- `unifi` => Unifi Controller [ui.com](https://ui.com)
 - `urbackup` => UrBackup Server [urbackup.org](https://urbackup.org)
 - `zabbix` => Zabbix Monitoring server [zabbix.com](https://www.zabbix.com)
 - `zammad` => Zammad Helpdesk and Ticketing Software [zammad.org](https://zammad.org/)
