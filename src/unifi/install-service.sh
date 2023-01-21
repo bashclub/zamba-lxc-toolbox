@@ -19,4 +19,4 @@ echo "deb http://www.ui.com/downloads/unifi/debian stable ubiquiti" > /etc/apt/s
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq sudo unifi
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq unifi

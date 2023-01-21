@@ -16,7 +16,7 @@ webroot=/var/www/bookstack/public
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq zip unzip sudo nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd php-tokenizer php-xml php-dompdf php-curl php-ldap php-tidy php-zip redis-server
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq zip unzip nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd php-tokenizer php-xml php-dompdf php-curl php-ldap php-tidy php-zip redis-server
 wget -O /opt/wkhtmltox_0.12.6-1.buster_amd64.deb https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_amd64.deb
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq /opt/wkhtmltox_0.12.6-1.buster_amd64.deb
 
