@@ -170,3 +170,12 @@ frontenddomain=${LXC_HOSTNAME}.${LXC_DOMAIN}
 meshdomain=mesh.${LXC_DOMAIN}
 adminemail=rmm@${LXC_DOMAIN}
 
+############### vaultwarden Section ###############
+VW_SMTP_HOST=mail.bashclub.org
+VW_SMTP_FROM="vaultwarden@bashclub.org"
+VW_SMTP_FROM_NAME="Vaultwarden Password Manager"
+VW_SMTP_PORT=587
+VW_SMTP_SSL=true
+VW_SMTP_EXPLICIT_TLS=false
+VW_SMTP_USERNAME=vaultwarden@bashclub.org
+VW_SMTP_PASSWORD='<yourEmailPassword>'
