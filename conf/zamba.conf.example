@@ -84,6 +84,12 @@ LXC_VIM_BG_DARK=1
 # Default random password length
 LXC_RANDOMPWD=32
 
+# Automatically add meta tags to lxc container
+LXC_AUTOTAG=1
+
+# Add meta tags to linux container
+LXC_TAGS="linux,debian,${service}"
+
 ############### Zamba-Server-Section ###############
 
 # Defines the REALM for the Active Directory (AD DC, AD member)

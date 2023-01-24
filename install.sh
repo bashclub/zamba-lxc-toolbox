@@ -102,6 +102,10 @@ source "$config"
 
 source "$PWD/src/$service/constants-service.conf"
 
+if [ $LXC_AUTOTAG -gt 0 ]; then
+  TAGS="--tags ${LXC_TAGS},${SERVICE_TAGS}"
+fi
+
 # CHeck is the newest template available, else download it.
 DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep $LXC_TEMPLATE_VERSION | tail -1 | cut -d'_' -f2)
 DEB_REP=$(pveam available --section system | grep $LXC_TEMPLATE_VERSION | tail -1 | cut -d'_' -f2)
@@ -131,7 +135,7 @@ fi
 echo "Will now create LXC Container $LXC_NBR!";
 
 # Create the container
-pct create $LXC_NBR --password $LXC_PWD -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
+pct create $LXC_NBR $TAGS --password $LXC_PWD -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
 sleep 2;
 
 # Check vlan configuration
