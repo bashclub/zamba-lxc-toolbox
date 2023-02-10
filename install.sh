@@ -102,22 +102,18 @@ source "$config"
 
 source "$PWD/src/$service/constants-service.conf"
 
+if [ $LXC_MEM -lt $LXC_MEM_MIN ]; then
+  LXC_MEM=$LXC_MEM_MIN
+fi
+
 if [ $LXC_AUTOTAG -gt 0 ]; then
   TAGS="--tags ${LXC_TAGS},${SERVICE_TAGS}"
 fi
 
-# CHeck is the newest template available, else download it.
-DEB_LOC=$(pveam list $LXC_TEMPLATE_STORAGE | grep $LXC_TEMPLATE_VERSION | tail -1 | cut -d'_' -f2)
-DEB_REP=$(pveam available --section system | grep $LXC_TEMPLATE_VERSION | tail -1 | cut -d'_' -f2)
+# Check is the newest template available, else download it.
+pveam update
 TMPL_NAME=$(pveam available --section system | grep $LXC_TEMPLATE_VERSION | tail -1 | cut -d' ' -f11)
-
-if [[ $DEB_LOC == $DEB_REP ]];
-then
-  echo "Newest Version of $LXC_TEMPLATE_VERSION $DEB_REP exists.";
-else
-  echo "Will now download newest $LXC_TEMPLATE_VERSION $DEP_REP.";
-  pveam download $LXC_TEMPLATE_STORAGE $TMPL_NAME
-fi
+pveam download $LXC_TEMPLATE_STORAGE $TMPL_NAME
 
 if [ $ctid -gt 99 ]; then
   LXC_CHK=$ctid
