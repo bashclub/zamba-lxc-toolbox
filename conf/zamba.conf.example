@@ -28,10 +28,10 @@ LXC_SHAREFS_STORAGE="local-zfs"
 LXC_SHAREFS_MOUNTPOINT="tank"
 
 # Defines the amount of RAM in MB your LXC container is allowed to use (default: 1024)
-LXC_MEM="1024"
+LXC_MEM=1024
 
 # Defines the amount of swap space in MB your LXC container is allowed to use (default: 1024)
-LXC_SWAP="1024"
+LXC_SWAP=1024
 
 # Defines the hostname of your LXC container
 LXC_HOSTNAME="${service}"
@@ -136,7 +136,7 @@ NEXTCLOUD_FQDN="nextcloud.zmb.rocks"
 NEXTCLOUD_ADMIN_USR="zmb-admin"
 
 # Build a strong password for this user. Username and password will shown at the end of the installation. 
-NEXTCLOUD_ADMIN_PWD="$(random_password)"
+# NEXTCLOUD_ADMIN_PWD='very_secure_password'
 
 # Defines the data directory, which will be createt under LXC_SHAREFS_MOUNTPOINT
 NEXTCLOUD_DATA="nc_data"
