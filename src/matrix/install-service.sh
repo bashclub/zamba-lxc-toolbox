@@ -146,9 +146,3 @@ sed -i "s|database: /var/lib/matrix-synapse/homeserver.db|database: $ELE_DBNAME\
 systemctl restart matrix-synapse
 
 register_new_matrix_user -a -u $MATRIX_ADMIN_USER -p '$MATRIX_ADMIN_PASSWORD' -c /etc/matrix-synapse/homeserver.yaml http://127.0.0.1:8008
-
-#curl https://download.jitsi.org/jitsi-key.gpg.key | sh -c 'gpg --dearmor > /usr/share/keyrings/jitsi-keyring.gpg'
-#echo 'deb [signed-by=/usr/share/keyrings/jitsi-keyring.gpg] https://download.jitsi.org stable/' | tee /etc/apt/sources.list.d/jitsi-stable.list > /dev/null
-
-#apt update
-#apt install -y jitsi-meet
