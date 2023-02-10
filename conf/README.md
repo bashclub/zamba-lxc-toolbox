@@ -40,13 +40,14 @@ LXC_SHAREFS_MOUNTPOINT="tank"
 ```
 ### LXC_MEM
 Defines the amount of RAM in MB your LXC container is allowed to use (default: 1024)
+If a service needs more minimum memory, LXC_MEM will be overwritten.
 ```bash
-LXC_MEM="1024"
+LXC_MEM=1024
 ```
 ### LXC_SWAP
 Defines the amount of swap space in MB your LXC container is allowed to use (default: 1024)
 ```bash
-LXC_SWAP="1024"
+LXC_SWAP=1024
 ```
 ### LXC_HOSTNAME
 Defines the hostname of your LXC container (Default: Name of installed Service)
