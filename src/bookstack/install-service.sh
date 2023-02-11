@@ -181,4 +181,6 @@ systemctl daemon-reload
 systemctl enable --now bookstack-queue php7.4-fpm nginx redis-server
 systemctl restart php7.4-fpm nginx bookstack-queue redis-server
 
-echo -e "Your bookstack installation is now complete. Please continue with setup in your Browser:\nLogin:\t\tadmin@admin.com\nPassword:\tpassword\n\n"
+LXC_IP=$(ip address show dev eth0 | grep "inet " | cut -d ' ' -f6)
+
+echo -e "Your bookstack installation is now complete. Please continue with setup in your Browser:\nURL:\t\thttp://$(echo ${LXC_IP} | cut -d'/' -f1)\nLogin:\t\tadmin@admin.com\nPassword:\tpassword\n\n"
