@@ -162,4 +162,6 @@ systemctl daemon-reload
 systemctl enable --now php${PHP_VERSION}-fpm nginx
 systemctl restart php${PHP_VERSION}-fpm nginx
 
+LXC_IP=$(ip address show dev eth0 | grep "inet " | cut -d ' ' -f6)
+
 echo -e "Your kimai installation is now complete. Please continue with setup in your Browser.\nURL:\t\thttp://$(echo ${LXC_IP} | cut -d'/' -f1)\nLogin:\t\tadmin@${LXC_DOMAIN}\nPassword:\t${LXC_PWD}\n\n"
