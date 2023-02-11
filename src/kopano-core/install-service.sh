@@ -11,8 +11,8 @@ source /root/constants-service.conf
 
 HOSTNAME=$(hostname -f)
 
-wget -q -O - https://packages.sury.org/php/apt.gpg | apt-key add -
-echo "deb https://packages.sury.org/php/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/php.list
+#wget -q -O - https://packages.sury.org/php/apt.gpg | apt-key add -
+#echo "deb https://packages.sury.org/php/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/php.list
 
 wget -q -O - https://nginx.org/keys/nginx_signing.key | apt-key add -
 echo "deb http://nginx.org/packages/debian $(lsb_release -cs) nginx" | tee /etc/apt/sources.list.d/nginx.list
@@ -22,8 +22,10 @@ echo "deb https://mirror.wtnet.de/mariadb/repo/$MARIA_DB_VERS/debian $(lsb_relea
 
 apt update
 
+#DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends nginx-light mariadb-server postfix postfix-ldap \
+#php$KOPANO_PHP_VERSION-{cli,common,curl,fpm,gd,json,mysql,mbstring,opcache,phpdbg,readline,soap,xml,zip}
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends nginx-light mariadb-server postfix postfix-ldap \
-php$KOPANO_PHP_VERSION-{cli,common,curl,fpm,gd,json,mysql,mbstring,opcache,phpdbg,readline,soap,xml,zip}
+php-{cli,common,curl,fpm,gd,json,mysql,mbstring,opcache,phpdbg,readline,soap,xml,zip}
 
 #timedatectl set-timezone Europe/Berlin
 #mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$NEXTCLOUD_DATA /var/www
@@ -35,7 +37,7 @@ mysqladmin -u root password "[$MARIA_ROOT_PWD]"
 
 mysql -uroot -p$MARIA_ROOT_PWD -e"DELETE FROM mysql.user WHERE User=''"
 mysql -uroot -p$MARIA_ROOT_PWD -e"DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1')"
-mysql -uroot -p$MARIA_ROOT_PWD -e"DROP DATABASE test;DELETE FROM mysql.db WHERE Db='test' OR Db='test_%'"
+#mysql -uroot -p$MARIA_ROOT_PWD -e"DROP DATABASE test;DELETE FROM mysql.db WHERE Db='test' OR Db='test_%'"
 mysql -uroot -p$MARIA_ROOT_PWD -e"FLUSH PRIVILEGES"
 
 #### Create user and DB for Kopano ####
@@ -50,19 +52,19 @@ db-user: $MARIA_DB_USER, password: $MARIA_USER_PWD" > /root/maria.log
 cat > /etc/apt/sources.list.d/kopano.list << EOF
 
 # Kopano Core
-deb https://download.kopano.io/supported/core:/final/Debian_10/ ./
+deb https://download.kopano.io/supported/core:/final/Debian_11/ ./
 
 # Kopano WebApp
-deb https://download.kopano.io/supported/webapp:/final/Debian_10/ ./
+deb https://download.kopano.io/supported/webapp:/final/Debian_11/ ./
 
 # Kopano MobileDeviceManagement
-deb https://download.kopano.io/supported/mdm:/final/Debian_10/ ./
+deb https://download.kopano.io/supported/mdm:/final/Debian_11/ ./
 
 # Kopano Files
-deb https://download.kopano.io/supported/files:/final/Debian_10/ ./
+deb https://download.kopano.io/supported/files:/final/Debian_11/ ./
 
 # Z-Push
-deb https://download.kopano.io/zhub/z-push:/final/Debian_10/ ./
+deb https://download.kopano.io/zhub/z-push:/final/Debian_11/ ./
 
 EOF
 
@@ -74,11 +76,11 @@ password $KOPANO_REPKEY
 
 EOF
 
-curl https://serial:$KOPANO_REPKEY@download.kopano.io/supported/core:/final/Debian_10/Release.key | apt-key add -
-curl https://serial:$KOPANO_REPKEY@download.kopano.io/supported/webapp:/final/Debian_10/Release.key | apt-key add -
-curl https://serial:$KOPANO_REPKEY@download.kopano.io/supported/mdm:/final/Debian_10/Release.key | apt-key add -
-curl https://serial:$KOPANO_REPKEY@download.kopano.io/supported/files:/final/Debian_10/Release.key | apt-key add -
-curl https://serial:$KOPANO_REPKEY@download.kopano.io/zhub/z-push:/final/Debian_10/Release.key | apt-key add -
+curl https://serial:$KOPANO_REPKEY@download.kopano.io/supported/core:/final/Debian_11/Release.key | apt-key add -
+curl https://serial:$KOPANO_REPKEY@download.kopano.io/supported/webapp:/final/Debian_11/Release.key | apt-key add -
+curl https://serial:$KOPANO_REPKEY@download.kopano.io/supported/mdm:/final/Debian_11/Release.key | apt-key add -
+curl https://serial:$KOPANO_REPKEY@download.kopano.io/supported/files:/final/Debian_11/Release.key | apt-key add -
+curl https://serial:$KOPANO_REPKEY@download.kopano.io/zhub/z-push:/final/Debian_11/Release.key | apt-key add -
 
 apt update && apt full-upgrade -y
 
@@ -91,7 +93,7 @@ cat > /etc/kopano/ldap.cfg << EOF
 
 !include /usr/share/kopano/ldap.active-directory.cfg
 
-ldap_uri = ldap://10.10.81.12:389
+ldap_uri = ldap://192.168.100.100:389
 ldap_bind_user = cn=zmb-ldap,cn=Users,dc=zmb,dc=rocks
 ldap_bind_passwd = Start123!
 ldap_search_base = dc=zmb,dc=rocks
@@ -112,8 +114,8 @@ mysql_user = $MARIA_DB_USER
 mysql_password = $MARIA_USER_PWD
 mysql_database = $MARIA_DB_NAME
 
-user_plugin = ldap
-user_plugin_config = /etc/kopano/ldap.cfg
+#user_plugin = ldap
+#user_plugin_config = /etc/kopano/ldap.cfg
 
 EOF
 
@@ -121,7 +123,7 @@ EOF
 
 sed -i "s/define('LANG', 'en_US.UTF-8')/define('LANG', 'de_DE.UTF-8')/" /etc/kopano/webapp/config.php
 
-cat > /etc/php/7.3/fpm/pool.d/webapp.conf << EOF
+cat > /etc/php/7.4/fpm/pool.d/webapp.conf << EOF
 
 [webapp]
 listen = 127.0.0.1:9002
@@ -153,9 +155,9 @@ openssl dhparam -dsaparam -out /etc/ssl/certs/dhparam.pem 4096
 
 cat > /etc/nginx/sites-available/webapp.conf << EOF
 upstream php-handler {
-    server 127.0.0.1:9002;
+    #server 127.0.0.1:9002;
     #server unix:/var/run/php5-fpm.sock;
-    #server unix:/var/run/php/php7.3-fpm.sock;
+    server unix:/var/run/php/php7.4-fpm.sock;
 }
  
 server{
@@ -270,5 +272,5 @@ EOF
 
 ln -s /etc/nginx/sites-available/webapp.conf /etc/nginx/sites-enabled/
 
-systemctl restart nginx
-
+phpenmod kopano
+systemctl restart php7.4-fpm nginx
