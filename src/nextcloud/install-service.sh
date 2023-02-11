@@ -402,7 +402,9 @@ array (
 'updater.release.channel' => 'stable',
 'trusted_proxies' => 
 array (
-'$NEXTCLOUD_REVPROX'
+'$NEXTCLOUD_REVPROX',
+'127.0.0.1',
+'::1',
 ),
 );
 EOF
