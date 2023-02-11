@@ -14,6 +14,8 @@ MRX_PKE=$(random_password)
 ELE_DBNAME="synapse_db"
 ELE_DBUSER="synapse_user"
 ELE_DBPASS=$(random_password)
+ELE_PATH=/var/www/element-web
+WEBROOT=/var/www
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq nginx postgresql python3-psycopg2
 
@@ -67,7 +69,7 @@ server {
     ssl_certificate_key /etc/nginx/ssl/matrix.key;
 
     # If you don't wanna serve a site, comment this out
-    root /var/www/$MATRIX_FQDN;
+    root $ELE_PATH;
     index index.html index.htm;
 
     location / {
@@ -102,7 +104,7 @@ server {
     ssl_certificate_key /etc/nginx/ssl/matrix.key;
 
     # If you don't wanna serve a site, comment this out
-    root /var/www/$MATRIX_ELEMENT_FQDN/element;
+    root $ELE_PATH;
     index index.html index.htm;
 } 
 
@@ -113,21 +115,23 @@ ln -s /etc/nginx/sites-available/$MATRIX_ELEMENT_FQDN /etc/nginx/sites-enabled/$
 
 systemctl restart nginx
 
-mkdir /var/www/$MATRIX_ELEMENT_FQDN
-cd /var/www/$MATRIX_ELEMENT_FQDN
-wget https://packages.riot.im/element-release-key.asc
+cd /var/www
+
+wget -O element-release-key.asc https://packages.riot.im/element-release-key.asc
 gpg --import element-release-key.asc
 
-wget https://github.com/vector-im/element-web/releases/download/$MATRIX_ELEMENT_VERSION/element-$MATRIX_ELEMENT_VERSION.tar.gz
-wget https://github.com/vector-im/element-web/releases/download/$MATRIX_ELEMENT_VERSION/element-$MATRIX_ELEMENT_VERSION.tar.gz.asc
+MATRIX_ELEMENT_VERSION=$(curl -s https://api.github.com/repos/vector-im/element-web/releases/latest | grep tag_name | cut -d'"' -f4)
+
+wget -O element-$MATRIX_ELEMENT_VERSION.tar.gz https://github.com/vector-im/element-web/releases/download/$MATRIX_ELEMENT_VERSION/element-$MATRIX_ELEMENT_VERSION.tar.gz
+wget -O element-$MATRIX_ELEMENT_VERSION.tar.gz.asc https://github.com/vector-im/element-web/releases/download/$MATRIX_ELEMENT_VERSION/element-$MATRIX_ELEMENT_VERSION.tar.gz.asc
 gpg --verify element-$MATRIX_ELEMENT_VERSION.tar.gz.asc
 
 tar -xzvf element-$MATRIX_ELEMENT_VERSION.tar.gz
-ln -s element-$MATRIX_ELEMENT_VERSION element
-chown www-data:www-data -R element
-cp ./element/config.sample.json ./element/config.json
-sed -i "s|https://matrix-client.matrix.org|https://$MATRIX_FQDN|" ./element/config.json
-sed -i "s|\"server_name\": \"matrix.org\"|\"server_name\": \"$MATRIX_FQDN\"|" ./element/config.json
+mv element-$MATRIX_ELEMENT_VERSION $ELE_PATH
+chown www-data:www-data -R $ELE_PATH
+cp $ELE_PATH/config.sample.json $ELE_PATH/config.json
+sed -i "s|https://matrix-client.matrix.org|https://$MATRIX_FQDN|" $ELE_PATH/config.json
+sed -i "s|\"server_name\": \"matrix.org\"|\"server_name\": \"$MATRIX_FQDN\"|" $ELE_PATH/config.json
 
 su postgres <<EOF
 psql -c "CREATE USER $ELE_DBUSER WITH PASSWORD '$ELE_DBPASS';"
@@ -145,4 +149,8 @@ sed -i "s|database: /var/lib/matrix-synapse/homeserver.db|database: $ELE_DBNAME\
 
 systemctl restart matrix-synapse
 
-register_new_matrix_user -a -u $MATRIX_ADMIN_USER -p '$MATRIX_ADMIN_PASSWORD' -c /etc/matrix-synapse/homeserver.yaml http://127.0.0.1:8008
+rm /var/www/element-release-key.asc /var/www/element-$MATRIX_ELEMENT_VERSION.tar.gz /var/www/element-$MATRIX_ELEMENT_VERSION.tar.gz.asc
+
+register_new_matrix_user -a -u $MATRIX_ADMIN_USER -p \'$MATRIX_ADMIN_PASSWORD\' -c /etc/matrix-synapse/homeserver.yaml http://127.0.0.1:8008
+
+echo -e "Your matrix installation is now complete. Please login into your element:\nLogin:\t\t$MATRIX_ADMIN_USER\nPassword:\t$MATRIX_ADMIN_PASSWORD\n\n"
