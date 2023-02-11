@@ -173,9 +173,9 @@ pct exec $LXC_NBR -- su - root -c "bash $dbg /root/lxc-base.sh"
 echo "Install '$service'!"
 pct exec $LXC_NBR -- su - root -c "bash $dbg /root/install-service.sh"
 
+pct shutdown $LXC_NBR
 if [[ $service == "zmb-ad" ]]; then
-  pct stop $LXC_NBR
   ## set nameserver, ${LXC_IP%/*} extracts the ip address from cidr format
   pct set $LXC_NBR -nameserver ${LXC_IP%/*}
-  pct start $LXC_NBR
 fi
+pct start $LXC_NBR
