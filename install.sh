@@ -177,5 +177,7 @@ pct shutdown $LXC_NBR
 if [[ $service == "zmb-ad" ]]; then
   ## set nameserver, ${LXC_IP%/*} extracts the ip address from cidr format
   pct set $LXC_NBR -nameserver ${LXC_IP%/*}
+elif [[ $service == "zmb-ad-join" ]]; then
+  pct set $LXC_NBR -nameserver "${LXC_IP%/*} $LXC_DNS"
 fi
 pct start $LXC_NBR
