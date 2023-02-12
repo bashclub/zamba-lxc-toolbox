@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# Update nextcloud
+# place in /etc/cron.daily and make executable with chmod +x  /etc/cron.daily/nextcloud-update
+user=www-data
+phpversion=php8.0
+path=/var/www/nextcloud
+
+alias ncc="sudo -u $user $phpversion $path/occ"
+alias updater="sudo -u $user $phpversion $path/updater/updater.phar"
+
+updater --no-backup --no-interaction
+
+subcommands=("db:add-missing-primary-keys" "db:add-missing-indices" "db:add-missing-columns" "db:convert-filecache-bigint" "files:scan-app-data" "--quiet --all app:update" "upgrade")
+for cmd in ${subcommands[@]}; do
+  ncc -n $cmd
+done
