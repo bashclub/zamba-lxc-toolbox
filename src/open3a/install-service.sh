@@ -79,4 +79,6 @@ EOF
 systemctl enable --now php7.4-fpm
 systemctl restart php7.4-fpm nginx
 
+LXC_IP=$(ip address show dev eth0 | grep "inet " | cut -d ' ' -f6)
+
 echo -e "Your open3a installation is now complete. Please continue with setup in your Browser:\nURL:\t\thttp://$(echo $LXC_IP | cut -d'/' -f1)\nLogin:\t\tAdmin\nPassword:\tAdmin\n\nMysql-Settings:\nServer:\t\tlocalhost\nUser:\t\topen3a\nPassword:\t$MYSQL_PASSWORD\nDatabase:\topen3a"
