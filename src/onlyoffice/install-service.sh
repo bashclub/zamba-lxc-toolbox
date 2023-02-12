@@ -1,7 +1,15 @@
+#!/bin/bash
+
+# Authors:
+# (C) 2021 Idea an concept by Christian Zengel <christian@sysops.de>
+# (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
+# (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
+
+source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-ONLYOFFICE_DB_PASS=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+ONLYOFFICE_DB_PASS=$(random_password)
 
 apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys CB2DE8E5
 echo "deb https://download.onlyoffice.com/repo/debian squeeze main" > /etc/apt/sources.list.d/onlyoffice.list
@@ -36,8 +44,33 @@ openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/only
 
 rm /etc/nginx/conf.d/ds.conf
 cp /etc/onlyoffice/documentserver/nginx/ds-ssl.conf.tmpl /etc/onlyoffice/documentserver/nginx/ds-ssl.conf
+
+sed -i "s|ssl_certificate {{SSL_CERTIFICATE_PATH}}|ssl_certificate /etc/nginx/ssl/onlyoffice.crt|" /etc/onlyoffice/documentserver/nginx/ds-ssl.conf
+sed -i "s|ssl_certificate_key {{SSL_KEY_PATH}}|ssl_certificate_key /etc/nginx/ssl/onlyoffice.key|" /etc/onlyoffice/documentserver/nginx/ds-ssl.conf
+
 ln -sf /etc/onlyoffice/documentserver/nginx/ds-ssl.conf /etc/nginx/conf.d/ds-ssl.conf
 
-sed -i "s|ssl_certificate {{SSL_CERTIFICATE_PATH}}|ssl_certificate /etc/nginx/ssl/onlyoffice.crt|" /etc/nginx/conf.d/ds-ssl.conf
-sed -i "s|ssl_certificate_key {{SSL_KEY_PATH}}|ssl_certificate_key /etc/nginx/ssl/onlyoffice.key|" /etc/nginx/conf.d/ds-ssl.conf
+cat > /usr/local/bin/ods-apt-pre-hook << DFOE
+#!/bin/bash
+rm /etc/nginx/conf.d/ds-ssl.conf
+systemctl stop nginx.service
+DFOE
+chmod +x /usr/local/bin/ods-apt-pre-hook
+
+cat > /usr/local/bin/ods-apt-post-hook << DFOE
+#!/bin/bash
+rm /etc/nginx/conf.d/ds.conf
+ln -sf /etc/onlyoffice/documentserver/nginx/ds-ssl.conf /etc/nginx/conf.d/ds-ssl.conf
+systemctl restart nginx
+DFOE
+chmod +x /usr/local/bin/ods-apt-post-hook
+
+cat << EOF > /etc/apt/apt.conf.d/80-ods-apt-pre-hook
+DPkg::Pre-Invoke {"/usr/local/bin/ods-apt-pre-hook";};
+EOF
+
+cat << EOF > /etc/apt/apt.conf.d/80-ods-apt-post-hook
+DPkg::Post-Invoke {"/usr/local/bin/ods-apt-post-hook";};
+EOF
+
 systemctl restart nginx

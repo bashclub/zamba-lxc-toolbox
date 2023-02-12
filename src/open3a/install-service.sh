@@ -5,12 +5,14 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
 webroot=/var/www/html
 
-MYSQL_PASSWORD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 20 | head -n 1)"
+LXC_RANDOMPWD=20
+MYSQL_PASSWORD="$(random_password)"
 
 apt update
 
@@ -55,7 +57,7 @@ CREATE DATABASE IF NOT EXISTS open3a;
 GRANT ALL PRIVILEGES ON open3a . * TO 'open3a'@'localhost';"
 
 cd $webroot
-wget https://www.open3a.de/download/open3A%203.5.zip -O $webroot/open3a.zip
+wget https://www.open3a.de/download/open3A%203.7.zip -O $webroot/open3a.zip
 unzip open3a.zip
 rm open3a.zip
 chmod 666 system/DBData/Installation.pfdb.php
@@ -66,7 +68,17 @@ chown -R www-data:www-data $webroot
 echo "sudo -u www-data /usr/bin/php $webroot/plugins/Installation/backup.php; for backup in \$(ls -r1 $webroot/system/Backup/*.gz | /bin/grep -v \$(date +%Y%m%d)); do /bin/rm \$backup;done" > /etc/cron.daily/open3a-backup
 chmod +x /etc/cron.daily/open3a-backup
 
+cat << EOF >/var/www/html/system/DBData/Installation.pfdb.php
+<?php echo "This is a database-file."; /*
+host&%%%&user&%%%&password&%%%&datab&%%%&httpHost
+varchar(40)&%%%&varchar(20)&%%%&varchar(20)&%%%&varchar(30)&%%%&varchar(40)                                                                                         
+localhost                               &%%%&open3a              &%%%&$MYSQL_PASSWORD&%%%&open3a                        &%%%&*                                       %%&&&
+*/ ?>
+EOF
+
 systemctl enable --now php7.4-fpm
 systemctl restart php7.4-fpm nginx
+
+LXC_IP=$(ip address show dev eth0 | grep "inet " | cut -d ' ' -f6)
 
 echo -e "Your open3a installation is now complete. Please continue with setup in your Browser:\nURL:\t\thttp://$(echo $LXC_IP | cut -d'/' -f1)\nLogin:\t\tAdmin\nPassword:\tAdmin\n\nMysql-Settings:\nServer:\t\tlocalhost\nUser:\t\topen3a\nPassword:\t$MYSQL_PASSWORD\nDatabase:\topen3a"

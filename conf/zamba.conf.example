@@ -28,10 +28,10 @@ LXC_SHAREFS_STORAGE="local-zfs"
 LXC_SHAREFS_MOUNTPOINT="tank"
 
 # Defines the amount of RAM in MB your LXC container is allowed to use (default: 1024)
-LXC_MEM="1024"
+LXC_MEM=1024
 
 # Defines the amount of swap space in MB your LXC container is allowed to use (default: 1024)
-LXC_SWAP="1024"
+LXC_SWAP=1024
 
 # Defines the hostname of your LXC container
 LXC_HOSTNAME="${service}"
@@ -57,7 +57,7 @@ LXC_DNS="192.168.100.254"
 LXC_BRIDGE="vmbr0"
 
 # Defines the vlan id of the LXC container's network interface, if the network adapter should be connected untagged, just leave the value empty.
-LXC_VLAN=
+LXC_VLAN=NONE
 
 # Defines the `root` password of your LXC container. Please use 'single quatation marks' to avoid unexpected behaviour.
 LXC_PWD='Start!123'
@@ -80,6 +80,15 @@ LXC_LOCALE="de_DE.UTF-8"
 
 # Set dark background for vim syntax highlighting (0 or 1)
 LXC_VIM_BG_DARK=1
+
+# Default random password length
+LXC_RANDOMPWD=32
+
+# Automatically add meta tags to lxc container
+LXC_AUTOTAG=1
+
+# Add meta tags to linux container
+LXC_TAGS="linux,debian,${service}"
 
 ############### Zamba-Server-Section ###############
 
@@ -126,8 +135,8 @@ NEXTCLOUD_FQDN="nextcloud.zmb.rocks"
 # The initial admin-user which will be configured
 NEXTCLOUD_ADMIN_USR="zmb-admin"
 
-# Build a strong password for this user. Username and password will shown at the end of the instalation. 
-NEXTCLOUD_ADMIN_PWD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
+# Build a strong password for this user. Username and password will shown at the end of the installation. 
+# NEXTCLOUD_ADMIN_PWD='very_secure_password'
 
 # Defines the data directory, which will be createt under LXC_SHAREFS_MOUNTPOINT
 NEXTCLOUD_DATA="nc_data"
@@ -147,3 +156,40 @@ CMK_ADMIN_PW='Start!123'
 # raw = completely free
 # free = limited version of the enterprise edition (25 hosts, 1 instance)
 CMK_EDITION=raw
+
+############### Kopano-Section ###############
+
+# Define the FQDN of your Nextcloud server
+KOPANO_FQDN="kopano.zmb.rocks"
+
+# Defines the trusted reverse proxy, which will enable the detection of source ip to fail2ban
+KOPANO_MAILGW="192.168.100.254"
+
+# Kopano test- or subscription-key offerd from 
+# https://kopano.com/downloads-demo/?demo=Kopano+Groupware&headline=Packages&target=Debian+10
+KOPANO_REPKEY="1234567890abcdefghijklmno"
+
+############### vaultwarden Section ###############
+# Hostname of your mailserver
+VW_SMTP_HOST=mail.bashclub.org
+
+# email address to send from
+VW_SMTP_FROM="vaultwarden@bashclub.org"
+
+# display name to send from
+VW_SMTP_FROM_NAME="Vaultwarden Password Manager"
+
+# port of your mailserver
+VW_SMTP_PORT=587
+
+# use ssl?
+VW_SMTP_SSL=true
+
+# use starttls?
+VW_SMTP_EXPLICIT_TLS=false
+
+# username of your mailbox
+VW_SMTP_USERNAME=vaultwarden@bashclub.org
+
+# password of your mailbox
+VW_SMTP_PASSWORD='<yourEmailPassword>'

@@ -40,13 +40,14 @@ LXC_SHAREFS_MOUNTPOINT="tank"
 ```
 ### LXC_MEM
 Defines the amount of RAM in MB your LXC container is allowed to use (default: 1024)
+If a service needs more minimum memory, LXC_MEM will be overwritten.
 ```bash
-LXC_MEM="1024"
+LXC_MEM=1024
 ```
 ### LXC_SWAP
 Defines the amount of swap space in MB your LXC container is allowed to use (default: 1024)
 ```bash
-LXC_SWAP="1024"
+LXC_SWAP=1024
 ```
 ### LXC_HOSTNAME
 Defines the hostname of your LXC container (Default: Name of installed Service)
@@ -220,7 +221,7 @@ NEXTCLOUD_ADMIN_USR="zmb-admin"
 ### NEXTCLOUD_ADMIN_PWD
 Build a strong password for this user. Username and password will shown at the end of the instalation. 
 ```bash
-NEXTCLOUD_ADMIN_PWD="$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)"
+NEXTCLOUD_ADMIN_PWD="$(random_password)"
 ```
 ### NEXTCLOUD_DATA
 Defines the data directory, which will be createt under LXC_SHAREFS_MOUNTPOINT

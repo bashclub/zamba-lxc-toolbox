@@ -5,6 +5,7 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
@@ -58,11 +59,14 @@ restrict 2.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery
 tinker panic 0
 EOF
 
+echo "deb http://ftp.de.debian.org/debian $(lsb_release -cs)-backports main contrib" > /etc/apt/sources.list.d/$(lsb_release -cs)-backports.list
+
 # update packages
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 # install required packages
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET $ADDITIONAL_PACKAGES acl attr ntpdate rpl net-tools dnsutils ntp samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET $ADDITIONAL_PACKAGES ntpdate rpl net-tools dnsutils ntp
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" -t $(lsb_release -cs)-backports acl attr samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils
 
 if [[ "$ADDITIONAL_PACKAGES" == *"nginx-full"* ]]; then
   cat << EOF > /etc/nginx/sites-available/default

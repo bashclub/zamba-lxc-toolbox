@@ -7,17 +7,28 @@ The package also provides LXC container installers for `mailpiler`, `matrix-syna
 ### Requirements
 Proxmox VE Server (>=6.30) with at least one configured ZFS Pool.
 ### Included services:
-- `checkmk` => Check_MK 2.0 Monitoring Server
+- `bookstack` => Bookstack wiki software [bookstackapp.com](https://www.bookstackapp.com/)
+- `checkmk` => Check_MK 2.0 Monitoring Server [checkmk.com](https://checkmk.com/)
 - `debian-priv` => Debian privileged container with basic toolset
 - `debian-unpriv` => Debian unprivileged container with basic toolset
+- `ecodms` => Fullfeatured DMS [ecodms.de](https://www.ecodms.de)
+- `gitea` => Lightweight and fast self-hosted git service [gitea.io](https://gitea.io)
+- `kimai` => Kimai Time-Tracking [kimai.org](https://www.kimai.org/)
+- `kopano-core` => Kopano Core Groupware [kopano.io](https://kopano.io/)
 - `mailpiler` => mailpiler mail archive [mailpiler.org](https://www.mailpiler.org/)
 - `matrix` => Matrix Synapse Homeserver [matrix.org](https://matrix.org/docs/projects/server/synapse) with Element Web [Element on github](https://github.com/vector-im/element-web)
 - `nextcloud` => Nextcloud Server [nextcloud.com](https://nextcloud.com/) with fail2ban und redis configuration
+- `omada` => TP-Link Omada SDN Controller [www.tp-link.com](https://www.tp-link.com/de/omada-sdn/)
 - `onlyoffice` => OnlyOffice [onlyoffice.com](https://onlyoffice.com)
 - `open3a` => Open3a web based accounting software [open3a.de](https://open3a.de)
 - `proxmox-pbs` => Proxmox Backup Server [proxmox.com](https://proxmox.com/en/proxmox-backup-server)
+- `unifi` => Unifi Controller [ui.com](https://ui.com)
 - `urbackup` => UrBackup Server [urbackup.org](https://urbackup.org)
+- `vaultwarden` => Bitwarder compatible Passwordmanager [github.com/dani-garcia/vaultwarden](https://github.com/dani-garcia/vaultwarden)
+- `zabbix` => Zabbix Monitoring server [zabbix.com](https://www.zabbix.com)
+- `zammad` => Zammad Helpdesk and Ticketing Software [zammad.org](https://zammad.org/)
 - `zmb-ad` => ZMB (Samba) Active Directory Domain Controller, DNS Backends `SAMBA_INTERNAL` and `BIND9_DLZ` are supported
+- `zmb-ad-join` => Additional Active Directory Domain Controller joining an existing Domain
 - `zmb-member` => ZMB (Samba) AD member with ZFS volume snapshot support (previous versions)
 - `zmb-standalone` => ZMB (Samba) standalone server with ZFS volume snapshot support (previous versions)
 ## Usage

@@ -5,6 +5,10 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+source /root/functions.sh
+
+NEXTCLOUD_ADMIN_PWD=$(random_password)
+
 source /root/zamba.conf
 source /root/constants-service.conf
 
@@ -21,7 +25,7 @@ echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" 
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends sudo tree locate screen zip ffmpeg ghostscript libfile-fcntllock-perl libfuse2 socat fail2ban ldap-utils cifs-utils redis-server imagemagick libmagickcore-6.q16-6-extra \
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends tree locate screen zip ffmpeg ghostscript libfile-fcntllock-perl libfuse2 socat fail2ban ldap-utils cifs-utils redis-server imagemagick libmagickcore-6.q16-6-extra \
 postgresql-13 nginx php$NEXTCLOUD_PHP_VERSION-{fpm,gd,mysql,pgsql,curl,xml,zip,intl,mbstring,bz2,ldap,apcu,bcmath,gmp,imagick,igbinary,redis,dev,smbclient,cli,common,opcache,readline}
 
 timedatectl set-timezone $LXC_TIMEZONE
@@ -398,7 +402,9 @@ array (
 'updater.release.channel' => 'stable',
 'trusted_proxies' => 
 array (
-'$NEXTCLOUD_REVPROX'
+'$NEXTCLOUD_REVPROX',
+'127.0.0.1',
+'::1',
 ),
 );
 EOF
