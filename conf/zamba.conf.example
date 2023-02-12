@@ -169,19 +169,27 @@ KOPANO_MAILGW="192.168.100.254"
 # https://kopano.com/downloads-demo/?demo=Kopano+Groupware&headline=Packages&target=Debian+10
 KOPANO_REPKEY="1234567890abcdefghijklmno"
 
-############### Tactical-RMM Section ###############
-
-rmmdomain=api.${LXC_DOMAIN}
-frontenddomain=${LXC_HOSTNAME}.${LXC_DOMAIN}
-meshdomain=mesh.${LXC_DOMAIN}
-adminemail=rmm@${LXC_DOMAIN}
-
 ############### vaultwarden Section ###############
+# Hostname of your mailserver
 VW_SMTP_HOST=mail.bashclub.org
+
+# email address to send from
 VW_SMTP_FROM="vaultwarden@bashclub.org"
+
+# display name to send from
 VW_SMTP_FROM_NAME="Vaultwarden Password Manager"
+
+# port of your mailserver
 VW_SMTP_PORT=587
+
+# use ssl?
 VW_SMTP_SSL=true
+
+# use starttls?
 VW_SMTP_EXPLICIT_TLS=false
+
+# username of your mailbox
 VW_SMTP_USERNAME=vaultwarden@bashclub.org
+
+# password of your mailbox
 VW_SMTP_PASSWORD='<yourEmailPassword>'
