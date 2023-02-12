@@ -147,10 +147,13 @@ sed -i "s|#enable_registration: false|enable_registration: true|" /etc/matrix-sy
 sed -i "s|name: sqlite3|name: psycopg2|" /etc/matrix-synapse/homeserver.yaml
 sed -i "s|database: /var/lib/matrix-synapse/homeserver.db|database: $ELE_DBNAME\n    user: $ELE_DBUSER\n    password: $ELE_DBPASS\n    host: 127.0.0.1\n    cp_min: 5\n    cp_max: 10|" /etc/matrix-synapse/homeserver.yaml
 
+reg_secret=$(random_password)
+echo -e "registration_shared_secret: \"$reg_secret\"" > /etc/matrix-synapse/conf.d/registration.yaml
+
 systemctl restart matrix-synapse
 
 rm /var/www/element-release-key.asc /var/www/element-$MATRIX_ELEMENT_VERSION.tar.gz /var/www/element-$MATRIX_ELEMENT_VERSION.tar.gz.asc
 
-register_new_matrix_user -a -u $MATRIX_ADMIN_USER -p \'$MATRIX_ADMIN_PASSWORD\' -c /etc/matrix-synapse/homeserver.yaml http://127.0.0.1:8008
+register_new_matrix_user -a -u $MATRIX_ADMIN_USER -p \'$MATRIX_ADMIN_PASSWORD\' -c /etc/matrix-synapse/conf.d/registration.yaml http://127.0.0.1:8008
 
 echo -e "Your matrix installation is now complete. Please login into your element:\nLogin:\t\t$MATRIX_ADMIN_USER\nPassword:\t$MATRIX_ADMIN_PASSWORD\n\n"
