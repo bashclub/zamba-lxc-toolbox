@@ -18,6 +18,7 @@ Proxmox VE Server (>=6.30) with at least one configured ZFS Pool.
 - `mailpiler` => mailpiler mail archive [mailpiler.org](https://www.mailpiler.org/)
 - `matrix` => Matrix Synapse Homeserver [matrix.org](https://matrix.org/docs/projects/server/synapse) with Element Web [Element on github](https://github.com/vector-im/element-web)
 - `nextcloud` => Nextcloud Server [nextcloud.com](https://nextcloud.com/) with fail2ban und redis configuration
+- `omada` => TP-Link Omada SDN Controller [www.tp-link.com](https://www.tp-link.com/de/omada-sdn/)
 - `onlyoffice` => OnlyOffice [onlyoffice.com](https://onlyoffice.com)
 - `open3a` => Open3a web based accounting software [open3a.de](https://open3a.de)
 - `proxmox-pbs` => Proxmox Backup Server [proxmox.com](https://proxmox.com/en/proxmox-backup-server)
