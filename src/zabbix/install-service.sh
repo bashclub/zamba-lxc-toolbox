@@ -18,7 +18,7 @@ echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" 
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql nginx php7.4-pgsql php7.4-fpm zabbix-server-pgsql zabbix-frontend-php zabbix-sql-scripts zabbix-agent sudo ssl-cert
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql nginx php7.4-pgsql php7.4-fpm zabbix-server-pgsql zabbix-frontend-php zabbix-nginx-conf zabbix-sql-scripts zabbix-agent ssl-cert
 
 unlink /etc/nginx/sites-enabled/default
 
@@ -122,8 +122,6 @@ server {
 }
 EOF
 
-ln -sf /etc/zabbix/nginx.conf /etc/nginx/sites-enabled/zabbix.conf
-
 cat << EOF > /etc/php/7.4/fpm/pool.d/zabbix-php-fpm.conf
 [zabbix]
 user = www-data
@@ -151,6 +149,63 @@ php_value[max_input_time] = 300
 php_value[max_input_vars] = 10000
 EOF
 
+cat << EOF > /etc/zabbix/web/zabbix.conf.php 
+<?php
+// Zabbix GUI configuration file.
+
+\$DB['TYPE']				= 'POSTGRESQL';
+\$DB['SERVER']			= 'localhost';
+\$DB['PORT']				= '0';
+\$DB['DATABASE']			= '${ZABBIX_DB_NAME}';
+\$DB['USER']				= '${ZABBIX_DB_USR}';
+\$DB['PASSWORD']			= '${ZABBIX_DB_PWD}';
+
+// Schema name. Used for PostgreSQL.
+\$DB['SCHEMA']			= '';
+
+// Used for TLS connection.
+\$DB['ENCRYPTION']		= true;
+\$DB['KEY_FILE']			= '';
+\$DB['CERT_FILE']		= '';
+\$DB['CA_FILE']			= '';
+\$DB['VERIFY_HOST']		= false;
+\$DB['CIPHER_LIST']		= '';
+
+// Vault configuration. Used if database credentials are stored in Vault secrets manager.
+\$DB['VAULT_URL']		= '';
+\$DB['VAULT_DB_PATH']	= '';
+\$DB['VAULT_TOKEN']		= '';
+
+// Use IEEE754 compatible value range for 64-bit Numeric (float) history values.
+// This option is enabled by default for new Zabbix installations.
+// For upgraded installations, please read database upgrade notes before enabling this option.
+\$DB['DOUBLE_IEEE754']	= true;
+
+// Uncomment and set to desired values to override Zabbix hostname/IP and port.
+// \$ZBX_SERVER			= '';
+// \$ZBX_SERVER_PORT		= '';
+
+\$ZBX_SERVER_NAME		= '${LXC_HOSTNAME}';
+
+\$IMAGE_FORMAT_DEFAULT	= IMAGE_FORMAT_PNG;
+
+// Uncomment this block only if you are using Elasticsearch.
+// Elasticsearch url (can be string if same url is used for all types).
+//\$HISTORY['url'] = [
+//	'uint' => 'http://localhost:9200',
+//	'text' => 'http://localhost:9200'
+//];
+// Value types stored in Elasticsearch.
+//\$HISTORY['types'] = ['uint', 'text'];
+
+// Used for SAML authentication.
+// Uncomment to override the default paths to SP private key, SP and IdP X.509 certificates, and to set extra settings.
+//\$SSO['SP_KEY']			= 'conf/certs/sp.key';
+//\$SSO['SP_CERT']			= 'conf/certs/sp.crt';
+//\$SSO['IDP_CERT']		= 'conf/certs/idp.crt';
+//\$SSO['SETTINGS']		= [];
+EOF
+
 timedatectl set-timezone ${LXC_TIMEZONE}
 
 systemctl enable --now postgresql
@@ -163,7 +218,7 @@ EOF
 
 sed -i "s/false/true/g" /usr/share/zabbix/include/locales.inc.php
 
-zcat /usr/share/doc/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql ${ZABBIX_DB_NAME}
+zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql ${ZABBIX_DB_NAME}
 
 echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_server.conf
 
