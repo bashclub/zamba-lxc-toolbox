@@ -255,3 +255,75 @@ checkmk edition (raw or free)
 ```bash
 CMK_EDITION=raw
 ```
+### Kopano-Section
+
+### KOPANO_FQDN
+Define the FQDN of your Nextcloud server
+```bash
+KOPANO_FQDN="kopano.zmb.rocks
+```
+
+
+### KOPANO_MAILGW=
+Define the host, to which mails will send.
+```bash
+KOPANO_MAILGW="192.168.100.254"
+```
+
+### KOPANO_REPKEY
+Kopano test- or subscription-key offerd from 
+https://kopano.com/downloads-demo/?demo=Kopano+Groupware&headline=Packages&target=Debian+11
+```bash
+KOPANO_REPKEY="1234567890abcdefghijklmno"
+```
+
+### vaultwarden Section
+
+### VW_SMTP_HOST
+Hostname of your mailserver
+```bash
+VW_SMTP_HOST=mail.bashclub.org
+```
+
+### VW_SMTP_FROM
+email address to send from
+```bash
+VW_SMTP_FROM="vaultwarden@bashclub.org"
+```
+
+### VW_SMTP_FROM_NAME
+display name to send from
+```bash
+VW_SMTP_FROM_NAME="Vaultwarden Password Manager"
+```
+
+### VW_SMTP_PORT
+Smtp-port of your mailserver
+```bash
+VW_SMTP_PORT=587
+```
+
+### VW_SMTP_SSL
+Use ssl true/false
+```bash
+VW_SMTP_SSL=true
+```
+
+### VW_SMTP_EXPLICIT_TLS
+Use starttls true/false
+```bash
+VW_SMTP_EXPLICIT_TLS=false
+```
+
+### VW_SMTP_USERNAME
+Username of your mailbox
+```bash
+VW_SMTP_USERNAME=vaultwarden@bashclub.org
+```
+
+### VW_SMTP_PASSWORD
+Password of your mailbox
+```bash
+VW_SMTP_PASSWORD='<yourEmailPassword>'
+```
+
