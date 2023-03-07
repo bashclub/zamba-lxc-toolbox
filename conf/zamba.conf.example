@@ -125,7 +125,7 @@ MATRIX_ELEMENT_FQDN="element.zmb.rocks"
 MATRIX_ADMIN_USER="admin"
 
 # Define the admin password
-MATRIX_ADMIN_PASSWORD="Start!123"
+MATRIX_ADMIN_PASSWORD='Start!123'
 
 ############### Nextcloud-Section ###############
 
