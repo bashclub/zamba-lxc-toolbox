@@ -64,3 +64,11 @@ You can also view possible parameters with `install.sh -h`
 After container creation, you will be prompted to select the service to install and depending on the service there may be some more questions during installation.
 
 Once the script has finished, the container is installed and running and you can continue with the service specific configuration.
+
+# Authors
+
+### Markus Helmke
+[<img src="https://storage.ko-fi.com/cdn/brandasset/kofi_s_tag_dark.png" rel="Support me on Ko-Fi">](https://ko-fi.com/nettwarker)
+
+### Thorsten Spille
+[<img src="https://storage.ko-fi.com/cdn/brandasset/kofi_s_tag_dark.png" rel="Support me on Ko-Fi">](https://ko-fi.com/thorakel)
