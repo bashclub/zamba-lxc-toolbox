@@ -185,7 +185,7 @@ add_header X-Content-Type-Options               "nosniff"       always;
 add_header X-Download-Options                   "noopen"        always;
 add_header X-Frame-Options                      "SAMEORIGIN"    always;
 add_header X-Permitted-Cross-Domain-Policies    "none"          always;
-add_header X-Robots-Tag                         "none"          always;
+add_header X-Robots-Tag                         "noindex, nofollow"          always;
 add_header X-XSS-Protection                     "1; mode=block" always;
 fastcgi_hide_header X-Powered-By;
 fastcgi_read_timeout 3600;
