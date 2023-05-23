@@ -150,13 +150,13 @@ APP_SECRET=$(random_password)
 CORS_ALLOW_ORIGIN=^https?://localhost(:[0-9]+)?$
 EOF
 
-chown -R www-data:www-data .
-chmod -R g+r .
-chmod -R g+rw var/
-
 bin/console kimai:install -n
 
 bin/console kimai:user:create admin admin@$LXC_DOMAIN ROLE_SUPER_ADMIN $LXC_PWD
+
+chown -R www-data:www-data .
+chmod -R g+r .
+chmod -R g+rw var/
 
 systemctl daemon-reload
 systemctl enable --now php${PHP_VERSION}-fpm nginx
