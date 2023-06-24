@@ -16,9 +16,9 @@ webroot=/var/www/bookstack/public
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq zip unzip nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd php-tokenizer php-xml php-dompdf php-curl php-ldap php-tidy php-zip redis-server
-wget -O /opt/wkhtmltox_0.12.6-1.buster_amd64.deb https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.buster_amd64.deb
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq /opt/wkhtmltox_0.12.6-1.buster_amd64.deb
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends zip unzip nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd php-tokenizer php-xml php-dompdf php-curl php-ldap php-tidy php-zip redis-server
+curl -s https://api.github.com/repos/wkhtmltopdf/packaging/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep 'bookworm_amd64.deb$' | wget -O /opt/wkhtmltox.deb -i -
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends /opt/wkhtmltox.deb
 
 mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/open3a.key -out /etc/nginx/ssl/open3a.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
@@ -106,9 +106,9 @@ CREATE DATABASE IF NOT EXISTS bookstack;
 GRANT ALL PRIVILEGES ON bookstack.* TO 'bookstack'@'localhost' IDENTIFIED BY '$BOOKSTACK_DB_PWD';
 FLUSH PRIVILEGES;"
 
-sed -i "s/post_max_size = 8M/post_max_size = 100M/g" /etc/php/7.4/fpm/php.ini
-sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 100M/g" /etc/php/7.4/fpm/php.ini
-sed -i "s/memory_limit = 128M/memory_limit = 512M/g" /etc/php/7.4/fpm/php.ini
+sed -i "s/post_max_size = 8M/post_max_size = 100M/g" /etc/php/${PHP_VERSION:0:3}/fpm/php.ini
+sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 100M/g" /etc/php/${PHP_VERSION:0:3}/fpm/php.ini
+sed -i "s/memory_limit = 128M/memory_limit = 512M/g" /etc/php/${PHP_VERSION:0:3}/fpm/php.ini
 
 EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')"
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
@@ -178,8 +178,8 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-systemctl enable --now bookstack-queue php7.4-fpm nginx redis-server
-systemctl restart php7.4-fpm nginx bookstack-queue redis-server
+systemctl enable --now bookstack-queue php${PHP_VERSION:0:3}-fpm nginx redis-server
+systemctl restart php${PHP_VERSION:0:3}-fpm nginx bookstack-queue redis-server
 
 LXC_IP=$(ip address show dev eth0 | grep "inet " | cut -d ' ' -f6)
 
