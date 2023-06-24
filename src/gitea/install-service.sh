@@ -9,11 +9,11 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-wget -q -O - https://nginx.org/keys/nginx_signing.key | apt-key add -
-echo "deb http://nginx.org/packages/debian $(lsb_release -cs) nginx" | tee /etc/apt/sources.list.d/nginx.list
+#wget -q -O - https://nginx.org/keys/nginx_signing.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/nginx.key
+#echo "deb http://nginx.org/packages/debian $(lsb_release -cs) nginx" | tee /etc/apt/sources.list.d/nginx.list
 
-wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
+#wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc  | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/postgresql.key
+#echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
 
 apt update
 
@@ -119,6 +119,10 @@ EOF
 chown -R root:git /etc/gitea
 chmod 770 /etc/gitea
 chmod 770 /etc/gitea/app.ini
+
+if [ -f /etc/nginx/sites-enabled/default ]; then
+  unlink /etc/nginx/sites-enabled/default
+fi
 
 cat << EOF > /etc/nginx/conf.d/default.conf
 server {
