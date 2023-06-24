@@ -27,7 +27,7 @@ systemctl enable matrix-synapse
 
 ss -tulpen
 
-mkdir /etc/nginx/ssl
+mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/matrix.key -out /etc/nginx/ssl/matrix.crt -subj "/CN=$MATRIX_FQDN" -addext "subjectAltName=DNS:$MATRIX_FQDN"
 
 cat > /etc/nginx/sites-available/$MATRIX_FQDN <<EOF

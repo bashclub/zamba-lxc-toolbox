@@ -18,7 +18,7 @@ apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq unzip sudo nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd
 
-mkdir /etc/nginx/ssl
+mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/open3a.key -out /etc/nginx/ssl/open3a.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
 
 cat << EOF > /etc/nginx/sites-available/default

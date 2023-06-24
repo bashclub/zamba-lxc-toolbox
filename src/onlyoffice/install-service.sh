@@ -45,7 +45,7 @@ ONLYOFFICE_DB_USER=$ONLYOFFICE_DB_USER
 ONLYOFFICE_DB_PASS=$ONLYOFFICE_DB_PASS
 EOF
 
-mkdir /etc/nginx/ssl
+mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/onlyoffice.key -out /etc/nginx/ssl/onlyoffice.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
 
 rm /etc/nginx/conf.d/ds.conf

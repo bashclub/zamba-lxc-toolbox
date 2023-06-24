@@ -21,7 +21,7 @@ apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq zip unzip sudo nginx-full mariadb-server mariadb-client php8.1 php8.1-intl php8.1-cli php8.1-fpm php8.1-mysql php8.1-xml php8.1-mbstring php8.1-gd php8.1-tokenizer php8.1-zip php8.1-opcache php8.1-curl
 
-mkdir /etc/nginx/ssl
+mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/kimai.key -out /etc/nginx/ssl/kimai.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
 
 PHP_VERSION=$(php -v | head -1 | cut -d ' ' -f2)

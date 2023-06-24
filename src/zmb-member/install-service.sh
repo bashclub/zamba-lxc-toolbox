@@ -98,7 +98,7 @@ systemctl restart winbind nmbd
 wbinfo -u
 wbinfo -g
 
-mkdir /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
 # originally 'domain users' was set, added variable for domain admins group, samba wiki recommends separate group e.g. 'unix admins'
 chown "${ZMB_ADMIN_USER@L}" /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE

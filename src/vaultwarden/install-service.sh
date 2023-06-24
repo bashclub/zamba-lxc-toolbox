@@ -18,7 +18,7 @@ systemctl enable --now postgresql
 wget https://raw.githubusercontent.com/jjlin/docker-image-extract/main/docker-image-extract
 chmod +x docker-image-extract
 ./docker-image-extract vaultwarden/server:alpine
-mkdir /opt/vaultwarden
+mkdir -p /opt/vaultwarden
 mkdir -p /var/lib/vaultwarden/data
 useradd vaultwarden
 chown -R vaultwarden:vaultwarden /var/lib/vaultwarden
