@@ -155,7 +155,7 @@ PS3="Select the Server-Function: "
 pct start $LXC_NBR;
 sleep 5;
 # Set the root ssh key
-pct exec $LXC_NBR -- mkdir /root/.ssh
+pct exec $LXC_NBR -- mkdir -p /root/.ssh
 pct push $LXC_NBR $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
 pct push $LXC_NBR "$config" /root/zamba.conf
 pct exec $LXC_NBR -- sed -i "s,\${service},${service}," /root/zamba.conf
