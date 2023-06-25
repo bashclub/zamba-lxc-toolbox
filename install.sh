@@ -131,7 +131,9 @@ fi
 echo "Will now create LXC Container $LXC_NBR!";
 
 # Create the container
+set +u
 pct create $LXC_NBR $TAGS --password $LXC_PWD -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
+set -u
 sleep 2;
 
 # Check vlan configuration
