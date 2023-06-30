@@ -148,7 +148,7 @@ fi
 sleep 2
 
 if [ $LXC_MP -gt 0 ]; then
-  pct set $LXC_NBR -mp0 $LXC_SHAREFS_STORAGE:$LXC_SHAREFS_SIZE,mp=/$LXC_SHAREFS_MOUNTPOINT
+  pct set $LXC_NBR -mp0 $LXC_SHAREFS_STORAGE:$LXC_SHAREFS_SIZE,backup=1,mp=/$LXC_SHAREFS_MOUNTPOINT
 fi
 sleep 2;
 
