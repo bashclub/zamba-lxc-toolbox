@@ -9,10 +9,11 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-apt-key adv --fetch https://dl.packager.io/srv/zammad/zammad/key
-apt-key adv --fetch https://artifacts.elastic.co/GPG-KEY-elasticsearch
-wget -O /etc/apt/sources.list.d/zammad.list https://dl.packager.io/srv/zammad/zammad/stable/installer/debian/11.repo
-echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" > /etc/apt/sources.list.d/elastic-7.x.list
+curl -fsSL https://dl.packager.io/srv/zammad/zammad/key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/pkgr-zammad.gpg > /dev/null
+curl -fsSL https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor | tee /etc/apt/trusted.gpg.d/elasticsearch.gpg> /dev/null
+echo "deb [signed-by=/etc/apt/trusted.gpg.d/elasticsearch.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main"| tee -a /etc/apt/sources.list.d/elastic-7.x.list > /dev/null
+echo "deb [signed-by=/etc/apt/trusted.gpg.d/pkgr-zammad.gpg] https://dl.packager.io/srv/deb/zammad/zammad/stable/debian 12 main"| tee /etc/apt/sources.list.d/zammad.list > /dev/null
+
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install ssl-cert nginx-full postgresql zammad
@@ -59,7 +60,7 @@ upstream zammad-websocket {
 server {
     listen 80;
     listen [::]:80;
-    server_name _;
+    server_name ${LXC_HOSTNAME}.${LXC_DOMAIN};
     
     server_tokens off;
 
@@ -76,7 +77,7 @@ server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
 
-    server_name _;
+    server_name ${LXC_HOSTNAME}.${LXC_DOMAIN};
     
     server_tokens off;
     ssl_certificate /etc/ssl/certs/ssl-cert-snakeoil.pem;
@@ -158,11 +159,12 @@ ln -sf /etc/nginx/sites-available/zammad.conf /etc/nginx/sites-enabled/
 
 openssl dhparam -out /etc/nginx/dhparam.pem 4096
 
+/usr/share/elasticsearch/bin/elasticsearch-plugin install -b ingest-attachment
+
 systemctl enable elasticsearch.service
 systemctl restart nginx elasticsearch.service
 
 # Elasticsearch conntact to Zammad
-/usr/share/elasticsearch/bin/elasticsearch-plugin install -b ingest-attachment
 zammad run rails r "Setting.set('es_url', 'http://localhost:9200')"
 zammad run rails r "Setting.set('es_index', Socket.gethostname.downcase + '_zammad')"
 zammad run rails r "User.find_by(email: 'nicole.braun@zammad.org').destroy"
