@@ -10,7 +10,7 @@ source /root/zamba.conf
 source /root/constants-service.conf
 
 apt-key adv --fetch https://repo.zabbix.com/zabbix-official-repo.key
-echo "deb https://repo.zabbix.com/zabbix/6.0/debian/ bullseye main contrib non-free" > /etc/apt/sources.list.d/zabbix-6.0.list
+echo "deb https://repo.zabbix.com/zabbix/6.0/debian/ $(lsb_release -cs) main contrib non-free" > /etc/apt/sources.list.d/zabbix-6.0.list
 
 wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
@@ -18,7 +18,7 @@ echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" 
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql nginx php7.4-pgsql php7.4-fpm zabbix-server-pgsql zabbix-frontend-php zabbix-nginx-conf zabbix-sql-scripts zabbix-agent ssl-cert
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql nginx php8.2-pgsql php8.2-fpm zabbix-server-pgsql zabbix-frontend-php zabbix-nginx-conf zabbix-sql-scripts zabbix-agent ssl-cert
 
 unlink /etc/nginx/sites-enabled/default
 
@@ -224,6 +224,6 @@ echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_server.conf
 
 openssl dhparam -out /etc/nginx/dhparam.pem 4096
 
-systemctl enable --now zabbix-server zabbix-agent nginx php7.4-fpm 
+systemctl enable --now zabbix-server zabbix-agent nginx php8.2-fpm 
 
-systemctl restart zabbix-server zabbix-agent nginx php7.4-fpm 
+systemctl restart zabbix-server zabbix-agent nginx php8.2-fpm 
