@@ -9,34 +9,12 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-# add wsdd package repo
-apt-key adv --fetch-keys https://pkg.ltec.ch/public/conf/ltec-ag.gpg.key
 apt-key adv --fetch-keys https://repo.45drives.com/key/gpg.asc
 echo "deb https://repo.45drives.com/debian focal main" > /etc/apt/sources.list.d/45drives.list
-echo "deb https://pkg.ltec.ch/public/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/wsdd.list
-echo "deb http://ftp.de.debian.org/debian $(lsb_release -cs)-backports main contrib" > /etc/apt/sources.list.d/$(lsb_release -cs)-backports.list
-
-cat << EOF > /etc/apt/preferences.d/samba
-Package: samba*
-Pin: release a=$(lsb_release -cs)-backports
-Pin-Priority: 900
-EOF
-
-cat << EOF > /etc/apt/preferences.d/winbind
-Package: winbind*
-Pin: release a=$(lsb_release -cs)-backports
-Pin-Priority: 900
-EOF
-
-cat << EOF > /etc/apt/preferences.d/cockpit
-Package: cockpit*
-Pin: release a=$(lsb_release -cs)-backports
-Pin-Priority: 900
-EOF
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" -t $(lsb_release -cs)-backports acl samba samba-common samba-common-bin samba-dsdb-modules samba-vfs-modules samba-libs libwbclient0 winbind wsdd
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba samba-common samba-common-bin samba-dsdb-modules samba-vfs-modules samba-libs libwbclient0 winbind wsdd
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" --no-install-recommends cockpit cockpit-identities cockpit-file-sharing cockpit-navigator
 
 USER=$(echo "$ZMB_ADMIN_USER" | awk '{print tolower($0)}')
