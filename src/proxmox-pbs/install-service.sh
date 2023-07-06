@@ -15,7 +15,7 @@ cat << EOF > /etc/apt/sources.list.d/pbs-no-subscription.list
 deb http://download.proxmox.com/debian/pbs $(lsb_release -cs) pbs-no-subscription
 EOF
 
-wget https://enterprise.proxmox.com/debian/proxmox-release-bullseye.gpg -O /etc/apt/trusted.gpg.d/proxmox-release-bullseye.gpg
+wget -q -O - https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/proxmox-release-bookworm.gpg >/dev/null
 
 apt update && apt upgrade -y
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" proxmox-backup-server
