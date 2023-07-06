@@ -15,8 +15,6 @@ for f in ${OPTIONAL_FEATURES[@]}; do
   if [[ "$f" == "wsdd" ]]; then
       ADDITIONAL_PACKAGES="wsdd $ADDITIONAL_PACKAGES"
       ADDITIONAL_SERVICES="wsdd $ADDITIONAL_SERVICES"
-      apt-key adv --fetch-keys https://pkg.ltec.ch/public/conf/ltec-ag.gpg.key
-      echo "deb https://pkg.ltec.ch/public/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/wsdd.list
   elif [[ "$f" == "splitdns" ]]; then
       ADDITIONAL_PACKAGES="nginx-full $ADDITIONAL_PACKAGES"
       ADDITIONAL_SERVICES="nginx $ADDITIONAL_SERVICES"
@@ -53,14 +51,12 @@ restrict 2.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery
 tinker panic 0
 EOF
 
-echo "deb http://ftp.de.debian.org/debian $(lsb_release -cs)-backports main contrib" > /etc/apt/sources.list.d/$(lsb_release -cs)-backports.list
-
 # update packages
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 # install required packages
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET $ADDITIONAL_PACKAGES ntpdate rpl net-tools dnsutils ntp
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" -t $(lsb_release -cs)-backports acl attr samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils rsync cifs-utils
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl attr samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils rsync cifs-utils
 if [[ "$ADDITIONAL_PACKAGES" == *"nginx-full"* ]]; then
 	  cat << EOF > /etc/nginx/sites-available/default
 server {
@@ -127,7 +123,7 @@ systemctl disable --now smbd nmbd winbind systemd-resolved
 rm -f /etc/samba/smb.conf
 
 echo -e "$ZMB_ADMIN_PASS" | kinit -V $ZMB_ADMIN_USER
-samba-tool domain join $ZMB_REALM DC -k yes --backend-store=mdb
+samba-tool domain join $ZMB_REALM DC --use-kerberos=required --backend-store=mdb
 
 mkdir -p /mnt/sysvol
 
