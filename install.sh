@@ -148,7 +148,11 @@ fi
 sleep 2
 
 if [ $LXC_MP -gt 0 ]; then
-  pct set $LXC_NBR -mp0 $LXC_SHAREFS_STORAGE:$LXC_SHAREFS_SIZE,backup=1,mp=/$LXC_SHAREFS_MOUNTPOINT
+  if [ -z "$LXC_SHAREFS_BINDMOUNT" ]; then
+    pct set $LXC_NBR -mp0 $LXC_SHAREFS_STORAGE:$LXC_SHAREFS_SIZE,backup=1,mp=/$LXC_SHAREFS_MOUNTPOINT
+  else
+    pct set $LXC_NBR -mp0 volume=$LXC_SHAREFS_BINDMOUNT,mp=$LXC_SHAREFS_MOUNTPOINT
+  fi
 fi
 sleep 2;
 
