@@ -217,3 +217,6 @@ openssl dhparam -out /etc/nginx/dhparam.pem 4096
 systemctl daemon-reload
 systemctl enable --now semaphore.service
 systemctl restart nginx.service
+
+
+echo -e "\n######################################################################\n\n    Please note this user and password for the semaphore login:\n        '$SEMAPHORE_ADMIN' / '$SEMAPHORE_ADMIN_PASSWORD'\n                Enjoy your semaphore intallation.\n\n######################################################################"
