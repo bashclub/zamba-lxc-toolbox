@@ -5,5 +5,5 @@ LXC_RANDOMPWD=32
 
 random_password() {
     set +o pipefail
-    C_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom 2>/dev/null | head -c${LXC_RANDOMPWD}
+    LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom 2>/dev/null | head -c${LXC_RANDOMPWD}
 }
