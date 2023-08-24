@@ -193,3 +193,10 @@ VW_SMTP_USERNAME=vaultwarden@bashclub.org
 
 # password of your mailbox
 VW_SMTP_PASSWORD='<yourEmailPassword>'
+
+############### ansible-semaphore Section ###############
+
+SEMAPHORE_ADMIN=admin
+SEMAPHORE_ADMIN_DISPLAY_NAME="Semaphore Administrator"
+SEMAPHORE_ADMIN_EMAIL="admin@zmb.rocks"
+SEMAPHORE_ADMIN_PASSWORD=$(LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom 2>/dev/null | head -c32)
