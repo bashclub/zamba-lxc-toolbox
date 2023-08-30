@@ -199,4 +199,4 @@ VW_SMTP_PASSWORD='<yourEmailPassword>'
 SEMAPHORE_ADMIN=admin
 SEMAPHORE_ADMIN_DISPLAY_NAME="Semaphore Administrator"
 SEMAPHORE_ADMIN_EMAIL="admin@zmb.rocks"
-SEMAPHORE_ADMIN_PASSWORD=$(LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom 2>/dev/null | head -c32)
+SEMAPHORE_ADMIN_PASSWORD='Start123'
