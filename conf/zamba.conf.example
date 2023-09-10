@@ -170,6 +170,10 @@ KOPANO_MAILGW="192.168.100.254"
 KOPANO_REPKEY="1234567890abcdefghijklmno"
 
 ############### vaultwarden Section ###############
+
+# Enable/disable signups (true/false)
+VW_SIGNUPS_ALLOWED=false
+
 # Hostname of your mailserver
 VW_SMTP_HOST=mail.bashclub.org
 
