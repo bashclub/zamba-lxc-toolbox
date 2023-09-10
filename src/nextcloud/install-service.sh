@@ -90,7 +90,7 @@ sed -i "s/rights=\"none\" pattern=\"XPS\"/rights=\"read|write\" pattern=\"XPS\"/
 
 mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/ssl/private/nextcloud.key -out /etc/ssl/certs/nextcloud.crt -subj "/CN=$NEXTCLOUD_FQDN" -addext "subjectAltName=DNS:$NEXTCLOUD_FQDN"
-openssl dhparam -dsaparam -out /etc/ssl/certs/dhparam.pem 4096
+generate_dhparam
 
 mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
 

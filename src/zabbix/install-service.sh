@@ -222,7 +222,7 @@ zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psq
 
 echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_server.conf
 
-openssl dhparam -out /etc/nginx/dhparam.pem 4096
+generate_dhparam
 
 systemctl enable --now zabbix-server zabbix-agent nginx php8.2-fpm 
 

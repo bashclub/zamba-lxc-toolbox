@@ -212,7 +212,7 @@ echo "source <(semaphore completion bash)" >> /root/.bashrc
 semaphore user add --admin --login ${SEMAPHORE_ADMIN} --name ${SEMAPHORE_ADMIN_DISPLAY_NAME} --email ${SEMAPHORE_ADMIN_EMAIL} --password ${SEMAPHORE_ADMIN_PASSWORD} --config /etc/semaphore/config.json
 
 
-openssl dhparam -out /etc/nginx/dhparam.pem 4096
+generate_dhparam
 
 systemctl daemon-reload
 systemctl enable --now semaphore.service

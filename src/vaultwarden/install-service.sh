@@ -40,7 +40,7 @@ ORG_CREATION_USERS=admin@$LXC_DOMAIN
 # Use `openssl rand -base64 48` to generate
 ADMIN_TOKEN=$admin_token
 # Uncomment this once vaults restored
-SIGNUPS_ALLOWED=false
+SIGNUPS_ALLOWED=$VW_SIGNUPS_ALLOWED
 SMTP_HOST=$VW_SMTP_HOST
 SMTP_FROM=$VW_SMTP_FROM
 SMTP_FROM_NAME="$VW_SMTP_FROM_NAME"
@@ -154,7 +154,10 @@ server {
 }
 
 EOF
-openssl dhparam -out /etc/nginx/dhparam.pem 4096
+
+generate_dhparam
+
+unlink /etc/nginx/sites-enabled/default
 
 systemctl daemon-reload
 systemctl enable --now vaultwarden
