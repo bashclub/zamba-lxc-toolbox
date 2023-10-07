@@ -27,6 +27,9 @@ LXC_SHAREFS_STORAGE="local-zfs"
 # Defines the mountpoint of the filesystem shared by Zamba inside your LXC container (default: tank)
 LXC_SHAREFS_MOUNTPOINT="tank"
 
+# cpu core count (default: 0 = unlimited)
+LXC_THREADS=0
+
 # Defines the amount of RAM in MB your LXC container is allowed to use (default: 1024)
 LXC_MEM=1024
 

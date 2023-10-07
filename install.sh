@@ -130,9 +130,13 @@ else
 fi
 echo "Will now create LXC Container $LXC_NBR!";
 
+if [ $LXC_THREADS -gt 0 ]; then
+  LXC_CORES=--cores$LXC_THREADS
+fi
+
 # Create the container
 set +u
-pct create $LXC_NBR $TAGS --password $LXC_PWD -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
+pct create $LXC_NBR $TAGS $LXC_CORES --password $LXC_PWD -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
 set -u
 sleep 2;
 
