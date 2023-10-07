@@ -125,6 +125,10 @@ rm -f /etc/samba/smb.conf
 echo -e "$ZMB_ADMIN_PASS" | kinit -V $ZMB_ADMIN_USER
 samba-tool domain join $ZMB_REALM DC --use-kerberos=required --backend-store=mdb
 
+
+rm /etc/krb5.conf
+ln -sf /var/lib/samba/private/krb5.conf /etc/krb5.conf
+
 mkdir -p /mnt/sysvol
 
 cat << EOF > /root/.smbcredentials
@@ -138,10 +142,14 @@ echo "//$LXC_DNS/sysvol /mnt/sysvol cifs credentials=/root/.smbcredentials 0 0" 
 mount.cifs //$LXC_DNS/sysvol /mnt/sysvol -o credentials=/root/.smbcredentials
 
 cat > /etc/cron.d/sysvol-sync << EOF
-*/15 * * * * root /usr/bin/rsync -XAavz --delete-after /mnt/sysvol/ /var/lib/samba/sysvol
+*/15 * * * * root /usr/bin/rsync -XAavz --delete-after /mnt/sysvol/ /var/lib/samba/sysvol; if ! /usr/bin/samba-tool ntacl sysvolcheck > /dev/null 2>&1 ; then /usr/bin/samba-tool ntacl sysvolreset ; fi
 EOF
 
 /usr/bin/rsync -XAavz --delete-after /mnt/sysvol/ /var/lib/samba/sysvol
+
+if ! samba-tool ntacl sysvolcheck > /dev/null 2>&1 ; then
+  samba-tool ntacl sysvolreset
+fi
 
 ssh-keygen -q -f "$HOME/.ssh/id_rsa" -N "" -b 4096
 

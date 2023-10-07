@@ -131,7 +131,7 @@ rm -f /etc/krb5.conf
 # provision zamba domain
 samba-tool domain provision --use-rfc2307 --realm=$ZMB_REALM --domain=$ZMB_DOMAIN --adminpass=$ZMB_ADMIN_PASS --server-role=dc --backend-store=mdb --dns-backend=$ZMB_DNS_BACKEND
 
-cp /var/lib/samba/private/krb5.conf /etc/krb5.conf
+ln -sf /var/lib/samba/private/krb5.conf /etc/krb5.conf
 
 systemctl unmask samba-ad-dc
 systemctl enable samba-ad-dc
