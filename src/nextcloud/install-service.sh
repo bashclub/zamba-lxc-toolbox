@@ -160,7 +160,7 @@ ssl_trusted_certificate /etc/ssl/certs/nextcloud.crt;
 #ssl_certificate /etc/letsencrypt/ecc-certs/fullchain.pem;
 #ssl_certificate_key /etc/letsencrypt/ecc-certs/privkey.pem;
 #ssl_trusted_certificate /etc/letsencrypt/ecc-certs/chain.pem;
-ssl_dhparam /etc/ssl/certs/dhparam.pem;
+ssl_dhparam /etc/nginx/dhparam.pem;
 ssl_session_timeout 1d;
 ssl_session_cache shared:SSL:50m;
 ssl_session_tickets off;

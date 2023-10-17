@@ -187,7 +187,7 @@ server {
     ssl_prefer_server_ciphers on;
     #
     # ssl_dhparam require you to create a dhparam.pem, this takes a long time
-    ssl_dhparam /etc/ssl/certs/dhparam.pem;
+    ssl_dhparam /etc/nginx/dhparam.pem;
     #
  
     # add headers
