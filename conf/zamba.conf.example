@@ -87,6 +87,9 @@ LXC_VIM_BG_DARK=1
 # Default random password length
 LXC_RANDOMPWD=32
 
+# Move lxc to specific ressource pool
+LXC_RESSOURCE_POOL=""
+
 # Automatically add meta tags to lxc container
 LXC_AUTOTAG=1
 
