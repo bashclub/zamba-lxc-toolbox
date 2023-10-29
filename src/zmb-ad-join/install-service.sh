@@ -180,7 +180,7 @@ prune () {
 }
 
 echo "\$(date) Starting samba-ad-dc online backup"
-if echo -e "${LXC_ADMIN_PASS}" | samba-tool domain backup online --targetdir=/${LXC_SHAREFS_MOUNTPOINT}/online --server=${LXC_HOSTNAME}.${LXC_DOMAIN} -UAdministrator ; then
+if echo -e '${ZMB_ADMIN_PASS}' | samba-tool domain backup online --targetdir=/${LXC_SHAREFS_MOUNTPOINT}/online --server=${LXC_HOSTNAME}.${LXC_DOMAIN} -UAdministrator ; then
   echo "\$(date) Finished samba-ad-dc online backup. Cleaning up old online backups..."
   prune online
 else
