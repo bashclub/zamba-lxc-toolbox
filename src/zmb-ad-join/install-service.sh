@@ -121,7 +121,7 @@ cat > /etc/krb5.conf <<EOF
 EOF
 
 # stop + disable samba services and remove default config
-systemctl disable --now smbd nmbd winbind systemd-resolved
+systemctl disable --now smbd nmbd winbind systemd-resolved > /dev/null 2>&1
 rm -f /etc/samba/smb.conf
 
 echo -e "$ZMB_ADMIN_PASS" | kinit -V $ZMB_ADMIN_USER
@@ -216,5 +216,3 @@ cat << EOF > /etc/logrotate.d/smb-backup
         create 644 root root
 }
 EOF
-
-smb-backup 7
