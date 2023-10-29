@@ -131,7 +131,7 @@ fi
 echo "Will now create LXC Container $LXC_NBR!";
 
 if [ $LXC_THREADS -gt 0 ]; then
-  LXC_CORES=--cores$LXC_THREADS
+  LXC_CORES=--cores\ $LXC_THREADS
 fi
 
 # Create the container
