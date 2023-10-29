@@ -10,7 +10,7 @@ source /root/zamba.conf
 source /root/constants-service.conf
 
 apt-key adv --fetch https://repo.zabbix.com/zabbix-official-repo.key
-echo "deb https://repo.zabbix.com/zabbix/6.0/debian/ $(lsb_release -cs) main contrib non-free" > /etc/apt/sources.list.d/zabbix-6.0.list
+echo "deb https://repo.zabbix.com/zabbix/6.5/debian/ $(lsb_release -cs) main contrib non-free" > /etc/apt/sources.list.d/zabbix-6.5.list
 
 wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
