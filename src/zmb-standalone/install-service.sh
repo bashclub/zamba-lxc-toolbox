@@ -12,10 +12,12 @@ source /root/constants-service.conf
 apt-key adv --fetch-keys https://repo.45drives.com/key/gpg.asc
 echo "deb https://repo.45drives.com/debian focal main" > /etc/apt/sources.list.d/45drives.list
 
+echo "deb http://ftp.halifax.rwth-aachen.de/debian/ bookworm-backports main contrib" >> /etc/apt/sources.list
+
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba samba-common samba-common-bin samba-dsdb-modules samba-vfs-modules samba-libs libwbclient0 winbind wsdd
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" --no-install-recommends cockpit cockpit-identities cockpit-file-sharing cockpit-navigator
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -t bookworm-backports -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba samba-common samba-common-bin samba-dsdb-modules samba-vfs-modules samba-libs libwbclient0 winbind wsdd
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -t bookworm-backports -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" --no-install-recommends cockpit cockpit-identities cockpit-file-sharing cockpit-navigator
 
 USER=$(echo "$ZMB_ADMIN_USER" | awk '{print tolower($0)}')
 useradd --comment "Zamba fileserver admin" --create-home --shell /bin/bash $USER
