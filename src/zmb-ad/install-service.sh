@@ -57,12 +57,14 @@ restrict 2.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery
 tinker panic 0
 EOF
 
+echo "deb http://ftp.halifax.rwth-aachen.de/debian/ bookworm-backports main contrib" >> /etc/apt/sources.list
+
 # update packages
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 # install required packages
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET $ADDITIONAL_PACKAGES ntpdate rpl net-tools dnsutils ntp
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl attr samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -t bookworn-backports -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl attr samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils
 
 if [[ "$ADDITIONAL_PACKAGES" == *"nginx-full"* ]]; then
   cat << EOF > /etc/nginx/sites-available/default
@@ -121,8 +123,6 @@ EOF
   mkdir -p /var/lib/samba/bind-dns/dns
 fi
 
-
-
 # stop + disable samba services and remove default config
 systemctl disable --now smbd nmbd winbind systemd-resolved
 rm -f /etc/samba/smb.conf
@@ -133,8 +133,71 @@ samba-tool domain provision --use-rfc2307 --realm=$ZMB_REALM --domain=$ZMB_DOMAI
 
 ln -sf /var/lib/samba/private/krb5.conf /etc/krb5.conf
 
+# disable password expiry for administrator
+samba-tool user setexpiry Administrator --noexpiry
+
 systemctl unmask samba-ad-dc
 systemctl enable samba-ad-dc
 systemctl restart samba-ad-dc $ADDITIONAL_SERVICES
+
+# configure ad backup
+cat << EOF > /usr/local/bin/smb-backup
+#!/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+rc=0
+keep=$1
+if \$1 ; then
+  keep=\$1
+fi
+
+mkdir -p /${LXC_SHAREFS_MOUNTPOINT}/{online,offline}
+
+prune () {
+  backup_type=\$1
+  if [ \$(find /${LXC_SHAREFS_MOUNTPOINT}/\$backup_type/*.tar.bz2 | wc -l) -gt \$keep ]; then
+    find /${LXC_SHAREFS_MOUNTPOINT}/\$backup_type/*.tar.bz2 | head --lines=-\$keep | xargs -d '\n' rm
+  fi
+}
+
+echo "\$(date) Starting samba-ad-dc online backup"
+if echo -e "${LXC_ADMIN_PASS}" | samba-tool domain backup online --targetdir=/${LXC_SHAREFS_MOUNTPOINT}/online --server=${LXC_HOSTNAME}.${LXC_DOMAIN} -UAdministrator ; then
+  echo "\$(date) Finished samba-ad-dc online backup. Cleaning up old online backups..."
+  prune online
+else
+  echo "\$(date) samba-ad-dc online backup failed"
+  rc=\$((\$rc + 1))
+fi
+
+echo "\$(date) Starting samba-ad-dc offline backup"
+if samba-tool domain backup offline --targetdir=/${LXC_SHAREFS_MOUNTPOINT}/offline ; then 
+  echo "\$(date) Finished samba-ad-dc offline backup. Cleaning up old offline backups..."
+  prune offline
+else
+  echo "S(date) samba-ad-dc offline backup failed"
+  rc=\$((\$rc + 1))
+fi
+
+exit \$rc
+EOF
+chmod +x /usr/local/bin/smb-backup
+
+cat << EOF > /etc/cron.d/smb-backup
+23 * * * * root /usr/local/bin/smb-backup 7 >> /var/log/smb-backup.log 2>&1
+EOF
+
+cat << EOF > /etc/logrotate.d/smb-backup
+/var/log/smb-backup.log {
+        weekly
+        rotate 12
+        compress
+        delaycompress
+        missingok
+        notifempty
+        create 644 root root
+}
+EOF
+
+smb-backup 7
 
 exit 0
