@@ -124,7 +124,7 @@ EOF
 fi
 
 # stop + disable samba services and remove default config
-systemctl disable --now smbd nmbd winbind systemd-resolved
+systemctl disable --now smbd nmbd winbind systemd-resolved > /dev/null 2>&1
 rm -f /etc/samba/smb.conf
 rm -f /etc/krb5.conf
 
@@ -146,10 +146,7 @@ cat << EOF > /usr/local/bin/smb-backup
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 rc=0
-keep=$1
-if \$1 ; then
-  keep=\$1
-fi
+keep=\$1
 
 mkdir -p /${LXC_SHAREFS_MOUNTPOINT}/{online,offline}
 
@@ -197,7 +194,5 @@ cat << EOF > /etc/logrotate.d/smb-backup
         create 644 root root
 }
 EOF
-
-smb-backup 7
 
 exit 0

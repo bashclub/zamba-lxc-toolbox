@@ -193,3 +193,7 @@ elif [[ $service == "zmb-ad-join" ]]; then
   pct set $LXC_NBR -nameserver "${LXC_IP%/*} $LXC_DNS"
 fi
 pct start $LXC_NBR
+if [[ $service == "zmb-ad" ]] || [[ $service == "zmb-ad-join" ]]; then
+  sleep 5
+  pct exec $LXC_NBR /usr/local/bin/smb-backup 7
+fi
