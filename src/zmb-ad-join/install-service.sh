@@ -27,38 +27,40 @@ for f in ${OPTIONAL_FEATURES[@]}; do
   fi
 done
 
-## configure ntp
-cat << EOF > /etc/ntp.conf
-# Local clock. Note that is not the "localhost" address!
-server 127.127.1.0
-fudge  127.127.1.0 stratum 10
-# Where to retrieve the time from
-server 0.de.pool.ntp.org     iburst prefer
-server 1.de.pool.ntp.org     iburst prefer
-server 2.de.pool.ntp.org     iburst prefer
-driftfile       /var/lib/ntp/ntp.drift
-logfile         /var/log/ntp
-ntpsigndsocket  /usr/local/samba/var/lib/ntp_signd/
-# Access control
-# Default restriction: Allow clients only to query the time
-restrict default kod nomodify notrap nopeer mssntp
-# No restrictions for "localhost"
-restrict 127.0.0.1
-# Enable the time sources to only provide time to this host
-restrict 0.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery
-restrict 1.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery
-restrict 2.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery
-tinker panic 0
-EOF
-
 echo "deb http://ftp.halifax.rwth-aachen.de/debian/ bookworm-backports main contrib" >> /etc/apt/sources.list
 
 # update packages
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 # install required packages
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET $ADDITIONAL_PACKAGES ntpdate rpl net-tools dnsutils ntp
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET $ADDITIONAL_PACKAGES ntpdate rpl net-tools dnsutils chrony sipcalc
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -t bookworm-backports -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl attr samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils rsync cifs-utils
+
+mkdir -p /etc/chrony/conf.d
+mkdir -p /etc/systemd/system/chrony.service.d
+
+cat << EOF > /etc/default/chrony
+# This is a configuration file for /etc/init.d/chrony and
+# /lib/systemd/system/chrony.service; it allows you to pass various options to
+# the chrony daemon without editing the init script or service file.
+
+# Options to pass to chrony.
+DAEMON_OPTS="-x -F 1"
+EOF
+
+cat << EOF > /etc/systemd/system/chrony.service.d/override.conf
+[Unit]
+ConditionCapability=
+EOF
+
+cat << EOF > /etc/chrony/conf.d/samba.conf
+bindcmdaddress $(sipcalc ${LXC_IP} | grep -m1 "Host address" | rev | cut -d' ' -f1 | rev)
+server de.pool.ntp.org iburst
+server europe.pool.ntp.org iburst
+allow $(sipcalc ${LXC_IP} | grep -m1 "Network address" | rev | cut -d' ' -f1 | rev)/$(sipcalc ${LXC_IP} | grep -m1 "Network mask (bits)" | rev | cut -d' ' -f1 | rev)
+ntpsigndsocket /var/lib/samba/ntp_signd
+EOF
+
 if [[ "$ADDITIONAL_PACKAGES" == *"nginx-full"* ]]; then
 	  cat << EOF > /etc/nginx/sites-available/default
 server {
