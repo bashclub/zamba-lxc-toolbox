@@ -346,11 +346,87 @@ SPAMHAUS_DQS_KEY=
 
 EOF
 
+cat << EOF > data/conf/nginx/redirect.conf
+server {
+  root /web;
+  listen 80 default_server;
+  listen [::]:80 default_server;
+  include /etc/nginx/conf.d/server_name.active;
+  if ( \$request_uri ~* "%0A|%0D" ) { return 403; }
+  location ^~ /.well-known/acme-challenge/ {
+    allow all;
+    default_type "text/plain";
+  }
+  location / {
+    return 301 https://\$host\$uri\$is_args\$args;
+  }
+}
+EOF
+
+cat << EOF > /etc/cron.daily/mailcowbackup
+#!/bin/sh
+
+# Backup mailcow data
+# https://docs.mailcow.email/backup_restore/b_n_r-backup/
+
+set -e
+
+OUT="\$(mktemp)"
+export MAILCOW_BACKUP_LOCATION="/$LXC_SHAREFS_MOUNTPOINT/backup"
+SCRIPT="/opt/mailcow-dockerized/helper-scripts/backup_and_restore.sh"
+PARAMETERS="backup all"
+OPTIONS="--delete-days 7"
+mkdir -p \$MAILCOW_BACKUP_LOCATION
+
+# run command
+set +e
+"\${SCRIPT}" \${PARAMETERS} \${OPTIONS} 2>&1 > "\$OUT"
+RESULT=\$?
+
+if [ \$RESULT -ne 0 ]
+    then
+            echo "\${SCRIPT} \${PARAMETERS} \${OPTIONS} encounters an error:"
+            echo "RESULT=\$RESULT"
+            echo "STDOUT / STDERR:"
+            cat "\$OUT"
+fi
+EOF
+
+chmod +x /etc/cron.daily/mailcowbackup
+
+cat << EOF > /etc/cron.daily/checkmk-mailcow-update-check
+#!/bin/bash
+if ! which check_mk_agent ; then
+  cd /opt/mailcow-dockerized/ && ./update.sh -c >/dev/null
+  status=\$?
+  if [ \$status -eq 3 ]; then
+    state="0 \"mailcow_update\" mailcow_update=0;1;;0;1 No updates available."
+  elif [ \$status -eq 0 ]; then
+    state="1 \"mailcow_update\" mailcow_update=1;1;;0;1 Updated code is available.\nThe changes can be found here: https://github.com/mailcow/mailcow-dockerized/commits/master"
+  else
+    state="3 \"mailcow_update\" - Unknown output from update script ..."
+  fi
+  echo -e "<<<local>>>\n$\state" > /tmp/87000_mailcowupdate
+  mv /tmp/87000_mailcowupdate /var/lib/check_mk_agent/spool/
+fi
+exit
+EOF
+chmod +x /etc/cron.daily/checkmk-mailcow-update-check
+
 chmod 600 mailcow.conf
 
 mkdir -p data/assets/ssl
 
 openssl req -x509 -newkey rsa:4096 -keyout data/assets/ssl/key.pem -out data/assets/ssl/cert.pem -days 365 -subj "/C=DE/ST=NRW/L=Willich/O=mailcow/OU=mailcow/CN=${LXC_HOSTNAME}.${LXC_DOMAIN}" -sha256 -nodes
+
+openssl dhparam -out data/assets/ssl/dhparams.pem 2048
+cat << EOF > /etc/cron.monthly/generate-dhparams
+#!/bin/bash
+openssl dhparam -out data/assets/ssl/dhparams.gen 4096 > /dev/null 2>&1
+mv data/assets/ssl/dhparams.gen data/assets/ssl/dhparams.pem
+systemctl restart nginx
+EOF
+chmod +x /etc/cron.monthly/generate-dhparams
 
 docker compose pull
 docker compose up -d
