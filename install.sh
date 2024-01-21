@@ -149,7 +149,7 @@ sleep 2;
 # Check vlan configuration
 if [[ $LXC_VLAN != "NONE" ]];then VLAN=",tag=$LXC_VLAN"; else VLAN=""; fi
 # Reconfigure conatiner
-pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING;
+pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING,keyctl=$LXC_KEYCTL;
 if [ $LXC_DHCP == true ]; then
  pct set $LXC_NBR -net0 "name=eth0,bridge=$LXC_BRIDGE,ip=dhcp,type=veth$VLAN"
 else
