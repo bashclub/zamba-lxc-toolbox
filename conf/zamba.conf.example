@@ -210,3 +210,8 @@ SEMAPHORE_ADMIN=admin
 SEMAPHORE_ADMIN_DISPLAY_NAME="Semaphore Administrator"
 SEMAPHORE_ADMIN_EMAIL="admin@zmb.rocks"
 SEMAPHORE_ADMIN_PASSWORD='Start123'
+
+############### docker Section ###############
+
+# Install Portainer (=full), Protainer Agent (=agent) or none
+PORTAINER=none
