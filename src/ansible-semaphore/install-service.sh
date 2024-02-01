@@ -52,6 +52,9 @@ fi
 EOF
 chmod +x /usr/local/bin/update-semaphore
 
+useradd -m -r -s /bin/bash semaphore
+sudo -s -u semaphore bash -c 'ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -q -N ""'
+
 cat << EOF > /etc/apt/apt.conf.d/80-semaphore-apt-hook
 DPkg::Post-Invoke {"/usr/local/bin/update-semaphore";};
 EOF
@@ -70,6 +73,8 @@ ExecReload=/bin/kill -HUP \$MAINPID
 ExecStart=/usr/bin/semaphore service --config=/etc/semaphore/config.json
 SyslogIdentifier=semaphore
 Restart=always
+User=semaphore
+Group=semaphore
 
 [Install]
 WantedBy=multi-user.target
@@ -207,8 +212,11 @@ echo "source <(semaphore completion bash)" >> /root/.bashrc
 semaphore user add --admin --login ${SEMAPHORE_ADMIN} --name ${SEMAPHORE_ADMIN_DISPLAY_NAME} --email ${SEMAPHORE_ADMIN_EMAIL} --password ${SEMAPHORE_ADMIN_PASSWORD} --config /etc/semaphore/config.json
 
 
-openssl dhparam -out /etc/nginx/dhparam.pem 4096
+generate_dhparam
 
 systemctl daemon-reload
 systemctl enable --now semaphore.service
 systemctl restart nginx.service
+
+
+echo -e "\n######################################################################\n\n    Please note this user and password for the semaphore login:\n        '$SEMAPHORE_ADMIN' / '$SEMAPHORE_ADMIN_PASSWORD'\n                Enjoy your semaphore intallation.\n\n######################################################################"

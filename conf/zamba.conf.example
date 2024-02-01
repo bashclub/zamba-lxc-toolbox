@@ -32,6 +32,9 @@ LXC_SHAREFS_MOUNTPOINT="tank"
 # Defines a the host system folder to be bind-mounted and shared by Zamba. Requires LXC_SHAREFS_SIZE > 0 but ignores the value. (AD member & standalone) (default: "")
 LXC_SHAREFS_BINDMOUNT=""
 
+# cpu core count (default: 0 = unlimited)
+LXC_THREADS=0
+
 # Defines the amount of RAM in MB your LXC container is allowed to use (default: 1024)
 LXC_MEM=1024
 
@@ -88,6 +91,9 @@ LXC_VIM_BG_DARK=1
 
 # Default random password length
 LXC_RANDOMPWD=32
+
+# Move lxc to specific ressource pool
+LXC_RESSOURCE_POOL=""
 
 # Automatically add meta tags to lxc container
 LXC_AUTOTAG=1
@@ -175,6 +181,10 @@ KOPANO_MAILGW="192.168.100.254"
 KOPANO_REPKEY="1234567890abcdefghijklmno"
 
 ############### vaultwarden Section ###############
+
+# Enable/disable signups (true/false)
+VW_SIGNUPS_ALLOWED=false
+
 # Hostname of your mailserver
 VW_SMTP_HOST=mail.bashclub.org
 
@@ -198,3 +208,15 @@ VW_SMTP_USERNAME=vaultwarden@bashclub.org
 
 # password of your mailbox
 VW_SMTP_PASSWORD='<yourEmailPassword>'
+
+############### ansible-semaphore Section ###############
+
+SEMAPHORE_ADMIN=admin
+SEMAPHORE_ADMIN_DISPLAY_NAME="Semaphore Administrator"
+SEMAPHORE_ADMIN_EMAIL="admin@zmb.rocks"
+SEMAPHORE_ADMIN_PASSWORD='Start123'
+
+############### docker Section ###############
+
+# Install Portainer (=full), Protainer Agent (=agent) or none
+PORTAINER=none

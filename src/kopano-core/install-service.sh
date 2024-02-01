@@ -149,7 +149,7 @@ sed -i "s/define('LANG', 'en_US.UTF-8')/define('LANG', 'de_DE.UTF-8')/" /etc/kop
 #### Adjust nginx settings ####
 
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/ssl/private/kopano.key -out /etc/ssl/certs/kopano.crt -subj "/CN=$KOPANO_FQDN" -addext "subjectAltName=DNS:$KOPANO_FQDN"
-openssl dhparam -dsaparam -out /etc/ssl/certs/dhparam.pem 4096
+generate_dhparam
 
 #mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
 
@@ -187,7 +187,7 @@ server {
     ssl_prefer_server_ciphers on;
     #
     # ssl_dhparam require you to create a dhparam.pem, this takes a long time
-    ssl_dhparam /etc/ssl/certs/dhparam.pem;
+    ssl_dhparam /etc/nginx/dhparam.pem;
     #
  
     # add headers

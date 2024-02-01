@@ -181,7 +181,7 @@ server {
 }
 
 EOF
-openssl dhparam -out /etc/nginx/dhparam.pem 4096
+generate_dhparam
 
 systemctl daemon-reload
 systemctl enable --now gitea

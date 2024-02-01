@@ -130,16 +130,26 @@ else
 fi
 echo "Will now create LXC Container $LXC_NBR!";
 
+if [ $LXC_THREADS -gt 0 ]; then
+  LXC_CORES=--cores\ $LXC_THREADS
+fi
+
+
+if [[ $LXC_RESSOURCE_POOL != "" ]]; then
+  LXC_POOL=--pool\ $LXC_RESSOURCE_POOL
+fi
+
+
 # Create the container
 set +u
-pct create $LXC_NBR $TAGS --password $LXC_PWD -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
+pct create $LXC_NBR $TAGS $LXC_CORES $LXC_POOL --password $LXC_PWD -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
 set -u
 sleep 2;
 
 # Check vlan configuration
 if [[ $LXC_VLAN != "NONE" ]];then VLAN=",tag=$LXC_VLAN"; else VLAN=""; fi
 # Reconfigure conatiner
-pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING;
+pct set $LXC_NBR -memory $LXC_MEM -swap $LXC_SWAP -hostname $LXC_HOSTNAME -onboot 1 -timezone $LXC_TIMEZONE -features nesting=$LXC_NESTING,keyctl=$LXC_KEYCTL;
 if [ $LXC_DHCP == true ]; then
  pct set $LXC_NBR -net0 "name=eth0,bridge=$LXC_BRIDGE,ip=dhcp,type=veth$VLAN"
 else
@@ -187,3 +197,7 @@ elif [[ $service == "zmb-ad-join" ]]; then
   pct set $LXC_NBR -nameserver "${LXC_IP%/*} $LXC_DNS"
 fi
 pct start $LXC_NBR
+if [[ $service == "zmb-ad" ]] || [[ $service == "zmb-ad-join" ]]; then
+  sleep 5
+  pct exec $LXC_NBR /usr/local/bin/smb-backup 7
+fi

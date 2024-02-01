@@ -157,7 +157,7 @@ EOF
 
 ln -sf /etc/nginx/sites-available/zammad.conf /etc/nginx/sites-enabled/
 
-openssl dhparam -out /etc/nginx/dhparam.pem 4096
+generate_dhparam
 
 /usr/share/elasticsearch/bin/elasticsearch-plugin install -b ingest-attachment
 
