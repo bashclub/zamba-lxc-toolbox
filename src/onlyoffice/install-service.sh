@@ -12,7 +12,7 @@ source /root/constants-service.conf
 ONLYOFFICE_DB_PASS=$(random_password)
 
 curl -fsSL https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE | gpg --dearmor | tee /etc/apt/trusted.gpg.d/onlyoffice.gpg >/dev/null
-echo "deb https://download.onlyoffice.com/repo/debian squeeze main" > /etc/apt/sources.list.d/onlyoffice.list
+echo "deb https://download.onlyoffice.com/repo/debian bookworm main" > /etc/apt/sources.list.d/onlyoffice.list
 
 cat > /etc/apt/preferences.d/onlyoffice << EOF
 Package: onlyoffice-documentserver
