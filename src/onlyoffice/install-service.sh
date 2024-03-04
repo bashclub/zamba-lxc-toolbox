@@ -16,7 +16,7 @@ echo "deb https://download.onlyoffice.com/repo/debian squeeze main" > /etc/apt/s
 
 cat > /etc/apt/preferences.d/onlyoffice << EOF
 Package: onlyoffice-documentserver
-Pin: version 8.0.1-31
+Pin: version 7.2.2
 Pin-Priority: 900
 EOF
 
