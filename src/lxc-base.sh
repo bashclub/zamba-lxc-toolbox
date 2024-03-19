@@ -26,36 +26,41 @@ locale-gen $LXC_LOCALE
 # Generate sources
 if [ "$LXC_TEMPLATE_VERSION" == "debian-10-standard" ] ; then
 
+if [ -n "$LXC_TEMPLATE_SET_MIRROR" ]; then
 cat << EOF > /etc/apt/sources.list
-deb http://ftp.halifax.rwth-aachen.de/debian/ buster main contrib
+deb $LXC_TEMPLATE_SET_MIRROR/debian/ buster main contrib
 
-deb http://ftp.halifax.rwth-aachen.de/debian/ buster-updates main contrib
+deb $LXC_TEMPLATE_SET_MIRROR/debian/ buster-updates main contrib
 
 # security updates
 deb http://security.debian.org/debian-security buster/updates main contrib
 EOF
+fi
 
 elif [ "$LXC_TEMPLATE_VERSION" == "debian-11-standard" ] ; then
 
+if [ -n "$LXC_TEMPLATE_SET_MIRROR" ]; then
 cat << EOF > /etc/apt/sources.list
-deb http://ftp.halifax.rwth-aachen.de/debian/ bullseye main contrib
+deb $LXC_TEMPLATE_SET_MIRROR/debian/ bullseye main contrib
 
-deb http://ftp.halifax.rwth-aachen.de/debian/ bullseye-updates main contrib
+deb $LXC_TEMPLATE_SET_MIRROR/debian/ bullseye-updates main contrib
 
 # security updates
 deb http://security.debian.org/debian-security bullseye-security main contrib
 EOF
-
+fi
 elif [ "$LXC_TEMPLATE_VERSION" == "debian-12-standard" ] ; then
 
+if [ -n "$LXC_TEMPLATE_SET_MIRROR" ]; then
 cat << EOF > /etc/apt/sources.list
-deb http://ftp.halifax.rwth-aachen.de/debian/ bookworm main contrib
+deb $LXC_TEMPLATE_SET_MIRROR/debian/ bookworm main contrib
 
-deb http://ftp.halifax.rwth-aachen.de/debian/ bookworm-updates main contrib
+deb $LXC_TEMPLATE_SET_MIRROR/debian/ bookworm-updates main contrib
 
 # security updates
 deb http://security.debian.org/debian-security bookworm-security main contrib
 EOF
+fi
 
 else echo "LXC Debian Version false. Please check configuration files!" ; exit
 fi

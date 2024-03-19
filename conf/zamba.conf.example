@@ -14,6 +14,9 @@
 # Defines the Proxmox storage where your LXC container template are stored (default: local)
 LXC_TEMPLATE_STORAGE="local"
 
+# Delault mirror setting for /etc/apt/sources.list (default: "", leaves the file unchanged)
+LXC_TEMPLATE_SET_MIRROR=""
+
 # Defines the size in GB of the LXC container's root filesystem (default: 32)
 # Depending on your environment, you should consider increasing the size for use of `mailpiler` or `matrix`.
 LXC_ROOTFS_SIZE="32"
@@ -26,6 +29,8 @@ LXC_SHAREFS_SIZE="100"
 LXC_SHAREFS_STORAGE="local-zfs"
 # Defines the mountpoint of the filesystem shared by Zamba inside your LXC container (default: tank)
 LXC_SHAREFS_MOUNTPOINT="tank"
+# Defines a the host system folder to be bind-mounted and shared by Zamba. Requires LXC_SHAREFS_SIZE > 0 but ignores the value. (AD member & standalone) (default: "")
+LXC_SHAREFS_BINDMOUNT=""
 
 # cpu core count (default: 0 = unlimited)
 LXC_THREADS=0

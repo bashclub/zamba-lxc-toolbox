@@ -12,6 +12,11 @@ Defines the Proxmox storage where your LXC container template are stored (defaul
 ```bash
 LXC_TEMPLATE_STORAGE="local"
 ```
+### LXC_TEMPLATE_SET_MIRROR
+Delault mirror setting for /etc/apt/sources.list (default: "", leaves the file unchanged)
+```bash
+LXC_TEMPLATE_SET_MIRROR=""
+```
 ### LXC_ROOTFS_SIZE
 Defines the size in GB of the LXC container's root filesystem (default: 32)
 ```bash
@@ -27,6 +32,11 @@ LXC_ROOTFS_STORAGE="local-zfs"
 Defines the size in GB your LXC container's filesystem shared by Zamba (AD member & standalone) (default: 100)
 ```bash
 LXC_SHAREFS_SIZE="100"
+```
+### LXC_SHAREFS_BINDMOUNT
+Defines a the host system folder to be bind-mounted and shared by Zamba. Requires LXC_SHAREFS_SIZE > 0 but ignores the value. (AD member & standalone) (default: "")
+```bash
+LXC_SHAREFS_BINDMOUNT="/host/folder"
 ```
 ### LXC_SHAREFS_STORAGE
 Defines the Proxmox storage where your LXC container's filesystem shared by Zamba will be generated (default: local-zfs)
