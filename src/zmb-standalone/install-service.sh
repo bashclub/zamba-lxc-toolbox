@@ -12,7 +12,7 @@ source /root/constants-service.conf
 apt-key adv --fetch-keys https://repo.45drives.com/key/gpg.asc
 echo "deb https://repo.45drives.com/debian focal main" > /etc/apt/sources.list.d/45drives.list
 
-echo "deb http://ftp.halifax.rwth-aachen.de/debian/ bookworm-backports main contrib" >> /etc/apt/sources.list
+echo "deb http://deb.debian.org/debian/ bookworm-backports main contrib" >> /etc/apt/sources.list
 
 apt update
 

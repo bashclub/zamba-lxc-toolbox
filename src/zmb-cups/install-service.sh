@@ -9,7 +9,7 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-echo "deb http://ftp.halifax.rwth-aachen.de/debian/ bookworm-backports main contrib" >> /etc/apt/sources.list
+echo "deb http://deb.debian.org/debian/ bookworm-backports main contrib" >> /etc/apt/sources.list
 
 apt update
 

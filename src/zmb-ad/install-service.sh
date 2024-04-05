@@ -27,7 +27,7 @@ for f in ${OPTIONAL_FEATURES[@]}; do
   fi
 done
 
-echo "deb http://ftp.halifax.rwth-aachen.de/debian/ bookworm-backports main contrib" >> /etc/apt/sources.list
+echo "deb http://deb.debian.org/debian/ bookworm-backports main contrib" >> /etc/apt/sources.list
 
 # update packages
 apt update
