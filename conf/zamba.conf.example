@@ -114,8 +114,7 @@ ZMB_SHARE="share"
 
 ############### Mailpiler-Section ###############
 
-# Defines the smarthost for piler mail archive
-PILER_SMARTHOST="mail.zmb.rocks"
+PILER_BRANCH=release
 
 ############### Matrix-Section ###############
 
