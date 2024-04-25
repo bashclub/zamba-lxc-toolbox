@@ -8,7 +8,7 @@ source zamba.conf
 wget -O - https://apt.bashclub.org/gpg/bashclub.pub | gpg --dearmor > /usr/share/keyrings/bashclub-keyring.gpg
 
 echo "deb [signed-by=/usr/share/keyrings/bashclub-keyring.gpg] https://apt.bashclub.org/manticore bookworm main" > /etc/apt/sources.list.d/bashclub-manticore.list
-echo "deb [signed-by=/usr/share/keyrings/bashclub-keyring.gpg] https://apt.bashclub.org/$PILER_BRANCH bookworm main" > /etc/apt/sources.list.d/bashclub-testing.list
+echo "deb [signed-by=/usr/share/keyrings/bashclub-keyring.gpg] https://apt.bashclub.org/$PILER_BRANCH bookworm main" > /etc/apt/sources.list.d/bashclub-$PILER_BRANCH.list
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends piler
