@@ -114,8 +114,6 @@ ZMB_SHARE="share"
 
 ############### Mailpiler-Section ###############
 
-# Defines the (public) FQDN of your piler mail archive
-PILER_FQDN="mailpiler.zmb.rocks"
 # Defines the smarthost for piler mail archive
 PILER_SMARTHOST="mail.zmb.rocks"
 
