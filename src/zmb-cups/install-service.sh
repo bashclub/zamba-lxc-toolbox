@@ -19,7 +19,7 @@ mv /etc/krb5.conf /etc/krb5.conf.bak
 cat > /etc/krb5.conf <<EOF
 [libdefaults]
 	default_realm = $ZMB_REALM
-    ticket_lifetime = 600
+	ticket_lifetime = 600
 	dns_lookup_realm = true
 	dns_lookup_kdc = true
 	renew_lifetime = 7d
@@ -37,12 +37,11 @@ cat > /etc/samba/smb.conf <<EOF
 	server string = %h server
 
 	vfs objects = acl_xattr shadow_copy2
-    map acl inherit = Yes
-    store dos attributes = Yes
+	map acl inherit = Yes
+	store dos attributes = Yes
 	idmap config *:backend = tdb
 	idmap config *:range = 3000000-4000000
 	idmap config *:schema_mode = rfc2307
-	username map = /etc/samba/user.map
 
 	winbind refresh tickets = Yes
 	winbind use default domain = Yes
@@ -69,18 +68,19 @@ cat > /etc/samba/smb.conf <<EOF
 	shadow: format = -%Y-%m-%d-%H%M
 	shadow: snapprefix = ^zfs-auto-snap_\(frequent\)\{0,1\}\(hourly\)\{0,1\}\(daily\)\{0,1\}\(weekly\)\{0,1\}\(monthly\)\{0,1\}\(backup\)\{0,1\}\(manual\)\{0,1\}
 	shadow: delimiter = -20
+	
 	printing = CUPS
 	rpcd_spoolss:idle_seconds=300
 	rpcd_spoolss:num_workers = 10
 	spoolss: architecture = Windows x64
 
 [printers]
-    path = /var/tmp/
-    printable = yes
+	path = /${LXC_SHAREFS_MOUNTPOINT}/spool
+	printable = yes
 
 [print$]
-	path = /var/lib/samba/printers
-    read only = no
+	path = /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
+	read only = no
 
 EOF
 
@@ -93,13 +93,16 @@ echo -e "session optional        pam_mkhomedir.so skel=/etc/skel umask=077" >> /
 
 systemctl restart winbind nmbd
 
-chown -R ${ZMB_ADMIN_USER}:"domain admins" /var/lib/samba/printers
-chmod -R 2775 /var/lib/samba/printers
-setfacl -Rb /var/lib/samba/printers
-setfacl -Rm u:${ZMB_ADMIN_USER}:rwx,g:"domain admins":rwx,g:"NT Authority/authenticated users":r--,g:"NT Authority/system":rwx,o::--- /var/lib/samba/printers
-setfacl -Rdm u:${ZMB_ADMIN_USER}:rwx,g:"domain admins":rwx,g:"NT Authority/authenticated users":r--,g:"NT Authority/system":rwx,o::--- /var/lib/samba/printers
-echo -e "${ZMB_ADMIN_PASS}" | net rpc rights grant "${ZMB_DOMAIN}\\Domain Admins" SePrintOperatorPrivilege -U "${ZMB_DOMAIN}\\${ZMB_ADMIN_USER}"
-echo -e "!root = ${ZMB_DOMAIN}\\administrator ${ZMB_DOMAIN}\\Administrator" > /etc/samba/user.map
+mkdir -p /${LXC_SHAREFS_MOUNTPOINT}/{spool,printerdrivers}
+cp -rv /var/lib/samba/printers/* /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
+chown -R root:"domain admins" /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
+chmod -R 1777 /${LXC_SHAREFS_MOUNTPOINT}/spool
+chmod -R 2775 /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
+setfacl -Rb /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
+setfacl -Rm u:${ZMB_ADMIN_USER}:rwx,g:"domain admins":rwx,g:"NT Authority/authenticated users":r-x,o::--- /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
+setfacl -Rdm u:${ZMB_ADMIN_USER}:rwx,g:"domain admins":rwx,g:"NT Authority/authenticated users":r-x,o::--- /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
+echo -e "${ZMB_ADMIN_PASS}" | net rpc rights grant "${ZMB_DOMAIN}\\domain admins" SePrintOperatorPrivilege -U "${ZMB_DOMAIN}\\${ZMB_ADMIN_USER}"
+systemctl disable --now cups-browsed.service
 
 cupsctl --remote-admin
 
