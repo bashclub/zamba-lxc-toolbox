@@ -64,7 +64,6 @@ Group=vaultwarden
 EnvironmentFile=/var/lib/vaultwarden/.env
 ExecStart=/opt/vaultwarden/vaultwarden
 LimitNOFILE=1048576
-LimitNPROC=64
 PrivateTmp=true
 PrivateDevices=true
 ProtectHome=true
