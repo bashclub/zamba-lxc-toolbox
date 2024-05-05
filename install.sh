@@ -160,7 +160,7 @@ sleep 2
 
 if [ $LXC_MP -gt 0 ]; then
   pct set $LXC_NBR -mp0 $LXC_SHAREFS_STORAGE:$LXC_SHAREFS_SIZE,backup=1,mp=/$LXC_SHAREFS_MOUNTPOINT
-  pool=$(grep  -A 4 $LXC_SHAREFS_MOUNTPOINT /etc/pve/storage.cfg | grep "pool " | cut -d ' ' -f2)
+  pool=$(grep  -A 4 $LXC_SHAREFS_STORAGE /etc/pve/storage.cfg | grep "pool " | cut -d ' ' -f2)
   dataset=$(grep mp0 /etc/pve/lxc/$LXC_NBR.conf | cut -d ':' -f3 | cut -d',' -f1)
   zfs set recordsize=$LXC_MP_RECORDSIZE $pool/$dataset
 fi
