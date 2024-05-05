@@ -25,7 +25,8 @@ LXC_SHAREFS_SIZE="100"
 # Defines the Proxmox storage where your LXC container's filesystem shared by Zamba will be generated (default: local-zfs)
 LXC_SHAREFS_STORAGE="local-zfs"
 # Defines the mountpoint of the filesystem shared by Zamba inside your LXC container (default: tank)
-LXC_SHAREFS_MOUNTPOINT="tank"
+# Moved to constants-service.conf, be careful if you override this value
+# LXC_SHAREFS_MOUNTPOINT="tank"
 
 # cpu core count (default: 0 = unlimited)
 LXC_THREADS=0

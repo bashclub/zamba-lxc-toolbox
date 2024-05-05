@@ -155,11 +155,16 @@ if [ $LXC_DHCP == true ]; then
 else
  pct set $LXC_NBR -net0 "name=eth0,bridge=$LXC_BRIDGE,firewall=1,gw=$LXC_GW,ip=$LXC_IP,type=veth$VLAN" -nameserver $LXC_DNS -searchdomain $LXC_DOMAIN
 fi
+
 sleep 2
 
 if [ $LXC_MP -gt 0 ]; then
   pct set $LXC_NBR -mp0 $LXC_SHAREFS_STORAGE:$LXC_SHAREFS_SIZE,backup=1,mp=/$LXC_SHAREFS_MOUNTPOINT
+  pool=$(grep  -A 4 $LXC_SHAREFS_MOUNTPOINT /etc/pve/storage.cfg | grep "pool " | cut -d ' ' -f2)
+  dataset=$(grep mp0 /etc/pve/lxc/$LXC_NBR.conf | cut -d ':' -f3 | cut -d',' -f1)
+  zfs set recordsize=$LXC_MP_RECORDSIZE $pool/$dataset
 fi
+
 sleep 2;
 
 PS3="Select the Server-Function: "
