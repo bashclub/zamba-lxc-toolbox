@@ -18,3 +18,14 @@ systemctl restart nginx
 EOF
     chmod +x /etc/cron.monthly/generate-dhparams
 }
+
+apt_repo() {
+    apt_name=$1
+    apt_key_url=$2
+    apt_key_path=/usr/share/keyrings/${apt_name}.gpg
+    apt_repo_url=$3
+
+    wget -q -O - ${apt_key_url} | gpg --dearmor -o ${apt_key_path}
+    echo "deb [signed-by=${apt_key_path}] ${apt_repo_url}" > /etc/apt/sources.list.d/${apt_name}.list
+
+}
