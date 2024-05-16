@@ -29,7 +29,7 @@ psql -c "CREATE DATABASE ${ZABBIX_DB_NAME} ENCODING UTF8 TEMPLATE template0 OWNE
 echo "Postgres User ${ZABBIX_DB_USR} and database ${ZABBIX_DB_NAME} created."
 EOF
 
-zcat /usr/share/zabbix-sql-scripts/postgresql/proxy.sql.gz | sudo -u zabbix psql ${ZABBIX_DB_NAME}
+cat /usr/share/zabbix-sql-scripts/postgresql/proxy.sql | sudo -u zabbix psql ${ZABBIX_DB_NAME}
 
 echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_server.conf
 
