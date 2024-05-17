@@ -44,7 +44,8 @@ chmod 700 /var/lib/zabbix/
 
 
 psk=$(openssl rand -hex 32)
-sudo -u zabbix echo "$psk" > /var/lib/zabbix/proxy.psk
+echo "$psk" > /var/lib/zabbix/proxy.psk
+chown zabbix:zabbix /var/lib/zabbix/proxy.psk
 chmod 600 /var/lib/zabbix/proxy.psk
 
 sed -i "s/# TLSConnect=unencrypted/TLSConnect=psk/g" /etc/zabbix/zabbix_proxy.conf
