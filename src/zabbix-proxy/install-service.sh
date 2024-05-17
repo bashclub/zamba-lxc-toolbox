@@ -34,7 +34,9 @@ cat /usr/share/zabbix-sql-scripts/postgresql/proxy.sql | sudo -u zabbix psql ${Z
 echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_proxy.conf
 
 srv=$(grep -E "^Server" /etc/zabbix/zabbix_proxy.conf)
-sed -i "s/$srv/Server=${ZBX_ADDR}/g" "s/# ListenPort=/ListenPort=/g" "s/Hostname=Zabbix proxy/# Hostname=${LXC_HOSTNAME}.${LXC_DOMAIN}/g" /etc/zabbix/zabbix_proxy.conf
+sed -i "s/$srv/Server=${ZBX_ADDR}/g" /etc/zabbix/zabbix_proxy.conf
+sed -i "s/# ListenPort=/ListenPort=/g" /etc/zabbix/zabbix_proxy.conf
+sed -i "s/Hostname=Zabbix proxy/# Hostname=${LXC_HOSTNAME}.${LXC_DOMAIN}/g" /etc/zabbix/zabbix_proxy.conf
 
 systemctl enable zabbix-proxy 
 
