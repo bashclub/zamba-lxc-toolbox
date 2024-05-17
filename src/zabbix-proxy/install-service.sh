@@ -59,9 +59,9 @@ systemctl restart zabbix-proxy
 
 echo -e "Installation of zabbix-proxy finished."
 echo -e "\nPlease register the Proxy on yout zabbix server with following data:"
-echo -e "Proxy name:\ŧ${LXC_HOSTNAME}.${LXC_DOMAIN}"
+echo -e "Proxy name:\t${LXC_HOSTNAME}.${LXC_DOMAIN}"
 echo -e "Proxy mode: Active"
 echo -e "Proxy address:\t$(ip a s dev eth0 | grep -m1 inet | cut -d ' ' -f6 | cut -d'/' -f1)"
 echo -e "Encryption:\tPSK"
-echo -e "PSK identity:\ŧ${LXC_HOSTNAME}.${LXC_DOMAIN}"
-echo -e "PSK:\t\ŧ${psk}"
+echo -e "PSK identity:\t${LXC_HOSTNAME}.${LXC_DOMAIN}"
+echo -e "PSK:\t\t${psk}"
