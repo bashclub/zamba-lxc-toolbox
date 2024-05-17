@@ -50,7 +50,7 @@ chmod 600 /var/lib/zabbix/proxy.psk
 sed -i "s/# TLSConnect=unencrypted/TLSConnect=psk/g" /etc/zabbix/zabbix_proxy.conf
 sed -i "s/# TLSAccept=unencrypted/TLSAccept=psk/g" /etc/zabbix/zabbix_proxy.conf
 sed -i "s/# TLSPSKIdentity=/TLSPSKIdentity=${LXC_HOSTNAME}.${LXC_DOMAIN}/g" /etc/zabbix/zabbix_proxy.conf
-sed -i "s/# TLSPSKFile=/TLSPSKFile=${psk}/g" /etc/zabbix/zabbix_proxy.conf
+sed -i "s/# TLSPSKFile=/TLSPSKFile=/var/lib/zabbix/proxy.psk/g" /etc/zabbix/zabbix_proxy.conf
 
 systemctl enable zabbix-proxy 
 
