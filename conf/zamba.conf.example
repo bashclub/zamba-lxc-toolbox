@@ -213,3 +213,8 @@ SEMAPHORE_ADMIN_PASSWORD='Start123'
 
 # Install Portainer (=full), Protainer Agent (=agent) or none
 PORTAINER=none
+
+############### zabbix Section ###############
+
+# (Zabbix Proxy) Name:Port of the zabbix server
+ZBX_ADDR=zabbix.zmb.rocks:10051

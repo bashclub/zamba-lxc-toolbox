@@ -31,7 +31,8 @@ EOF
 
 cat /usr/share/zabbix-sql-scripts/postgresql/proxy.sql | sudo -u zabbix psql ${ZABBIX_DB_NAME}
 
-echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_server.conf
+echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_proxy.conf
+echo "Server=${ZBX_ADDR}" >> /etc/zabbix/zabbix_proxy.conf
 
 
 systemctl enable zabbix-proxy 
