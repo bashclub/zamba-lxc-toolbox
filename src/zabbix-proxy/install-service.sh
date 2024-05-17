@@ -38,6 +38,30 @@ sed -i "s/$srv/Server=${ZBX_ADDR}/g" /etc/zabbix/zabbix_proxy.conf
 sed -i "s/# ListenPort=/ListenPort=/g" /etc/zabbix/zabbix_proxy.conf
 sed -i "s/Hostname=Zabbix proxy/Hostname=${LXC_HOSTNAME}.${LXC_DOMAIN}/g" /etc/zabbix/zabbix_proxy.conf
 
+mkdir -p /var/lib/zabbix
+chown -R zabbix:zabbix /var/lib/zabbix/
+chmod 700 /var/lib/zabbix/
+
+
+psk=$(openssl rand -hex 32)
+echo "$psk" > /var/lib/zabbix/proxy.psk
+chmod 600 /var/lib/zabbix/proxy.psk
+
+sed -i "s/# TLSConnect=unencrypted/TLSConnect=psk/g" /etc/zabbix/zabbix_proxy.conf
+sed -i "s/# TLSAccept=unencrypted/TLSAccept=psk/g" /etc/zabbix/zabbix_proxy.conf
+sed -i "s/# TLSPSKIdentity=/TLSPSKIdentity=${LXC_HOSTNAME}.${LXC_DOMAIN}/g" /etc/zabbix/zabbix_proxy.conf
+sed -i "s/# TLSPSKFile=/TLSPSKFile=${psk}/g" /etc/zabbix/zabbix_proxy.conf
+
 systemctl enable zabbix-proxy 
 
 systemctl restart zabbix-proxy
+
+
+echo -e "Installation of zabbix-proxy finished."
+echo -e "\nPlease register the Proxy on yout zabbix server with following data:"
+echo -e "Proxy name:\ŧ${LXC_HOSTNAME}.${LXC_DOMAIN}"
+echo -e "Proxy mode: Active"
+echo -e "Proxy address:\t$(ip a s dev eth0 | grep -m1 inet | cut -d ' ' -f6 | cut -d'/' -f1)"
+echo -e "Encryption:\tPSK"
+echo -e "PSK identity:\ŧ${LXC_HOSTNAME}.${LXC_DOMAIN}"
+echo -e "PSK:\t\ŧ${psk}"
