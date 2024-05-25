@@ -19,23 +19,6 @@ DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install ssl-cert nginx-full postgresql zammad
 
 
-cat << EOF >>/etc/hosts
-0.0.0.0 image.zammad.com
-0.0.0.0 images.zammad.com
-0.0.0.0 geo.zammad.com
-0.0.0.0 www.zammad.com
-0.0.0.0 www.zammad.org
-0.0.0.0 www.zammad.net
-0.0.0.0 www.zammad.de
-0.0.0.0 zammad.com
-0.0.0.0 zammad.org
-0.0.0.0 zammad.net
-0.0.0.0 zammad.de
-#
-127.0.0.1 elasticsearch
-0.0.0.0 geoip.elastic.co
-EOF
-
 # Java set startup environment 
 mkdir -p /etc/elasticsearch/jvm.options.d
 cat << EOF >>/etc/elasticsearch/jvm.options.d/msmx-size.options
@@ -165,8 +148,8 @@ systemctl enable elasticsearch.service
 systemctl restart nginx elasticsearch.service
 
 # Elasticsearch conntact to Zammad
-zammad run rails r "Setting.set('es_url', 'http://localhost:9200')"
+zammad run rails r "Setting.set('es_url', 'http://127.0.0.1:9200')"
 zammad run rails r "Setting.set('es_index', Socket.gethostname.downcase + '_zammad')"
 zammad run rails r "User.find_by(email: 'nicole.braun@zammad.org').destroy"
 systemctl restart elasticsearch.service
-zammad run rake searchindex:rebuild
+zammad run rake zammad:searchindex:rebuild[$(nproc)]
