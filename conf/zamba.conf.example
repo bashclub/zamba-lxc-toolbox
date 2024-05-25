@@ -218,3 +218,8 @@ PORTAINER=none
 
 # (Zabbix Proxy) Name:Port of the zabbix server
 ZBX_ADDR=zabbix.zmb.rocks:10051
+
+############### freescout Section ################
+FS_FIRSTNAME=Max
+FS_LASTNAME=Mustermann
+FS_EMAIL=mail@zmb.rocks
