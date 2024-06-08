@@ -18,7 +18,7 @@ apt_repo "timescaledb" "https://packagecloud.io/timescale/timescaledb/gpgkey" "h
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql-$POSTGRES_VERSION timescaledb-2-oss-$TS_VERSION-postgresql-$POSTGRES_VERSION postgresql-client timescaledb-tools nginx php$PHP_VERSION-pgsql php$PHP_VERSION-fpm zabbix-server-pgsql zabbix-frontend-php zabbix-nginx-conf zabbix-sql-scripts zabbix-agent ssl-cert
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql-$POSTGRES_VERSION timescaledb-2-oss-$TS_VERSION-postgresql-$POSTGRES_VERSION postgresql-client timescaledb-tools nginx php$PHP_VERSION-pgsql php$PHP_VERSION-fpm zabbix-server-pgsql zabbix-frontend-php zabbix-nginx-conf zabbix-sql-scripts zabbix-agent2 zabbix-agent2-plugin-* ssl-cert
 
 unlink /etc/nginx/sites-enabled/default
 
@@ -231,6 +231,6 @@ echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_server.conf
 
 generate_dhparam
 
-systemctl enable nginx php$PHP_VERSION-fpm zabbix-server zabbix-agent 
+systemctl enable nginx php$PHP_VERSION-fpm zabbix-server zabbix-agent2 
 
-systemctl restart nginx php$PHP_VERSION-fpm zabbix-server zabbix-agent > /dev/null 2>&1
+systemctl restart nginx php$PHP_VERSION-fpm zabbix-server zabbix-agent2 > /dev/null 2>&1

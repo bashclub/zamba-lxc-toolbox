@@ -17,7 +17,7 @@ apt_repo "postgresql" "https://www.postgresql.org/media/keys/ACCC4CF8.asc" "http
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql-$POSTGRES_VERSION postgresql-client zabbix-proxy-pgsql zabbix-sql-scripts ssl-cert
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql-$POSTGRES_VERSION postgresql-client zabbix-proxy-pgsql zabbix-sql-scripts zabbix-agent2 zabbix-agent2-plugin-* ssl-cert
 
 timedatectl set-timezone ${LXC_TIMEZONE}
 
@@ -53,10 +53,9 @@ sed -i "s/# TLSAccept=unencrypted/TLSAccept=psk/g" /etc/zabbix/zabbix_proxy.conf
 sed -i "s/# TLSPSKIdentity=/TLSPSKIdentity=${LXC_HOSTNAME}.${LXC_DOMAIN}/g" /etc/zabbix/zabbix_proxy.conf
 sed -i "s|# TLSPSKFile=|TLSPSKFile=/var/lib/zabbix/proxy.psk|g" /etc/zabbix/zabbix_proxy.conf
 
-systemctl enable zabbix-proxy 
+systemctl enable zabbix-proxy zabbix-agent2
 
-systemctl restart zabbix-proxy
-
+systemctl restart zabbix-proxy zabbix-agent2 
 
 echo -e "Installation of zabbix-proxy finished."
 echo -e "\nPlease register the Proxy on yout zabbix server with following data:"
