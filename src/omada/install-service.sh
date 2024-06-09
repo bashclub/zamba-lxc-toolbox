@@ -19,5 +19,5 @@ echo "deb [signed-by=/usr/share/keyrings/mongodb-server-4.4.gpg] http://repo.mon
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install --no-install-recommends -y -qq temurin-17-jre jsvc mongodb-org
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install --no-install-recommends -y -qq temurin-8-jre jsvc mongodb-org
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install --no-install-recommends -y -qq omadac
