@@ -19,4 +19,4 @@ echo "deb [ signed-by=/usr/share/keyrings/unifi.gpg ] http://www.ui.com/download
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq default-jre-headless mongodb-server unifi
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq default-jre-headless unifi
