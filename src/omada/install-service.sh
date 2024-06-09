@@ -12,7 +12,7 @@ source /root/zamba.conf
 source /root/constants-service.conf
 
 wget -O - https://pgp.mongodb.com/server-4.4.asc | gpg --dearmor > /usr/share/keyrings/mongodb-server-4.4.gpg
-echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-4.4.gpg ] http://repo.mongodb.org/apt/debian bookworm/mongodb-org/4.4 main" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-4.4.gpg ] http://repo.mongodb.org/apt/debian buster/mongodb-org/4.4 main" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
 
 apt update
 
