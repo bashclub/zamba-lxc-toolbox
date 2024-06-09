@@ -29,7 +29,16 @@ cat << EOF >>/etc/elasticsearch/jvm.options.d/msmx-size.options
 EOF
 
 # configure nginx
+generate_dhparam
+
 unlink /etc/nginx/sites-enabled/default
+unlink /etc/nginx/sites-enabled/zammad.conf
+
+mkdir -p /etc/nginx/ssl
+ln -sf /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/nginx/ssl/fullchain.pem
+ln -sf /etc/ssl/private/ssl-cert-snakeoil.key /etc/nginx/ssl/privkey.pem
+ln -sf /etc/nginx/dhparam.pem /etc/nginx/ssl/dhparam.pem
+
 sed -e "s|server_name example.com;|server_name ${LXC_HOSTNAME}.${LXC_DOMAIN};|g" \
  -e "s|ssl_certificate /etc/nginx/ssl/example.com-fullchain.pem;|ssl_certificate /etc/nginx/ssl/fullchain.pem;|g" \
  -e "s|ssl_certificate_key /etc/nginx/ssl/example.com-privkey.pem;|ssl_certificate_key /etc/nginx/ssl/privkey.pem;|g" \
@@ -39,7 +48,6 @@ sed -e "s|server_name example.com;|server_name ${LXC_HOSTNAME}.${LXC_DOMAIN};|g"
 
 ln -sf /etc/nginx/sites-available/zammad_ssl.conf /etc/nginx/sites-enabled/
 
-generate_dhparam
 
 # configure elasticsearch
 /usr/share/elasticsearch/bin/elasticsearch-plugin install -b ingest-attachment
