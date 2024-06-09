@@ -11,7 +11,7 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-wget -O - https://www.mongodb.org/static/pgp/server-7.0.asc | gpg --dearmor > /usr/share/keyrings/mongodb7.gpg
+wget -O - https://www.mongodb.org/static/pgp/server-7.0.asc | gpg --dearmor > /usr/share/keyrings/mongodb-server-7.0.gpg
 wget -O - https://dl.ubnt.com/unifi/unifi-repo.gpg | gpg --dearmor > /usr/share/keyrings/unifi.gpg
 
 echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] http://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
