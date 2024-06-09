@@ -120,10 +120,10 @@ cd /var/www
 wget -O element-release-key.asc https://packages.riot.im/element-release-key.asc
 gpg --import element-release-key.asc
 
-MATRIX_ELEMENT_VERSION=$(curl -s https://api.github.com/repos/vector-im/element-web/releases/latest | grep tag_name | cut -d'"' -f4)
+MATRIX_ELEMENT_VERSION=$(curl -s https://api.github.com/repos/element-hq/element-web/releases/latest | grep tag_name | cut -d'"' -f4)
 
-wget -O element-$MATRIX_ELEMENT_VERSION.tar.gz https://github.com/vector-im/element-web/releases/download/$MATRIX_ELEMENT_VERSION/element-$MATRIX_ELEMENT_VERSION.tar.gz
-wget -O element-$MATRIX_ELEMENT_VERSION.tar.gz.asc https://github.com/vector-im/element-web/releases/download/$MATRIX_ELEMENT_VERSION/element-$MATRIX_ELEMENT_VERSION.tar.gz.asc
+wget -O element-$MATRIX_ELEMENT_VERSION.tar.gz https://github.com/element-hq/element-web/releases/download/$MATRIX_ELEMENT_VERSION/element-$MATRIX_ELEMENT_VERSION.tar.gz
+wget -O element-$MATRIX_ELEMENT_VERSION.tar.gz.asc https://github.com/element-hq/element-web/releases/download/$MATRIX_ELEMENT_VERSION/element-$MATRIX_ELEMENT_VERSION.tar.gz.asc
 gpg --verify element-$MATRIX_ELEMENT_VERSION.tar.gz.asc
 
 tar -xzvf element-$MATRIX_ELEMENT_VERSION.tar.gz
