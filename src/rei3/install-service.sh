@@ -10,7 +10,7 @@ source /root/zamba.conf
 source /root/constants-service.conf
 
 mkdir /opt/rei3
-wget -c https://rei3.de/downloads/REI3_3.4.2_x64_linux.tar.gz -O - | tar -zx -C /opt/rei3
+wget -c https://rei3.de/latest/x64_linux -O - | tar -zx -C /opt/rei3
 
 wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | sudo tee /usr/share/keyrings/postgres.gpg
 echo "deb [signed-by=/usr/share/keyrings/postgres.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
