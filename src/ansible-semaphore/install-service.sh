@@ -27,21 +27,21 @@ psql -c "CREATE DATABASE ${SEMAPHORE_DB_NAME} ENCODING UTF8 TEMPLATE template0 O
 echo "Postgres User ${SEMAPHORE_DB_USR} and database ${SEMAPHORE_DB_NAME} created."
 EOF
 
-curl -s https://api.github.com/repos/ansible-semaphore/semaphore/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep 'linux_amd64.deb$' | wget -i - -O /opt/semaphore_linux_amd64.deb
+curl -s https://api.github.com/repos/semaphoreui/semaphore/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep 'linux_amd64.deb$' | wget -i - -O /opt/semaphore_linux_amd64.deb
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install /opt/semaphore_linux_amd64.deb
 
 cat << EOF > /usr/local/bin/update-semaphore
 PATH="/bin:/usr/bin:/usr/local/bin"
 echo "Checking github for new semaphore version"
-current_version=\$(curl -s https://api.github.com/repos/ansible-semaphore/semaphore/releases/latest | grep "tag_name" | cut -d '"' -f4)
+current_version=\$(curl -s https://api.github.com/repos/semaphoreui/semaphore/releases/latest | grep "tag_name" | cut -d '"' -f4)
 installed_version=\$(semaphore version)
 echo "Installed semaphore version is \$installed_version"
 if [ \$installed_version != \$current_version ]; then
   echo "New semaphore version \$current_version available. Stopping semaphore.service"
   systemctl stop semaphore.service
   echo "Downloading semaphore version \$current_version..."
-  curl -s https://api.github.com/repos/ansible-semaphore/semaphore/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep 'linux_amd64.deb$' | wget -i - -O /opt/semaphore_linux_amd64.deb
+  curl -s https://api.github.com/repos/semaphoreui/semaphore/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep 'linux_amd64.deb$' | wget -i - -O /opt/semaphore_linux_amd64.deb
   DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install /opt/semaphore_linux_amd64.deb
   echo "Starting semaphore.service..."
   systemctl start semaphore.service
@@ -63,7 +63,7 @@ chmod +x /etc/apt/apt.conf.d/80-semaphore-apt-hook
 cat << EOF > /etc/systemd/system/semaphore.service
 [Unit]
 Description=Semaphore Ansible
-Documentation=https://github.com/ansible-semaphore/semaphore
+Documentation=https://github.com/semaphoreui/semaphore
 Wants=network-online.target
 After=network-online.target
 
