@@ -54,6 +54,18 @@ cat << EOF > /etc/aptly.conf
 }
 EOF
 
+cat << EOF > /usr/local/bin/update-apt-mirrors
+#!/bin/bash
+PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+
+for m in $(aptly mirror list -raw); do
+  aptly mirror update -keyring='/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg' \$m
+done
+EOF
+
+chmod +x /usr/local/bin/update-apt-mirrors
+
+
 cat << EOF > /etc/nginx/conf.d/default.conf
 server {
         listen 80 default_server;
@@ -153,6 +165,95 @@ TimeoutStopSec=15s
 WantedBy=multi-user.target
 EOF
 
+cat << EOF > /root/mirror-examples
+# import proxmox keyring
+wget -O - http://download.proxmox.com/debian/proxmox-release-bookworm.gpg | gpg --no-default-keyring --keyring /$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg --import
+
+# proxmox 8 no subscription mirror (about 11.5 GB)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg pve8.pve-no-subscription http://download.proxmox.com/debian/ bookworm pve-no-suscription
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg pve8.pve-no-subscription
+
+# import debian keyring
+cat /etc/apt/trusted.gpg.d/debian-archive* | gpg --no-default-keyring --keyring /$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg --import
+
+# debian 12 main mirror (about 87 GB)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.main http://deb.debian.org/debian/ bookworm main
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.main
+
+# debian 12 contrib mirror (about 600 MB)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.contrib http://deb.debian.org/debian/ bookworm contrib
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.contrib
+
+# debian 12 non-free mirror (about7,2 GB)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free http://deb.debian.org/debian/ bookworm non-free
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free
+
+# debian 12 non-free-firmware mirror (38 Packages)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free-firmware http://deb.debian.org/debian/ bookworm non-free-firmware
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free-firmware
+
+# debian 12 update main mirror (about 2,5 GB)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.main.update http://deb.debian.org/debian/ bookworm-updates main
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.main.update
+
+# debian 12 update contrib mirror (currently empty)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.contrib.updates http://deb.debian.org/debian/ bookworm-updates contrib
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.contrib.updates
+
+# debian 12 updates non-free mirror (about 900 MB)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free.updates http://deb.debian.org/debian/ bookworm-updates non-free
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free.updates
+
+# debian 12 updates non-free-firmware mirror (about 70 MB)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free-firmware.updates http://deb.debian.org/debian/ bookworm-updates non-free-firmware
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free-firmware.updates
+
+# debian 12 security main mirror (about 5,5 GB)
+aptly mirror create -force-components -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.main.security http://security.debian.org/debian-security bookworm-security main
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.main.security
+
+# debian 12 security contrib mirror (2 packages)
+aptly mirror create -force-components -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.contrib.security http://security.debian.org/debian-security bookworm-security contrib
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.contrib.security
+
+# debian 12 security non-free mirror (currently empty)
+aptly mirror create -force-components -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free.security http://security.debian.org/debian-security bookworm-security non-free
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free.security
+
+# debian 12 security non-free-firmware mirror (1 package)
+aptly mirror create -force-components -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free-firmware.security http://security.debian.org/debian-security bookworm-security non-free-firmware
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free-firmware.security
+
+# debian 12 backports main mirror (about 14,5 GB)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.main.backports http://deb.debian.org/debian/ bookworm-backports main
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.main.backports
+
+# debian 12 backports contrib mirror (about 100 MB)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.contrib.backports http://deb.debian.org/debian/ bookworm-backports contrib
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.contrib.backports
+
+# debian 12 backports non-free mirror (2 packages)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free.backports http://deb.debian.org/debian/ bookworm-backports non-free
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free.backports
+
+# debian 12 backports non-free-firmware mirror (currently empty)
+aptly mirror create -architectures="amd64" -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free-firmware.backports http://deb.debian.org/debian/ bookworm-backports non-free-firmware
+aptly mirror update -keyring=/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg debian12.non-free-firmware.backports
+EOF
+
+cat << EOF > /usr/local/bin/update-apt-mirrors 
+#!/bin/bash
+PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+
+for m in \$(aptly mirror list -raw); do
+  aptly mirror update -keyring='/$LXC_SHAREFS_MOUNTPOINT/trustedkeys.gpg' $m
+done
+EOF
+
+echo "0 4 * * * root /usr/local/bin/update-apt-mirrors" > /etc/cron.d/update-apt-mirrors
+
+chmod +x /usr/local/bin/update-apt-mirrors 
+
 chown -R www-data:www-data /$LXC_SHAREFS_MOUNTPOINT
 
 chown -R www-data:www-data /var/www
@@ -168,3 +269,5 @@ generate_dhparam
 systemctl daemon-reload
 systemctl enable --now aptly aptly-api
 systemctl restart nginx
+
+echo "Apt mirror installation complete. Please look into /root/mirror-examples for mirror examples."
