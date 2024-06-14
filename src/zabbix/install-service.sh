@@ -5,20 +5,20 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+set -euo pipefail
+
 source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-apt-key adv --fetch https://repo.zabbix.com/zabbix-official-repo.key
-echo "deb https://repo.zabbix.com/zabbix/6.0/debian/ bullseye main contrib non-free" > /etc/apt/sources.list.d/zabbix-6.0.list
-
-wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
+apt_repo "zabbix" "https://repo.zabbix.com/zabbix-official-repo.key" "https://repo.zabbix.com/zabbix/${ZABBIX_VERSION}/debian/ $(lsb_release -cs) main"
+apt_repo "postgresql" "https://www.postgresql.org/media/keys/ACCC4CF8.asc" "http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main"
+apt_repo "timescaledb" "https://packagecloud.io/timescale/timescaledb/gpgkey" "https://packagecloud.io/timescale/timescaledb/debian/ $(lsb_release -c -s) main"
 
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql nginx php7.4-pgsql php7.4-fpm zabbix-server-pgsql zabbix-frontend-php zabbix-nginx-conf zabbix-sql-scripts zabbix-agent ssl-cert
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql-$POSTGRES_VERSION timescaledb-2-oss-$TS_VERSION-postgresql-$POSTGRES_VERSION postgresql-client timescaledb-tools nginx php$PHP_VERSION-pgsql php$PHP_VERSION-fpm zabbix-server-pgsql zabbix-frontend-php zabbix-nginx-conf zabbix-sql-scripts zabbix-agent2 zabbix-agent2-plugin-* ssl-cert
 
 unlink /etc/nginx/sites-enabled/default
 
@@ -122,7 +122,7 @@ server {
 }
 EOF
 
-cat << EOF > /etc/php/7.4/fpm/pool.d/zabbix-php-fpm.conf
+cat << EOF > /etc/php/$PHP_VERSION/fpm/pool.d/zabbix-php-fpm.conf
 [zabbix]
 user = www-data
 group = www-data
@@ -220,10 +220,17 @@ sed -i "s/false/true/g" /usr/share/zabbix/include/locales.inc.php
 
 zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql ${ZABBIX_DB_NAME}
 
+timescaledb-tune --quiet --yes >> /etc/postgresql/$POSTGRES_VERSION/main/postgresql.conf
+
+systemctl restart postgresql
+
+echo "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;" | sudo -u postgres psql zabbix
+cat /usr/share/zabbix-sql-scripts/postgresql/timescaledb/schema.sql | sudo -u zabbix psql ${ZABBIX_DB_NAME}
+
 echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_server.conf
 
-openssl dhparam -out /etc/nginx/dhparam.pem 4096
+generate_dhparam
 
-systemctl enable --now zabbix-server zabbix-agent nginx php7.4-fpm 
+systemctl enable nginx php$PHP_VERSION-fpm zabbix-server zabbix-agent2 
 
-systemctl restart zabbix-server zabbix-agent nginx php7.4-fpm 
+systemctl restart nginx php$PHP_VERSION-fpm zabbix-server zabbix-agent2 > /dev/null 2>&1

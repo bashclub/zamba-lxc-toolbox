@@ -18,7 +18,7 @@ systemctl enable --now postgresql
 wget https://raw.githubusercontent.com/jjlin/docker-image-extract/main/docker-image-extract
 chmod +x docker-image-extract
 ./docker-image-extract vaultwarden/server:alpine
-mkdir /opt/vaultwarden
+mkdir -p /opt/vaultwarden
 mkdir -p /var/lib/vaultwarden/data
 useradd vaultwarden
 chown -R vaultwarden:vaultwarden /var/lib/vaultwarden
@@ -40,7 +40,7 @@ ORG_CREATION_USERS=admin@$LXC_DOMAIN
 # Use `openssl rand -base64 48` to generate
 ADMIN_TOKEN=$admin_token
 # Uncomment this once vaults restored
-SIGNUPS_ALLOWED=false
+SIGNUPS_ALLOWED=$VW_SIGNUPS_ALLOWED
 SMTP_HOST=$VW_SMTP_HOST
 SMTP_FROM=$VW_SMTP_FROM
 SMTP_FROM_NAME="$VW_SMTP_FROM_NAME"
@@ -64,7 +64,6 @@ Group=vaultwarden
 EnvironmentFile=/var/lib/vaultwarden/.env
 ExecStart=/opt/vaultwarden/vaultwarden
 LimitNOFILE=1048576
-LimitNPROC=64
 PrivateTmp=true
 PrivateDevices=true
 ProtectHome=true
@@ -154,7 +153,10 @@ server {
 }
 
 EOF
-openssl dhparam -out /etc/nginx/dhparam.pem 4096
+
+generate_dhparam
+
+unlink /etc/nginx/sites-enabled/default
 
 systemctl daemon-reload
 systemctl enable --now vaultwarden

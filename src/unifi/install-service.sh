@@ -11,12 +11,12 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-wget -O /etc/apt/trusted.gpg.d/mongodb-3.6.asc https://www.mongodb.org/static/pgp/server-3.6.asc
-wget -O /etc/apt/trusted.gpg.d/unifi.gpg https://dl.ubnt.com/unifi/unifi-repo.gpg
+wget -O - https://www.mongodb.org/static/pgp/server-7.0.asc | gpg --dearmor > /usr/share/keyrings/mongodb-server-7.0.gpg
+wget -O - https://dl.ubnt.com/unifi/unifi-repo.gpg | gpg --dearmor > /usr/share/keyrings/unifi.gpg
 
-echo "deb http://repo.mongodb.org/apt/debian stretch/mongodb-org/3.6 main" > /etc/apt/sources.list.d/mongodb.list
-echo "deb http://www.ui.com/downloads/unifi/debian stable ubiquiti" > /etc/apt/sources.list.d/unifi.list 
+echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] http://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+echo "deb [ signed-by=/usr/share/keyrings/unifi.gpg ] http://www.ui.com/downloads/unifi/debian stable ubiquiti" > /etc/apt/sources.list.d/unifi.list 
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq unifi
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq default-jre-headless unifi

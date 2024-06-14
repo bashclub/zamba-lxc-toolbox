@@ -29,8 +29,8 @@ Proxmox VE Server (>=6.30) with at least one configured ZFS Pool.
 - `zammad` => Zammad Helpdesk and Ticketing Software [zammad.org](https://zammad.org/)
 - `zmb-ad` => ZMB (Samba) Active Directory Domain Controller, DNS Backends `SAMBA_INTERNAL` and `BIND9_DLZ` are supported
 - `zmb-ad-join` => Additional Active Directory Domain Controller joining an existing Domain
-- `zmb-member` => ZMB (Samba) AD member with ZFS volume snapshot support (previous versions)
-- `zmb-standalone` => ZMB (Samba) standalone server with ZFS volume snapshot support (previous versions)
+- `zmb-member` => ZMB (Samba) AD member with ZFS volume snapshot support
+- `zmb-standalone` => ZMB (Samba) standalone server with ZFS volume snapshot support
 ## Usage
 Just ssh into your Proxmox machine and clone this git repository. Make sure you have installed `git`.
 ```bash

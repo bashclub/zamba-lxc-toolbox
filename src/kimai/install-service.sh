@@ -14,14 +14,14 @@ source /root/constants-service.conf
 KIMAI_DB_PWD=$(random_password)
 webroot=/var/www/kimai/public
 
-wget -q -O - https://packages.sury.org/php/apt.gpg | apt-key add -
-echo "deb https://packages.sury.org/php/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/php.list
+#wget -q -O - https://packages.sury.org/php/apt.gpg | apt-key add -
+#echo "deb https://packages.sury.org/php/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/php.list
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq zip unzip sudo nginx-full mariadb-server mariadb-client php8.1 php8.1-intl php8.1-cli php8.1-fpm php8.1-mysql php8.1-xml php8.1-mbstring php8.1-gd php8.1-tokenizer php8.1-zip php8.1-opcache php8.1-curl
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq zip unzip sudo nginx-full mariadb-server mariadb-client php${KIMAI_PHP_VERSION} php${KIMAI_PHP_VERSION}-intl php${KIMAI_PHP_VERSION}-cli php${KIMAI_PHP_VERSION}-fpm php${KIMAI_PHP_VERSION}-mysql php${KIMAI_PHP_VERSION}-xml php${KIMAI_PHP_VERSION}-mbstring php${KIMAI_PHP_VERSION}-gd php${KIMAI_PHP_VERSION}-tokenizer php${KIMAI_PHP_VERSION}-zip php${KIMAI_PHP_VERSION}-opcache php${KIMAI_PHP_VERSION}-curl
 
-mkdir /etc/nginx/ssl
+mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/kimai.key -out /etc/nginx/ssl/kimai.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
 
 PHP_VERSION=$(php -v | head -1 | cut -d ' ' -f2)
@@ -132,7 +132,12 @@ rm composer-setup.php
 mv composer.phar /usr/local/bin/composer
 
 cd /var/www
-git clone https://github.com/kimai/kimai.git --branch $KIMAI_VERSION --depth 1
+dl=$(curl -s https://api.github.com/repos/kimai/kimai/releases/latest | grep tarball_url | cut -d'"' -f4)
+version=$(echo $dl | rev | cut -d'/' -f1 | rev)
+wget -O kimai-${version}.tar.gz ${dl}
+tar xfz kimai-${version}.tar.gz
+rm kimai-${version}.tar.gz
+mv kimai-* kimai
 cd kimai
 
 # Install kimai composer dependencies
@@ -142,7 +147,7 @@ export COMPOSER_ALLOW_SUPERUSER=1
 # Copy and update kimai environment variables
 cat << EOF > .env
 # For more infos about the variables, see .env.dist
-DATABASE_URL=mysql://kimai:$KIMAI_DB_PWD@localhost:3306/kimai?charset=utf8&serverVersion=mariadb-10.5.8
+DATABASE_URL=mysql://kimai:$KIMAI_DB_PWD@localhost:3306/kimai?charset=utf8&serverVersion=mariadb-10.11.3
 MAILER_FROM=admin@$LXC_DOMAIN
 MAILER_URL=null://null
 APP_ENV=prod
@@ -150,13 +155,13 @@ APP_SECRET=$(random_password)
 CORS_ALLOW_ORIGIN=^https?://localhost(:[0-9]+)?$
 EOF
 
-chown -R www-data:www-data .
-chmod -R g+r .
-chmod -R g+rw var/
-
 bin/console kimai:install -n
 
 bin/console kimai:user:create admin admin@$LXC_DOMAIN ROLE_SUPER_ADMIN $LXC_PWD
+
+chown -R www-data:www-data .
+chmod -R g+r .
+chmod -R g+rw var/
 
 systemctl daemon-reload
 systemctl enable --now php${PHP_VERSION}-fpm nginx

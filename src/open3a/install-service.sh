@@ -16,9 +16,9 @@ MYSQL_PASSWORD="$(random_password)"
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq unzip sudo nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends unzip sudo nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd
 
-mkdir /etc/nginx/ssl
+mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/open3a.key -out /etc/nginx/ssl/open3a.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
 
 cat << EOF > /etc/nginx/sites-available/default
@@ -45,7 +45,7 @@ server {
 
     location ~ .php$ {
         include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
     }
 }
 
@@ -57,7 +57,7 @@ CREATE DATABASE IF NOT EXISTS open3a;
 GRANT ALL PRIVILEGES ON open3a . * TO 'open3a'@'localhost';"
 
 cd $webroot
-wget https://www.open3a.de/download/open3A%203.7.zip -O $webroot/open3a.zip
+wget https://www.open3a.de/download/open3A%204.0.zip -O $webroot/open3a.zip
 unzip open3a.zip
 rm open3a.zip
 chmod 666 system/DBData/Installation.pfdb.php
@@ -76,8 +76,8 @@ localhost                               &%%%&open3a              &%%%&$MYSQL_PAS
 */ ?>
 EOF
 
-systemctl enable --now php7.4-fpm
-systemctl restart php7.4-fpm nginx
+systemctl enable --now php8.2-fpm
+systemctl restart php8.2-fpm nginx
 
 LXC_IP=$(ip address show dev eth0 | grep "inet " | cut -d ' ' -f6)
 

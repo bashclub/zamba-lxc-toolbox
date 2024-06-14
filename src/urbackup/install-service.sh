@@ -11,7 +11,7 @@ source /root/constants-service.conf
 
 mkdir -p /$LXC_SHAREFS_MOUNTPOINT/tmp
 mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$URBACKUP_DATA
-mkdir /etc/urbackup
+mkdir -p /etc/urbackup
 echo "/$LXC_SHAREFS_MOUNTPOINT/$URBACKUP_DATA" > /etc/urbackup/backupfolder
 
 echo "deb http://download.opensuse.org/repositories/home:/uroni/$REPO_CODENAME/ /" | tee /etc/apt/sources.list.d/urbackup.list
@@ -20,7 +20,7 @@ curl -fsSL https://download.opensuse.org/repositories/home:uroni/$REPO_CODENAME/
 apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y --no-install-recommends -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" urbackup-server nginx
 
-mkdir /etc/nginx/ssl
+mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/urbackup.key -out /etc/nginx/ssl/urbackup.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
 
 ln -s /usr/share/urbackup/www /var/www/urbackup

@@ -10,20 +10,14 @@ set -euo pipefail
 source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
-
-wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -
-add-apt-repository --yes https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/
-
-wget -O /etc/apt/trusted.gpg.d/mongodb-4.4.asc https://www.mongodb.org/static/pgp/server-4.4.asc
-
-echo "deb http://repo.mongodb.org/apt/debian buster/mongodb-org/4.4 main" > /etc/apt/sources.list.d/mongodb.list
+wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor > /usr/share/keyrings/adoptium-keyring.gpg
+wget -O - https://apt.bashclub.org/gpg/bashclub.pub | gpg --dearmor > /usr/share/keyrings/bashclub-keyring.gpg
+wget -O - https://pgp.mongodb.com/server-4.4.asc | gpg --dearmor > /usr/share/keyrings/mongodb-server-4.4.gpg
+echo "deb [signed-by=/usr/share/keyrings/bashclub-keyring.gpg] https://apt.bashclub.org/omada $(lsb_release -cs 2>/dev/null) main" > /etc/apt/sources.list.d/bashclub-omada.list
+echo "deb [signed-by=/usr/share/keyrings/adoptium-keyring.gpg] https://packages.adoptium.net/artifactory/deb $(lsb_release -cs 2>/dev/null) main" > /etc/apt/sources.list.d/adoptium.list
+echo "deb [signed-by=/usr/share/keyrings/mongodb-server-4.4.gpg] http://repo.mongodb.org/apt/debian buster/mongodb-org/4.4 main" > /etc/apt/sources.list.d/mongodb-org-7.0.list
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq adoptopenjdk-8-hotspot jsvc mongodb-org
-
-DL=$(wget -O - -q  https://www.tp-link.com/de/support/download/omada-software-controller/ 2>/dev/null | grep Download-Detail-Software_Omada-Software-Controller | grep "Linux_x64.deb" | head -1 | cut -d'"' -f6)
-
-wget -O /tmp/omada.deb -q $DL
-
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq /tmp/omada.deb
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install --no-install-recommends -y -qq temurin-8-jre jsvc mongodb-org
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install --no-install-recommends -y -qq omadac

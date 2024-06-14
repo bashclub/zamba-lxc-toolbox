@@ -24,27 +24,39 @@ EOF
 locale-gen $LXC_LOCALE 
 
 # Generate sources
-if [ "$LXC_TEMPLATE_VERSION" == "debian-11-standard" ] ; then
+if [ "$LXC_TEMPLATE_VERSION" == "debian-10-standard" ] ; then
 
 cat << EOF > /etc/apt/sources.list
-deb http://debian.inf.tu-dresden.de/debian bullseye main contrib
+deb http://deb.debian.org/debian/ buster main contrib
 
-deb http://debian.inf.tu-dresden.de/debian bullseye-updates main contrib
+deb http://deb.debian.org/debian/ buster-updates main contrib
 
 # security updates
-deb http://debian.inf.tu-dresden.de/debian-security bullseye-security main contrib
+deb http://security.debian.org/debian-security buster/updates main contrib
 EOF
 
-elif [ "$LXC_TEMPLATE_VERSION" == "debian-10-standard" ] ; then
+elif [ "$LXC_TEMPLATE_VERSION" == "debian-11-standard" ] ; then
 
 cat << EOF > /etc/apt/sources.list
-deb http://debian.inf.tu-dresden.de/debian buster main contrib
+deb http://deb.debian.org/debian/ bullseye main contrib
 
-deb http://debian.inf.tu-dresden.de/debian buster-updates main contrib
+deb http://deb.debian.org/debian/ bullseye-updates main contrib
 
 # security updates
-deb http://debian.inf.tu-dresden.de/debian-security buster/updates main contrib
+deb http://security.debian.org/debian-security bullseye-security main contrib
 EOF
+
+elif [ "$LXC_TEMPLATE_VERSION" == "debian-12-standard" ] ; then
+
+cat << EOF > /etc/apt/sources.list
+deb http://deb.debian.org/debian/ bookworm main contrib
+
+deb http://deb.debian.org/debian/ bookworm-updates main contrib
+
+# security updates
+deb http://security.debian.org/debian-security bookworm-security main contrib
+EOF
+
 else echo "LXC Debian Version false. Please check configuration files!" ; exit
 fi
 

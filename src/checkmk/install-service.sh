@@ -23,6 +23,46 @@ cat << EOF > /etc/apache2/sites-available/000-default.conf
 </VirtualHost>
 EOF
 
+cat << EOF > /etc/apache2/sites-available/default-ssl.conf
+<VirtualHost *:443>
+	RewriteEngine On
+	RewriteCond %{REQUEST_URI} !^/$CMK_INSTANCE
+	RewriteRule ^/(.*) https://%{HTTP_HOST}/$CMK_INSTANCE/\$1 [R=301,L]
+
+	ServerAdmin webmaster@localhost
+
+	DocumentRoot /var/www/html
+
+	ErrorLog \${APACHE_LOG_DIR}/error.log
+	CustomLog \${APACHE_LOG_DIR}/access.log combined
+
+	SSLEngine on
+
+	SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
+	SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
+
+	#SSLCertificateChainFile /etc/apache2/ssl.crt/server-ca.crt
+
+	#SSLCACertificatePath /etc/ssl/certs/
+	#SSLCACertificateFile /etc/apache2/ssl.crt/ca-bundle.crt
+
+	#SSLCARevocationPath /etc/apache2/ssl.crl/
+	#SSLCARevocationFile /etc/apache2/ssl.crl/ca-bundle.crl
+
+	#SSLVerifyClient require
+	#SSLVerifyDepth  10
+
+	#SSLOptions +FakeBasicAuth +ExportCertData +StrictRequire
+	<FilesMatch "\.(?:cgi|shtml|phtml|php)\$">
+		SSLOptions +StdEnvVars
+	</FilesMatch>
+	<Directory /usr/lib/cgi-bin>
+		SSLOptions +StdEnvVars
+	</Directory>
+
+</VirtualHost>
+EOF
+
 a2enmod ssl
 a2enmod rewrite
 a2ensite default-ssl

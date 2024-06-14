@@ -14,19 +14,19 @@ source /root/constants-service.conf
 
 HOSTNAME=$(hostname -f)
 
-wget -q -O - https://packages.sury.org/php/apt.gpg | apt-key add -
+wget -q -O - https://packages.sury.org/php/apt.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/sury-php.gpg >/dev/null
 echo "deb https://packages.sury.org/php/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/php.list
 
-wget -q -O - https://nginx.org/keys/nginx_signing.key | apt-key add -
+wget -q -O - https://nginx.org/keys/nginx_signing.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/nginx.gpg >/dev/null
 echo "deb http://nginx.org/packages/debian $(lsb_release -cs) nginx" | tee /etc/apt/sources.list.d/nginx.list
 
-wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/postgresql.gpg >/dev/null
 echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
 
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends tree locate screen zip ffmpeg ghostscript libfile-fcntllock-perl libfuse2 socat fail2ban ldap-utils cifs-utils redis-server imagemagick libmagickcore-6.q16-6-extra \
-postgresql-13 nginx php$NEXTCLOUD_PHP_VERSION-{fpm,gd,mysql,pgsql,curl,xml,zip,intl,mbstring,bz2,ldap,apcu,bcmath,gmp,imagick,igbinary,redis,dev,smbclient,cli,common,opcache,readline}
+postgresql-15 nginx php$NEXTCLOUD_PHP_VERSION-{fpm,gd,mysql,pgsql,curl,xml,zip,intl,mbstring,bz2,ldap,apcu,bcmath,gmp,imagick,igbinary,redis,dev,smbclient,cli,common,opcache,readline}
 
 timedatectl set-timezone $LXC_TIMEZONE
 mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$NEXTCLOUD_DATA /var/www
@@ -76,7 +76,7 @@ sed -i "s/;session.cookie_secure.*/session.cookie_secure = True/" /etc/php/$NEXT
 sed -i "s/;opcache.enable=.*/opcache.enable=1/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/;opcache.enable_cli=.*/opcache.enable_cli=1/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/;opcache.memory_consumption=.*/opcache.memory_consumption=128/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
-sed -i "s/;opcache.interned_strings_buffer=.*/opcache.interned_strings_buffer=8/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
+sed -i "s/;opcache.interned_strings_buffer=.*/opcache.interned_strings_buffer=16/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/;opcache.max_accelerated_files=.*/opcache.max_accelerated_files=10000/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/;opcache.revalidate_freq=.*/opcache.revalidate_freq=1/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
 sed -i "s/;opcache.save_comments=.*/opcache.save_comments=1/" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini
@@ -90,7 +90,7 @@ sed -i "s/rights=\"none\" pattern=\"XPS\"/rights=\"read|write\" pattern=\"XPS\"/
 
 mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/ssl/private/nextcloud.key -out /etc/ssl/certs/nextcloud.crt -subj "/CN=$NEXTCLOUD_FQDN" -addext "subjectAltName=DNS:$NEXTCLOUD_FQDN"
-openssl dhparam -dsaparam -out /etc/ssl/certs/dhparam.pem 4096
+generate_dhparam
 
 mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
 
@@ -113,6 +113,9 @@ set_real_ip_from 127.0.0.1;
 real_ip_header X-Forwarded-For;
 real_ip_recursive on;
 include /etc/nginx/mime.types;
+types {
+        text/javascript mjs;
+    }
 default_type application/octet-stream;
 sendfile on;
 send_timeout 3600;
@@ -135,6 +138,10 @@ touch /etc/nginx/conf.d/default.conf
 cat > /etc/nginx/conf.d/http.conf << EOF
 upstream php-handler {
 server unix:/run/php/php$NEXTCLOUD_PHP_VERSION-fpm.sock;
+}
+map \$arg_v \$asset_immutable {
+    "" "";
+    default "immutable";
 }
 server {
 listen 80 default_server;
@@ -160,7 +167,7 @@ ssl_trusted_certificate /etc/ssl/certs/nextcloud.crt;
 #ssl_certificate /etc/letsencrypt/ecc-certs/fullchain.pem;
 #ssl_certificate_key /etc/letsencrypt/ecc-certs/privkey.pem;
 #ssl_trusted_certificate /etc/letsencrypt/ecc-certs/chain.pem;
-ssl_dhparam /etc/ssl/certs/dhparam.pem;
+ssl_dhparam /etc/nginx/dhparam.pem;
 ssl_session_timeout 1d;
 ssl_session_cache shared:SSL:50m;
 ssl_session_tickets off;
@@ -171,13 +178,15 @@ ssl_prefer_server_ciphers on;
 ssl_stapling on;
 ssl_stapling_verify on;
 client_max_body_size 5120M;
+client_body_timeout 300s;
+client_body_buffer_size 512k;
 fastcgi_buffers 64 4K;
 gzip on;
 gzip_vary on;
 gzip_comp_level 4;
 gzip_min_length 256;
 gzip_proxied expired no-cache no-store private no_last_modified no_etag auth;
-gzip_types application/atom+xml application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
+gzip_types application/atom+xml text/javascript application/wasm application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
 add_header Strict-Transport-Security            "max-age=15768000; includeSubDomains; preload;" always;
 add_header Permissions-Policy                   "interest-cohort=()";
 add_header Referrer-Policy                      "no-referrer"   always;
@@ -230,10 +239,13 @@ fastcgi_pass php-handler;
 fastcgi_intercept_errors on;
 fastcgi_request_buffering off;
 }
-location ~ \.(?:css|js|svg|gif)\$ {
+location ~ \.(?:css|js|mjs|svg|gif|ico|wasm|tflite|map)\$ {
 try_files \$uri /index.php\$request_uri;
 expires 6M;
 access_log off;
+    location ~ \.wasm$ {
+            default_type application/wasm;
+        }
 }
 location ~ \.woff2?\$ {
 try_files \$uri /index.php\$request_uri;
