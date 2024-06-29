@@ -95,6 +95,7 @@ AUTHENTIK_EMAIL__USE_SSL=false
 AUTHENTIK_EMAIL__TIMEOUT=10
 # Email address authentik will send from, should have a correct @domain
 AUTHENTIK_EMAIL__FROM=
+AUTHENTIK_REDIS__DB=1
 EOF
 
 docker compose pull
