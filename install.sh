@@ -142,7 +142,7 @@ fi
 
 # Create the container
 set +u
-pct create $LXC_NBR $TAGS $LXC_CORES $LXC_POOL --password $LXC_PWD -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE;
+pct create $LXC_NBR $TAGS $LXC_CORES $LXC_POOL --password $LXC_PWD -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE,acl=1;
 set -u
 sleep 2;
 
