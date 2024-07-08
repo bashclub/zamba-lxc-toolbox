@@ -119,8 +119,7 @@ if [ $ctid -gt 99 ]; then
   LXC_CHK=$ctid
 else
   # Get next free LXC-number
-  LXC_LST=$( lxc-ls -1 | tail -1 )
-  LXC_CHK=$((LXC_LST+1));
+  LXC_CHK=$(($(pct list | cut -d' ' -f1 | tail -1) + 1))
 fi
 
 if  [ $LXC_CHK -lt 100 ] || [ -f /etc/pve/qemu-server/$LXC_CHK.conf ]; then
