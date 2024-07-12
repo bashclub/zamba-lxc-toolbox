@@ -119,8 +119,7 @@ if [ $ctid -gt 99 ]; then
   LXC_CHK=$ctid
 else
   # Get next free LXC-number
-  LXC_LST=$( lxc-ls -1 | tail -1 )
-  LXC_CHK=$((LXC_LST+1));
+  LXC_CHK=$(($(pct list | cut -d' ' -f1 | tail -1) + 1))
 fi
 
 if  [ $LXC_CHK -lt 100 ] || [ -f /etc/pve/qemu-server/$LXC_CHK.conf ]; then
@@ -160,9 +159,11 @@ sleep 2
 
 if [ $LXC_MP -gt 0 ]; then
   pct set $LXC_NBR -mp0 $LXC_SHAREFS_STORAGE:$LXC_SHAREFS_SIZE,backup=1,mp=/$LXC_SHAREFS_MOUNTPOINT
-  pool=$(grep -A 4 $LXC_SHAREFS_STORAGE /etc/pve/storage.cfg | grep -m1 "pool " | cut -d ' ' -f2)
-  dataset=$(grep mp0 /etc/pve/lxc/$LXC_NBR.conf | cut -d ':' -f3 | cut -d',' -f1)
-  zfs set recordsize=$LXC_MP_RECORDSIZE $pool/$dataset
+  if [[ "$(pvesm status | grep $LXC_SHAREFS_STORAGE | cut -d ' ' -f6)" == "zfspool" ]]; then
+    pool=$(grep -A 4 $LXC_SHAREFS_STORAGE /etc/pve/storage.cfg | grep -m1 "pool " | cut -d ' ' -f2)
+    dataset=$(grep mp0 /etc/pve/lxc/$LXC_NBR.conf | cut -d ':' -f3 | cut -d',' -f1)
+    zfs set recordsize=$LXC_MP_RECORDSIZE $pool/$dataset
+  fi
 fi
 
 sleep 2;
