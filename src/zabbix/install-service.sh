@@ -18,7 +18,7 @@ apt_repo "timescaledb" "https://packagecloud.io/timescale/timescaledb/gpgkey" "h
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql-$POSTGRES_VERSION timescaledb-2-oss-$TS_VERSION-postgresql-$POSTGRES_VERSION postgresql-client timescaledb-tools nginx php$PHP_VERSION-pgsql php$PHP_VERSION-fpm zabbix-server-pgsql zabbix-frontend-php zabbix-nginx-conf zabbix-sql-scripts zabbix-agent2 zabbix-agent2-plugin-* ssl-cert
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql-$POSTGRES_VERSION timescaledb-2-oss-$TS_VERSION-postgresql-$POSTGRES_VERSION postgresql-client-$POSTGRES_VERSION timescaledb-tools nginx php$PHP_VERSION-pgsql php$PHP_VERSION-fpm zabbix-server-pgsql zabbix-frontend-php zabbix-nginx-conf zabbix-sql-scripts zabbix-agent2 zabbix-agent2-plugin-* ssl-cert
 
 unlink /etc/nginx/sites-enabled/default
 
