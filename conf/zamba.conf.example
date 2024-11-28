@@ -99,16 +99,20 @@ LXC_TAGS="linux,debian,${service}"
 
 ############### Zamba-Server-Section ###############
 
-# Defines the REALM for the Active Directory (AD DC, AD member)
+# Defines the REALM for the Active Directory (needs to be UPPER CASE, valid on zmb-ad, zmb-ad-join, zmb-member, zmb-cups)
 ZMB_REALM="ZMB.ROCKS"
-# Defines the domain name in your Active Directory or Workgroup (AD DC, AD member, standalone)
+# Defines the domain name in your Active Directory or Workgroup (needs to be UPPER CASE, valid on zmb-ad, zmb-ad-join, zmb-member, zmb-cups, zmb-standalone)
 ZMB_DOMAIN="ZMB"
 
-# Defines the name of your domain administrator account (AD DC, AD member, standalone)
+# Defines the name of your domain administrator account (Some environments are case sensitive, valid on zmb-ad, zmb-ad-join, zmb-member, zmb-cups, zmb-standalone)
 ZMB_ADMIN_USER="administrator"
+
 # The admin password for zamba installation. Please use 'single quatation marks' to avoid unexpected behaviour
 # `zmb-ad` domain administrator has to meet the password complexity policy, if password is too weak, domain provisioning will fail
 ZMB_ADMIN_PASS='Start!123'
+
+# Name of the "domain admins" group (depends on your Active Directory language, valid on zmb-cups)
+ZMB_DOMAIN_ADMINS="domain admins"
 
 # Defines the name of your Zamba share
 ZMB_SHARE="share"

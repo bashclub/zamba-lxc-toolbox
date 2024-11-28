@@ -102,6 +102,15 @@ source "$config"
 
 source "$PWD/src/$service/constants-service.conf"
 
+if [[ $service == "zmb-ad-restore" ]]; then
+  if find ./ | grep samba-backup*.tar.bz2 ; then
+    sambabackup=$(find $PWD/ | grep samba-backup*.tar.bz2 | tail -1)
+  else
+    echo "No samba backup found in $PWD. Please place a samba online backup into $PWD. Canceling..."
+    exit 1
+  fi
+fi
+
 if [ $LXC_MEM -lt $LXC_MEM_MIN ]; then
   LXC_MEM=$LXC_MEM_MIN
 fi
@@ -184,6 +193,11 @@ pct push $LXC_NBR "$PWD/src/lxc-base.sh" /root/lxc-base.sh
 pct push $LXC_NBR "$PWD/src/$service/install-service.sh" /root/install-service.sh
 pct push $LXC_NBR "$PWD/src/$service/constants-service.conf" /root/constants-service.conf
 
+if [[ $service == "zmb-ad-restore" ]]; then
+    pct exec $LXC_NBR -- mkdir -p /backup/online
+    pct push $LXC_NBR "$PWD/samba-backup-*.tar.bz2" /backup/online/
+fi
+
 if [ $debug -gt 0 ]; then dbg=-vx; else dbg=""; fi
 
 echo "Installing basic container setup..."
@@ -193,6 +207,9 @@ pct exec $LXC_NBR -- su - root -c "bash $dbg /root/install-service.sh"
 
 pct shutdown $LXC_NBR
 if [[ $service == "zmb-ad" ]]; then
+  ## set nameserver, ${LXC_IP%/*} extracts the ip address from cidr format
+  pct set $LXC_NBR -nameserver ${LXC_IP%/*}
+elif [[ $service == "zmb-ad-restore" ]]; then
   ## set nameserver, ${LXC_IP%/*} extracts the ip address from cidr format
   pct set $LXC_NBR -nameserver ${LXC_IP%/*}
 elif [[ $service == "zmb-ad-join" ]]; then

@@ -96,13 +96,13 @@ systemctl restart winbind nmbd
 
 mkdir -p /${LXC_SHAREFS_MOUNTPOINT}/{spool,printerdrivers}
 cp -rv /var/lib/samba/printers/* /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
-chown -R root:"domain admins" /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
+chown -R root:"${ZMB_DOMAIN_ADMINS}" /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
 chmod -R 1777 /${LXC_SHAREFS_MOUNTPOINT}/spool
 chmod -R 2775 /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
 setfacl -Rb /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
-setfacl -Rm u:${ZMB_ADMIN_USER}:rwx,g:"domain admins":rwx,g:"NT Authority/authenticated users":r-x,o::--- /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
-setfacl -Rdm u:${ZMB_ADMIN_USER}:rwx,g:"domain admins":rwx,g:"NT Authority/authenticated users":r-x,o::--- /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
-echo -e "${ZMB_ADMIN_PASS}" | net rpc rights grant "${ZMB_DOMAIN}\\domain admins" SePrintOperatorPrivilege -U "${ZMB_DOMAIN}\\${ZMB_ADMIN_USER}"
+setfacl -Rm u:${ZMB_ADMIN_USER}:rwx,g:"${ZMB_DOMAIN_ADMINS}":rwx,g:"NT Authority/authenticated users":r-x,o::--- /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
+setfacl -Rdm u:${ZMB_ADMIN_USER}:rwx,g:"${ZMB_DOMAIN_ADMINS}":rwx,g:"NT Authority/authenticated users":r-x,o::--- /${LXC_SHAREFS_MOUNTPOINT}/printerdrivers
+echo -e "${ZMB_ADMIN_PASS}" | net rpc rights grant "${ZMB_DOMAIN}\\${ZMB_DOMAIN_ADMINS}" SePrintOperatorPrivilege -U "${ZMB_DOMAIN}\\${ZMB_ADMIN_USER}"
 systemctl disable --now cups-browsed.service
 
 cupsctl --remote-admin
