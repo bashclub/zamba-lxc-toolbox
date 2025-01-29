@@ -32,7 +32,7 @@ events {
   use epoll;
 }
 http {
-  log_format criegerde escape=json
+  log_format bashclub escape=json
   '{'
     '"time_local":"\$time_local",'
     '"remote_addr":"\$remote_addr",'
