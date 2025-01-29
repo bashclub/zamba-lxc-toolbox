@@ -527,6 +527,7 @@ systemctl enable notify_push
 
 #### Modifying Crowdsec ####
 mod_crowdsec() {
+systemctl restart crowdsec
 cscli collections install crowdsecurity/nginx
 cscli collections install crowdsecurity/nextcloud
 cscli collections install crowdsecurity/sshd
