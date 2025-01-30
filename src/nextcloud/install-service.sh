@@ -14,6 +14,7 @@ source /root/constants-service.conf
 NEXTCLOUD_ADMIN_PWD=$(random_password)
 NEXTCLOUD_REDIS_PWD=$(random_password)
 HOSTNAME=$(hostname -f)
+HOST_IP=$(hostname -i)
 
 #### Modify Nginx for Nextcloud ####
 mod_nginx() {
@@ -480,7 +481,7 @@ cat >> /var/www/nextcloud/config/config.php << EOF
   'overwritehost' => '$NEXTCLOUD_FQDN',
   'trusted_domains' => 
   array (
-    0 => '$LXC_IP',
+    0 => '$HOST_IP',
     1 => '$NEXTCLOUD_FQDN',
   ),
 
