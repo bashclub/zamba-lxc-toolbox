@@ -17,7 +17,7 @@ chmod a+r /etc/apt/keyrings/docker.gpg
 # Add the repository to Apt sources:
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 apt-get update
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq rsync docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get purge -y -qq postfix
 
 SECRET=$(random_password)
@@ -385,32 +385,11 @@ server {
 EOF
 
 cat << EOF > /etc/cron.daily/mailcowbackup
-#!/bin/sh
-
-# Backup mailcow data
-# https://docs.mailcow.email/backup_restore/b_n_r-backup/
-
-set -e
-
-OUT="\$(mktemp)"
-export MAILCOW_BACKUP_LOCATION="/$LXC_SHAREFS_MOUNTPOINT"
-SCRIPT="/opt/mailcow-dockerized/helper-scripts/backup_and_restore.sh"
-PARAMETERS="backup all"
-OPTIONS="--delete-days 7"
-mkdir -p \$MAILCOW_BACKUP_LOCATION
-
-# run command
-set +e
-"\${SCRIPT}" \${PARAMETERS} \${OPTIONS} 2>&1 > "\$OUT"
-RESULT=\$?
-
-if [ \$RESULT -ne 0 ]
-    then
-            echo "\${SCRIPT} \${PARAMETERS} \${OPTIONS} encounters an error:"
-            echo "RESULT=\$RESULT"
-            echo "STDOUT / STDERR:"
-            cat "\$OUT"
-fi
+#!/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+25 1 * * * rsync -aH --delete /opt/mailcow-dockerized /${LXC_SHAREFS_MOUNTPOINT}/mailcow-dockerized
+40 2 * * * rsync -aH --delete /var/lib/docker/volumes /${LXC_SHAREFS_MOUNTPOINT}/var_lib_docker_volumes
+5 4 * * * cd /opt/mailcow-dockerized/; BACKUP_LOCATION=/${LXC_SHAREFS_MOUNTPOINT}/db_crypt_redis /opt/mailcow-dockerized/helper-scripts/backup_and_restore.sh backup mysql crypt redis --delete-days 3
 EOF
 
 chmod +x /etc/cron.daily/mailcowbackup
