@@ -139,7 +139,6 @@ POPS_PORT=995
 SIEVE_PORT=4190
 DOVEADM_PORT=127.0.0.1:19991
 SQL_PORT=127.0.0.1:13306
-SOLR_PORT=127.0.0.1:18983
 REDIS_PORT=127.0.0.1:7654
 
 # Your timezone
@@ -224,15 +223,6 @@ SKIP_CLAMD=n
 # Skip SOGo: Will disable SOGo integration and therefore webmail, DAV protocols and ActiveSync support (experimental, unsupported, not fully implemented) - y/n
 
 SKIP_SOGO=n
-
-# Skip Solr on low-memory systems or if you do not want to store a readable index of your mails in solr-vol-1.
-
-SKIP_SOLR=n
-
-# Solr heap size in MB, there is no recommendation, please see Solr docs.
-# Solr is a prone to run OOM and should be monitored. Unmonitored Solr setups are not recommended.
-
-SOLR_HEAP=1024
 
 # Allow admins to log into SOGo as email user (without any password)
 
@@ -344,6 +334,37 @@ WEBAUTHN_ONLY_TRUSTED_VENDORS=n
 # Otherwise it will work normally.
 SPAMHAUS_DQS_KEY=
 
+# Obtain certificates for autodiscover.* and autoconfig.* domains.
+# This can be useful to switch off in case you are in a scenario where a reverse proxy already handles those.
+# There are mixed scenarios where ports 80,443 are occupied and you do not want to share certs
+# between services. So acme-mailcow obtains for maildomains and all web-things get handled
+# in the reverse proxy.
+AUTODISCOVER_SAN=y
+# Skip Unbound (DNS Resolver) Healthchecks (NOT Recommended!) - y/n
+SKIP_UNBOUND_HEALTHCHECK=n
+# Prevent netfilter from setting an iptables/nftables rule to isolate the mailcow docker network - y/n
+# CAUTION: Disabling this may expose container ports to other neighbors on the same subnet, even if the ports are bound to localhost
+DISABLE_NETFILTER_ISOLATION_RULE=n
+
+# ------------------------------
+# REDIS configuration
+# ------------------------------
+
+REDISPASS=$(LC_ALL=C </dev/urandom tr -dc A-Za-z0-9 2> /dev/null | head -c 28)
+# Dovecot Indexing (FTS) Process maximum heap size in MB, there is no recommendation, please see Dovecot docs.
+# Flatcurve is used as FTS Engine. It is supposed to be pretty efficient in CPU and RAM consumption.
+# Please always monitor your Resource consumption!
+FTS_HEAP=128
+# Controls how many processes the Dovecot indexing process can spawn at max.
+# Too many indexing processes can use a lot of CPU and Disk I/O
+# Please visit: https://doc.dovecot.org/configuration_manual/service_configuration/#indexer-worker for more informations
+FTS_PROCS=1
+# Skip FTS (Fulltext Search) for Dovecot on low-memory, low-threaded systems or if you simply want to disable it.
+# Dovecot inside mailcow use Flatcurve as FTS Backend.
+SKIP_FTS=y
+# Redirect HTTP connections to HTTPS - y/n
+HTTP_REDIRECT=y
+
 EOF
 
 cat << EOF > data/conf/nginx/redirect.conf
@@ -372,7 +393,7 @@ cat << EOF > /etc/cron.daily/mailcowbackup
 set -e
 
 OUT="\$(mktemp)"
-export MAILCOW_BACKUP_LOCATION="/$LXC_SHAREFS_MOUNTPOINT/backup"
+export MAILCOW_BACKUP_LOCATION="/$LXC_SHAREFS_MOUNTPOINT"
 SCRIPT="/opt/mailcow-dockerized/helper-scripts/backup_and_restore.sh"
 PARAMETERS="backup all"
 OPTIONS="--delete-days 7"
