@@ -57,27 +57,27 @@ LXC_HOSTNAME="zamba"
 ### LXC_DOMAIN
 Defines the domain name / search domain of your LXC container
 ```bash
-LXC_DOMAIN="zmb.rocks"
+LXC_DOMAIN="y2hay.com"
 ```
 ### LXC_DHCP
 Enable DHCP on LAN (eth0) - (Obtain an IP address automatically) [true/false]
 ```bash
-LXC_DHCP=false
+LXC_DHCP=true
 ```
 ### LXC_IP
 Defines the local IP address and subnet of your LXC container in CIDR format
 ```bash
-LXC_IP="10.10.80.20/24"
+LXC_IP="10.10.0.101/24"
 ```
 ### LXC_GW
 Defines the default gateway IP address of your LXC container
 ```bash
-LXC_GW="10.10.80.254"
+LXC_GW="10.10.0.1"
 ```
 ### LXC_DNS
 Defines the DNS server ip address of your LXC container
 ```bash
-LXC_DNS="10.10.80.254"
+LXC_DNS="1.1.1.1"
 ```
 `zmb-ad` used this DNS server for installation, after installation and domain provisioning it will be used as forwarding DNS
 For other services this should be your active directory domain controller (if present, else a DNS server of your choice)
@@ -94,7 +94,7 @@ LXC_VLAN="80"
 ### LXC_PWD
 Defines the `root` password of your LXC container. Please use 'single quotation marks' to avoid unexpected behaviour.
 ```bash
-LXC_PWD="Start!123"
+LXC_PWD='666666'
 ```
 ### LXC_AUTHORIZED_KEY
 Defines an authorized_keys file to push into the LXC container.
@@ -104,18 +104,18 @@ LXC_AUTHORIZED_KEY="/root/.ssh/authorized_keys"
 ```
 ### LXC_TOOLSET
 Define your (administrative) tools, you always want to have installed into your LXC container
-```bash
-LXC_TOOLSET="vim htop net-tools dnsutils sysstat mc"
+``` bash
+LXC_TOOLSET="vim htop net-tools dnsutils btop sysstat mc"
 ```
 ### LXC_TIMEZONE
 Define the local timezone of your LXC container (default: Euroe/Berlin)
 ```bash
-LXC_TIMEZONE="Europe/Berlin"
+LXC_TIMEZONE="UTC"
 ```
 ### LXC_LOCALE
 Define system language on LXC container (locales)
 ```bash
-LXC_LOCALE="de_DE.utf8"
+LXC_LOCALE="en_US.utf8"
 ```
 This parameter is not used yet, but will be integrated in future releases.
 
@@ -134,12 +134,12 @@ This section configures the Zamba server (AD DC, AD member and standalone)
 ### ZMB_REALM
 Defines the REALM for the Active Directory (AD DC, AD member)
 ```bash
-ZMB_REALM="ZMB.ROCKS"
+ZMB_REALM="y2hay.y2home"
 ```
 ### ZMB_DOMAIN
 Defines the domain name in your Active Directory or Workgroup (AD DC, AD member, standalone)
 ```bash
-ZMB_DOMAIN="ZMB"
+ZMB_DOMAIN="y2home"
 ```
 ### ZMB_ADMIN_USER
 Defines the name of your domain administrator account (AD DC, AD member, standalone)
@@ -149,14 +149,14 @@ ZMB_ADMIN_USER="Administrator"
 ### ZMB_ADMIN_PASS
 Defines the domain administrator's password (AD DC, AD member).
 ```bash
-ZMB_ADMIN_PASS='Start!123'
+ZMB_ADMIN_PASS='Parabola617!'
 ```
 Please use 'single quotation marks' to avoid unexpected behaviour.
 `zmb-ad` domain administrator has to meet the password complexity policy, if password is too weak, domain provisioning will fail.
 ### ZMB_SHARE
 Defines the name of your Zamba share
 ```bash
-ZMB_SHARE="share"
+ZMB_SHARE="lclpool"
 ```
 <br>
 
@@ -167,12 +167,12 @@ This section configures the mailpiler email archive
 ### PILER_FQDN
 Defines the (public) FQDN of your piler mail archive
 ```bash
-PILER_FQDN="piler.zmb.rocks"
+PILER_FQDN="piler.y2hay.com"
 ```
 ### PILER_SMARTHOST
 Defines the smarthost for piler mail archive
 ```bash
-PILER_SMARTHOST="your.mailserver.tld"
+PILER_SMARTHOST="mail.y2hay.com"
 ```
 <br>
 
@@ -183,13 +183,13 @@ This section configures the matrix chat server
 ### MATRIX_FQDN
 Define the FQDN of your Matrix server
 ```bash
-MATRIX_FQDN="matrix.zmb.rocks"
+MATRIX_FQDN="enterthe.matrix.y2hay.com"
 ```
 
 ### MATRIX_ELEMENT_FQDN
 Define the FQDN for the Element Web virtual host
 ```bash
-MATRIX_ELEMENT_FQDN="element.zmb.rocks"
+MATRIX_ELEMENT_FQDN="element.y2hay.com"
 ```
 
 ### MATRIX_ADMIN_USER
@@ -201,7 +201,7 @@ MATRIX_ADMIN_USER="admin"
 ### MATRIX_ADMIN_PASSWORD
 Define the admin password
 ```bash
-MATRIX_ADMIN_PASSWORD="Start!123"
+MATRIX_ADMIN_PASSWORD="Parabola617!"
 ```
 
 ## Nextcloud-Section
@@ -209,7 +209,7 @@ MATRIX_ADMIN_PASSWORD="Start!123"
 ### NEXTCLOUD_FQDN
 Define the FQDN of your Nextcloud server
 ```bash
-NEXTCLOUD_FQDN="nc1.zmb.rocks"
+NEXTCLOUD_FQDN="cloudy.y2hay.com"
 ```
 
 ### NEXTCLOUD_ADMIN_USR
@@ -221,7 +221,7 @@ NEXTCLOUD_ADMIN_USR="zmb-admin"
 ### NEXTCLOUD_ADMIN_PWD
 Build a strong password for this user. Username and password will shown at the end of the instalation. 
 ```bash
-NEXTCLOUD_ADMIN_PWD="$(random_password)"
+NEXTCLOUD_ADMIN_PWD="Parabola617!"
 ```
 ### NEXTCLOUD_DATA
 Defines the data directory, which will be createt under LXC_SHAREFS_MOUNTPOINT
@@ -231,7 +231,7 @@ NEXTCLOUD_DATA="nc_data"
 ### NEXTCLOUD_REVPROX
 Defines the trusted reverse proxy, which will enable the detection of source ip to fail2ban
 ```bash
-NEXTCLOUD_REVPROX="192.168.100.254"
+NEXTCLOUD_REVPROX="10.10.0.254"
 ```
 
 ## Check_MK-Section
@@ -245,7 +245,7 @@ CMK_INSTANCE=zmbrocks
 ### CMK_ADMIN_PW
 Define the password of user 'cmkadmin'
 ```bash
-CMK_ADMIN_PW='Start!123'
+CMK_ADMIN_PW='666666'
 ```
 
 ### CMK_EDITION
@@ -260,14 +260,14 @@ CMK_EDITION=raw
 ### KOPANO_FQDN
 Define the FQDN of your Nextcloud server
 ```bash
-KOPANO_FQDN="kopano.zmb.rocks
+KOPANO_FQDN="kopano.y2hay.com"
 ```
 
 
 ### KOPANO_MAILGW=
 Define the host, to which mails will send.
 ```bash
-KOPANO_MAILGW="192.168.100.254"
+KOPANO_MAILGW="10.10.0.114"
 ```
 
 ### KOPANO_REPKEY
@@ -296,7 +296,7 @@ display name to send from
 ```bash
 VW_SMTP_FROM_NAME="Vaultwarden Password Manager"
 ```
-
+    
 ### VW_SMTP_PORT
 Smtp-port of your mailserver
 ```bash
@@ -306,7 +306,7 @@ VW_SMTP_PORT=587
 ### VW_SMTP_SSL
 Use ssl true/false
 ```bash
-VW_SMTP_SSL=true
+VW_SMTP_SSL=false
 ```
 
 ### VW_SMTP_EXPLICIT_TLS
@@ -324,6 +324,6 @@ VW_SMTP_USERNAME=vaultwarden@bashclub.org
 ### VW_SMTP_PASSWORD
 Password of your mailbox
 ```bash
-VW_SMTP_PASSWORD='<yourEmailPassword>'
+VW_SMTP_PASSWORD="Parabola617!"
 ```
 
