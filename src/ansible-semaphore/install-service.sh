@@ -32,7 +32,7 @@ curl -s https://api.github.com/repos/semaphoreui/semaphore/releases/latest | gre
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install /opt/semaphore_linux_amd64.deb
 
 cat << EOF > /usr/local/bin/update-semaphore
-PATH="/bin:/usr/bin:/usr/local/bin"
+PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 echo "Checking github for new semaphore version"
 current_version=\$(curl -s https://api.github.com/repos/semaphoreui/semaphore/releases/latest | grep "tag_name" | cut -d '"' -f4)
 installed_version=\$(semaphore version)
