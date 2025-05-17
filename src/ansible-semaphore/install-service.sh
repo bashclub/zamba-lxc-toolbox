@@ -32,7 +32,7 @@ curl -s https://api.github.com/repos/semaphoreui/semaphore/releases/latest | gre
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install /opt/semaphore_linux_amd64.deb
 
 cat << EOF > /usr/local/bin/update-semaphore
-PATH="/bin:/usr/bin:/usr/local/bin"
+PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 echo "Checking github for new semaphore version"
 current_version=\$(curl -s https://api.github.com/repos/semaphoreui/semaphore/releases/latest | grep "tag_name" | cut -d '"' -f4)
 installed_version=\$(semaphore version)
@@ -42,7 +42,7 @@ if [ \$installed_version != \$current_version ]; then
   systemctl stop semaphore.service
   echo "Downloading semaphore version \$current_version..."
   curl -s https://api.github.com/repos/semaphoreui/semaphore/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep 'linux_amd64.deb$' | wget -i - -O /opt/semaphore_linux_amd64.deb
-  DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install /opt/semaphore_linux_amd64.deb
+  DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical dpkg -i /opt/semaphore_linux_amd64.deb
   echo "Starting semaphore.service..."
   systemctl start semaphore.service
   echo "semaphore update finished!"
@@ -141,7 +141,7 @@ cat << EOF > /etc/semaphore/config.json
  	"slack_alert": false,
  	"ldap_enable": false,
  	"ldap_needtls": false,
- 	"ssh_config_path": "~/.ssh/",
+ 	"ssh_config_path": "/home/semaphore/.ssh/",
  	"demo_mode": false,
  	"git_client": ""
  }
