@@ -356,7 +356,7 @@ sed -i '$avm.overcommit_memory = 1' /etc/sysctl.conf
 
 #### Install some more packages
 inst_packages() {
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends tree ldap-utils cifs-utils locate screen zip ffmpeg ghostscript libfile-fcntllock-perl libfuse2 socat imagemagick libmagickcore-6.q16-6-extra
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends tree ldap-utils php-ldap cifs-utils locate screen zip ffmpeg ghostscript libfile-fcntllock-perl libfuse2 socat imagemagick libmagickcore-6.q16-6-extra
 timedatectl set-timezone $LXC_TIMEZONE
 mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$NEXTCLOUD_DATA /var/www /etc/letsencrypt
 chown -R www-data:www-data /$LXC_SHAREFS_MOUNTPOINT/$NEXTCLOUD_DATA /var/www
