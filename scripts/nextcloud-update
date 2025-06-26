@@ -4,7 +4,7 @@
 # Place in /etc/cron.daily and make executable with: chmod +x /etc/cron.daily/nextcloud-update
 
 user=www-data
-phpversion=php8.2
+phpversion=php8.3
 path=/var/www/nextcloud
 logfile="/var/log/nextcloud-update.log"
 
