@@ -334,8 +334,8 @@ EOF
     echo "[INFO] Warte auf Icinga2 API..."
     sleep 15
     echo "[INFO] Icinga Director Setup wird ausgeführt."
-    # KORREKTUR: Reihenfolge der Director-Befehle getauscht
-    icingacli director kickstart --endpoint localhost --user director --password "${ICINGA_API_USER_PASS}"
+    # KORREKTUR: 'run' wurde zum kickstart-Befehl hinzugefügt.
+    icingacli director kickstart run --endpoint localhost --user director --password "${ICINGA_API_USER_PASS}"
     icingacli director migration run
     icingacli director config set 'endpoint' 'localhost' --user 'director' --password "${ICINGA_API_USER_PASS}"
     icingacli director automation run
