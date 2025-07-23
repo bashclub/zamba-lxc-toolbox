@@ -70,20 +70,29 @@ _install() {
         grafana \
         icingaweb2 icingacli
 
-    echo "[INFO] Icinga Director Modul wird installiert."
-    if [ ! -d /usr/share/icingaweb2/modules/director ]; then
-        ICINGA_DIRECTOR_VERSION=$(curl -s "https://api.github.com/repos/Icinga/icingaweb2-module-director/releases/latest" | grep -Po '"tag_name": "v\K[0-9.]+')
-        wget -O /tmp/director.tar.gz "https://github.com/Icinga/icingaweb2-module-director/archive/refs/tags/v${ICINGA_DIRECTOR_VERSION}.tar.gz"
-        tar -C /usr/share/icingaweb2/modules -xzf /tmp/director.tar.gz
-        mv /usr/share/icingaweb2/modules/icingaweb2-module-director-* /usr/share/icingaweb2/modules/director
-        rm /tmp/director.tar.gz
-        echo "[INFO] Icinga Director v${ICINGA_DIRECTOR_VERSION} installiert."
-    else
-        echo "[INFO] Icinga Director ist bereits installiert."
-    fi
+    echo "[INFO] Icinga Web 2 Module (Abhängigkeiten für Director) werden installiert."
+    # Funktion zum Herunterladen und Entpacken von Modulen
+    install_icinga_module() {
+        local module_name="$1"
+        local repo_name="$2"
+        if [ ! -d "/usr/share/icingaweb2/modules/${module_name}" ]; then
+            echo "[INFO] Installiere Modul: ${module_name}"
+            local version=$(curl -s "https://api.github.com/repos/Icinga/${repo_name}/releases/latest" | grep -Po '"tag_name": "v\K[0-9.]+')
+            wget -O "/tmp/${module_name}.tar.gz" "https://github.com/Icinga/${repo_name}/archive/refs/tags/v${version}.tar.gz"
+            tar -C /usr/share/icingaweb2/modules -xzf "/tmp/${module_name}.tar.gz"
+            mv "/usr/share/icingaweb2/modules/${repo_name}-"* "/usr/share/icingaweb2/modules/${module_name}"
+            rm "/tmp/${module_name}.tar.gz"
+        else
+            echo "[INFO] Modul ${module_name} ist bereits installiert."
+        fi
+    }
+    
+    install_icinga_module "ipl" "icingaweb2-module-ipl"
+    install_icinga_module "reactbundle" "icingaweb2-module-reactbundle"
+    install_icinga_module "director" "icingaweb2-module-director"
 
     echo "[INFO] Systemd Services werden aktiviert."
-    systemctl enable --now icinga2 postgresql nginx php${PHP_VERSION}-fpm influxdb2 grafana-server
+    systemctl enable --now icinga2 postgresql nginx php${PHP_VERSION}-fpm influxdb grafana-server
 }
 
 _configure() {
@@ -144,10 +153,8 @@ _configure() {
     sudo -u postgres createdb -O icinga_ido icinga_ido &>/dev/null || echo "[INFO] Postgres-DB 'icinga_ido' existiert bereits."
     sudo -u postgres psql -d icinga_ido -c "GRANT ALL ON SCHEMA public TO icinga_ido;"
 
-    # 3. Icinga2 konfigurieren
-    echo "[INFO] Icinga2 (ido-pgsql, api, influxdb2-writer) wird konfiguriert."
-    icinga2 feature enable ido-pgsql api influxdb2-writer >/dev/null
-    
+    # 3. Icinga2 Konfigurationsdateien schreiben
+    echo "[INFO] Icinga2 Konfigurationsdateien werden geschrieben."
     bash -c "cat > /etc/icinga2/features-available/ido-pgsql.conf" <<EOF
 object IdoPgsqlConnection "ido-pgsql" {
   user = "icinga_ido",
@@ -173,9 +180,8 @@ object Influxdb2Writer "influxdb2-writer" {
 }
 EOF
 
-    # 4. Icinga Web 2 & Director konfigurieren
-    echo "[INFO] Icinga Web 2 und Director werden konfiguriert."
-    icingacli module enable director
+    # 4. Icinga Web 2 Konfigurationsdateien schreiben
+    echo "[INFO] Icinga Web 2 Konfigurationsdateien werden geschrieben."
     mkdir -p /etc/icingaweb2
     bash -c "cat > /etc/icingaweb2/resources.ini" <<EOF
 [icingaweb_db]
@@ -233,14 +239,29 @@ datasources:
 EOF
     chown grafana:grafana /etc/grafana/provisioning/datasources/influxdb.yaml
     
-    # 7. Nginx konfigurieren
-    echo "[INFO] Nginx als Reverse Proxy wird konfiguriert."
+    # 7. Nginx und Icinga2 API TLS Konfiguration
+    echo "[INFO] Nginx und Icinga2 API für TLS werden konfiguriert."
     mkdir -p /etc/nginx/ssl
     if [ ! -L /etc/nginx/ssl/fullchain.pem ]; then
         ln -s /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/nginx/ssl/fullchain.pem
         ln -s /etc/ssl/private/ssl-cert-snakeoil.key /etc/nginx/ssl/privkey.pem
     fi
-    
+
+    # Icinga-Benutzer zur ssl-cert Gruppe hinzufügen, um den Schlüssel lesen zu können
+    usermod -a -G ssl-cert icinga
+
+    # api.conf anpassen, um die Nginx/Snakeoil-Zertifikate zu verwenden
+    bash -c "cat > /etc/icinga2/features-available/api.conf" <<EOF
+object ApiListener "api" {
+  cert_path = "/etc/nginx/ssl/fullchain.pem"
+  key_path = "/etc/nginx/ssl/privkey.pem"
+  ca_path = "/etc/ssl/certs/ca-certificates.crt"
+  
+  accept_config = true
+  accept_commands = true
+}
+EOF
+
     bash -c "cat > /etc/nginx/sites-available/icinga-stack" <<EOF
 server {
     listen 80;
@@ -298,13 +319,31 @@ _setup() {
     echo "================================================="
     echo ""
     
-    # 1. Schemas importieren
+    # 1. Datenbank-Schemas importieren (BEVOR Icinga2 gestartet wird)
     echo "[INFO] Datenbank-Schemas werden importiert."
     sudo -u postgres psql -d icinga_ido -c "SELECT current_user;" # Warmup
     PGPASSWORD="${ICINGA_IDO_DB_PASS}" psql -h localhost -U icinga_ido -d icinga_ido -f /usr/share/icinga2-ido-pgsql/schema/pgsql.sql &>/dev/null
     PGPASSWORD="${ICINGAWEB_DB_PASS}" psql -h localhost -U icingaweb2 -d icingaweb2 -f /usr/share/icingaweb2/etc/schema/pgsql.schema.sql &>/dev/null
     
-    # 2. Icinga Web 2 Setup
+    # 2. Icinga2 Features aktivieren (NACHDEM die DB bereit ist)
+    echo "[INFO] Icinga2 Features werden aktiviert."
+    icinga2 feature enable ido-pgsql api influxdb2-writer >/dev/null
+
+    # 3. Icinga Web 2 Module in korrekter Reihenfolge aktivieren
+    echo "[INFO] Icinga Web 2 Module werden aktiviert."
+    icingacli module enable ipl
+    icingacli module enable reactbundle
+    icingacli module enable director
+
+    # 4. Alle Dienste neu starten
+    echo "[INFO] Alle Services werden neu gestartet, um Konfigurationen zu laden."
+    systemctl restart postgresql
+    systemctl restart icinga2
+    systemctl restart php${PHP_VERSION}-fpm
+    systemctl restart nginx
+    systemctl restart grafana-server
+
+    # 5. Icinga Web 2 Setup ausführen (NACHDEM die Dienste laufen)
     echo "[INFO] Icinga Web 2 Setup wird ausgeführt."
     ICINGAWEB_SETUP_TOKEN=$(icingacli setup token create)
     icingacli setup config webserver nginx --document-root /usr/share/icingaweb2/public
@@ -315,23 +354,14 @@ _setup() {
         --backend-type ido --resource icinga_ido
     icingacli user add icingaadmin --password "$ICINGAWEB_ADMIN_PASS" --role "Administrators"
 
-    # 3. Director Setup
+    # 6. Director Setup ausführen (als letzter Schritt)
+    echo "[INFO] Warte auf Icinga2 API..."
+    sleep 15 # Gibt Icinga2 Zeit, vollständig zu starten
     echo "[INFO] Icinga Director Setup wird ausgeführt."
+    icingacli director migration run # Importiert das Director DB Schema
     icingacli director kickstart --endpoint localhost --user director --password "${ICINGA_API_USER_PASS}"
     icingacli director config set 'endpoint' 'localhost' --user 'director' --password "${ICINGA_API_USER_PASS}"
-    icingacli director migration run
     icingacli director automation run
-
-    # 4. Services neu starten, um alle Konfigurationen zu laden
-    echo "[INFO] Alle Services werden neu gestartet."
-    systemctl restart postgresql
-    systemctl restart icinga2
-    systemctl restart php${PHP_VERSION}-fpm
-    systemctl restart nginx
-    systemctl restart grafana-server
-    
-    echo "[INFO] Warte auf Icinga2 API..."
-    sleep 15
     echo "[INFO] Director Konfiguration wird angewendet."
     icingacli director config deploy
 }
@@ -352,9 +382,9 @@ _info() {
     echo "  Icinga Web 2: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingaweb2"
     echo "  Grafana:      https://${ZAMBA_HOSTNAME:-$(hostname -f)}/grafana"
     echo ""
-    echo "Hinweis zu TLS: Der Server verwendet aktuell ein selbst-signiertes 'snakeoil'-Zertifikat."
-    echo "Ersetzen Sie die Symlinks in /etc/nginx/ssl/ mit Ihren echten Zertifikaten und starten Sie Nginx neu:"
-    echo "  systemctl restart nginx"
+    echo "Hinweis zu TLS: Der Server verwendet aktuell die Icinga2-eigenen, selbst-signierten Zertifikate."
+    echo "Wenn Sie externe Zertifikate (z.B. von Let's Encrypt) verwenden möchten,"
+    echo "passen Sie die Pfade in /etc/nginx/sites-available/icinga-stack und /etc/icinga2/features-available/api.conf an und starten Sie die Dienste neu."
     echo ""
 }
 
@@ -368,17 +398,4 @@ _info() {
 #   exit 1
 # fi
 #
-source zamba.conf
-source constants-service.conf
-# # Load constants if running standalone
-ZAMBA_HOSTNAME=$(hostname -f)
-source ./constants-service.conf
-#
-# set -e # Exit on first error
-_install
-_configure
-_setup
-_info
-set +e
-#
-exit 0
+# # Load constants if runn
