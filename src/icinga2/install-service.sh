@@ -327,6 +327,18 @@ type = "ido"
 resource = "icinga_ido"
 EOF
 
+    # KORREKTUR: Director API-Verbindung wird direkt in die Konfigurationsdatei geschrieben.
+    mkdir -p /etc/icingaweb2/modules/director
+    bash -c "cat > /etc/icingaweb2/modules/director/config.ini" <<EOF
+[db]
+resource = "director_db"
+
+[api]
+endpoint = "localhost"
+user = "director"
+password = "${ICINGA_API_USER_PASS}"
+EOF
+
     echo "[INFO] Alle Services werden neu gestartet."
     systemctl restart mariadb
     systemctl restart icinga2
@@ -341,10 +353,8 @@ EOF
     echo "[INFO] Warte auf Icinga2 API..."
     sleep 15
     echo "[INFO] Icinga Director Setup wird ausgeführt."
-    # KORREKTUR: Reihenfolge der Director-Befehle getauscht
-    icingacli director kickstart run --endpoint localhost --user director --password "${ICINGA_API_USER_PASS}"
+    # KORREKTUR: kickstart wird nicht mehr benötigt.
     icingacli director migration run
-    icingacli director config set 'endpoint' 'localhost' --user 'director' --password "${ICINGA_API_USER_PASS}"
     icingacli director automation run
     echo "[INFO] Director Konfiguration wird angewendet."
     icingacli director config deploy
