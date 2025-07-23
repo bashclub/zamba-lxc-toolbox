@@ -327,10 +327,11 @@ EOF
     systemctl restart nginx
     systemctl restart grafana-server
 
-    # KORREKTUR: Der 'user add' Befehl wird NACH dem Neustart der Dienste ausgeführt.
-    echo "[INFO] Füge Icinga Web 2 Admin-Benutzer hinzu."
-    icingacli user add icingaadmin --password "$ICINGAWEB_ADMIN_PASS"
-
+    # KORREKTUR: Füge den Admin-Benutzer direkt in die Datenbank ein.
+    echo "[INFO] Füge Icinga Web 2 Admin-Benutzer direkt in die Datenbank ein."
+    local PASSWORD_HASH=$(icingacli security account password-hash --password "${ICINGAWEB_ADMIN_PASS}")
+    mysql icingaweb2 -e "INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('icingaadmin', 1, '${PASSWORD_HASH}') ON DUPLICATE KEY UPDATE password_hash='${PASSWORD_HASH}';"
+    
     echo "[INFO] Warte auf Icinga2 API..."
     sleep 15
     echo "[INFO] Icinga Director Setup wird ausgeführt."
