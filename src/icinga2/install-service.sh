@@ -92,6 +92,7 @@ _install() {
     install_icinga_module "director" "icingaweb2-module-director"
 
     echo "[INFO] Systemd Services werden aktiviert."
+    # KORREKTUR: Der Service für InfluxDB v2 heißt 'influxdb', nicht 'influxdb2'
     systemctl enable --now icinga2 postgresql nginx php${PHP_VERSION}-fpm influxdb grafana-server
 }
 
@@ -102,8 +103,8 @@ _configure() {
     echo "================================================="
     echo ""
 
-    # 1. Passwörter und Credentials generieren und speichern
-    echo "[INFO] Passwörter und API-Keys werden generiert und in ${CRED_FILE} gespeichert."
+    # 1. Passwörter generieren
+    echo "[INFO] Passwörter und API-Keys werden generiert."
     ICINGAWEB_DB_PASS=$(_generate_local_password 24)
     DIRECTOR_DB_PASS=$(_generate_local_password 24)
     ICINGA_IDO_DB_PASS=$(_generate_local_password 24)
@@ -111,8 +112,33 @@ _configure() {
     ICINGAWEB_ADMIN_PASS=$(_generate_local_password 16)
     GRAFANA_ADMIN_PASS=$(_generate_local_password 16)
     INFLUX_ADMIN_TOKEN=$(_generate_local_password 40)
-    INFLUX_ICINGA_TOKEN=$(_generate_local_password 40)
     
+    # 2. PostgreSQL konfigurieren
+    echo "[INFO] PostgreSQL wird konfiguriert."
+    sudo -u postgres psql -c "CREATE ROLE icingaweb2 WITH LOGIN PASSWORD '${ICINGAWEB_DB_PASS}';" &>/dev/null || echo "[INFO] Postgres-Rolle 'icingaweb2' existiert bereits."
+    sudo -u postgres psql -c "CREATE ROLE director WITH LOGIN PASSWORD '${DIRECTOR_DB_PASS}';" &>/dev/null || echo "[INFO] Postgres-Rolle 'director' existiert bereits."
+    sudo -u postgres psql -c "CREATE ROLE icinga_ido WITH LOGIN PASSWORD '${ICINGA_IDO_DB_PASS}';" &>/dev/null || echo "[INFO] Postgres-Rolle 'icinga_ido' existiert bereits."
+    sudo -u postgres createdb -O icingaweb2 icingaweb2 &>/dev/null || echo "[INFO] Postgres-DB 'icingaweb2' existiert bereits."
+    sudo -u postgres createdb -O director director &>/dev/null || echo "[INFO] Postgres-DB 'director' existiert bereits."
+    sudo -u postgres createdb -O icinga_ido icinga_ido &>/dev/null || echo "[INFO] Postgres-DB 'icinga_ido' existiert bereits."
+    sudo -u postgres psql -d icinga_ido -c "GRANT ALL ON SCHEMA public TO icinga_ido;"
+
+    # 3. InfluxDB 2 konfigurieren und Icinga-Token generieren
+    echo "[INFO] InfluxDB 2 wird konfiguriert."
+    influx setup --skip-verify --username admin --password "$GRAFANA_ADMIN_PASS" --org icinga --bucket icinga --token "$INFLUX_ADMIN_TOKEN" -f
+    
+    echo "[INFO] Erstelle dedizierten InfluxDB Token für Icinga und Grafana."
+    # KORREKTUR: Der Parameter war '--all-access-org', korrekt ist '--all-access'.
+    # Die Logik wurde angepasst, um das von InfluxDB generierte Token zu verwenden.
+    INFLUX_ICINGA_TOKEN=$(influx auth create --org icinga --all-access --json | grep -oP '"token": "\K[^"]+')
+    if [ -z "$INFLUX_ICINGA_TOKEN" ]; then
+        echo "[ERROR] Konnte InfluxDB Token für Icinga nicht erstellen." >&2
+        exit 1
+    fi
+    echo "[INFO] InfluxDB Token erfolgreich erstellt."
+
+    # 4. Credentials-Datei schreiben (jetzt sind alle Werte bekannt)
+    echo "[INFO] Zugangsdaten werden in ${CRED_FILE} gespeichert."
     mkdir -p "$(dirname "$CRED_FILE")"
     chmod 700 "$(dirname "$CRED_FILE")"
     {
@@ -143,17 +169,7 @@ _configure() {
     } > "$CRED_FILE"
     chmod 600 "$CRED_FILE"
 
-    # 2. PostgreSQL konfigurieren
-    echo "[INFO] PostgreSQL wird konfiguriert."
-    sudo -u postgres psql -c "CREATE ROLE icingaweb2 WITH LOGIN PASSWORD '${ICINGAWEB_DB_PASS}';" &>/dev/null || echo "[INFO] Postgres-Rolle 'icingaweb2' existiert bereits."
-    sudo -u postgres psql -c "CREATE ROLE director WITH LOGIN PASSWORD '${DIRECTOR_DB_PASS}';" &>/dev/null || echo "[INFO] Postgres-Rolle 'director' existiert bereits."
-    sudo -u postgres psql -c "CREATE ROLE icinga_ido WITH LOGIN PASSWORD '${ICINGA_IDO_DB_PASS}';" &>/dev/null || echo "[INFO] Postgres-Rolle 'icinga_ido' existiert bereits."
-    sudo -u postgres createdb -O icingaweb2 icingaweb2 &>/dev/null || echo "[INFO] Postgres-DB 'icingaweb2' existiert bereits."
-    sudo -u postgres createdb -O director director &>/dev/null || echo "[INFO] Postgres-DB 'director' existiert bereits."
-    sudo -u postgres createdb -O icinga_ido icinga_ido &>/dev/null || echo "[INFO] Postgres-DB 'icinga_ido' existiert bereits."
-    sudo -u postgres psql -d icinga_ido -c "GRANT ALL ON SCHEMA public TO icinga_ido;"
-
-    # 3. Icinga2 Konfigurationsdateien schreiben
+    # 5. Icinga2 Konfigurationsdateien schreiben
     echo "[INFO] Icinga2 Konfigurationsdateien werden geschrieben."
     bash -c "cat > /etc/icinga2/features-available/ido-pgsql.conf" <<EOF
 object IdoPgsqlConnection "ido-pgsql" {
@@ -180,7 +196,7 @@ object Influxdb2Writer "influxdb2-writer" {
 }
 EOF
 
-    # 4. Icinga Web 2 Konfigurationsdateien schreiben
+    # 6. Icinga Web 2 Konfigurationsdateien schreiben
     echo "[INFO] Icinga Web 2 Konfigurationsdateien werden geschrieben."
     mkdir -p /etc/icingaweb2
     bash -c "cat > /etc/icingaweb2/resources.ini" <<EOF
@@ -212,12 +228,7 @@ username = "icinga_ido"
 password = "${ICINGA_IDO_DB_PASS}"
 EOF
     
-    # 5. InfluxDB 2 konfigurieren
-    echo "[INFO] InfluxDB 2 wird konfiguriert."
-    influx setup --skip-verify --username admin --password "$GRAFANA_ADMIN_PASS" --org icinga --bucket icinga --token "$INFLUX_ADMIN_TOKEN" -f
-    influx auth create --org icinga --all-access-org icinga --token "$INFLUX_ICINGA_TOKEN"
-    
-    # 6. Grafana konfigurieren
+    # 7. Grafana konfigurieren
     echo "[INFO] Grafana wird konfiguriert."
     grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
     
@@ -239,7 +250,7 @@ datasources:
 EOF
     chown grafana:grafana /etc/grafana/provisioning/datasources/influxdb.yaml
     
-    # 7. Nginx und Icinga2 API TLS Konfiguration
+    # 8. Nginx und Icinga2 API TLS Konfiguration
     echo "[INFO] Nginx und Icinga2 API für TLS werden konfiguriert."
     mkdir -p /etc/nginx/ssl
     if [ ! -L /etc/nginx/ssl/fullchain.pem ]; then
