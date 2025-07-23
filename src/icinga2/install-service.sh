@@ -14,12 +14,6 @@
 # This should work without changes on future Debian versions.
 OS_CODENAME=$(source /etc/os-release && echo "$VERSION_CODENAME")
 
-# Define the PHP version for the current OS release.
-# For Debian 12 (Bookworm), this is 8.2.
-# For a future Debian 13 (Trixie), you would likely change this to "8.3".
-PHP_VERSION="8.2"
-
-
 # --- Service Functions ---
 
 _install() {
