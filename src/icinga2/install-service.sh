@@ -287,8 +287,6 @@ _setup() {
     icingacli module enable incubator
     icingacli module enable director
 
-    # KORREKTUR: Die fehlerhaften 'icingacli setup' Befehle werden durch
-    # das manuelle Erstellen der Konfigurationsdateien ersetzt.
     echo "[INFO] Erstelle Icinga Web 2 Kernkonfiguration."
     bash -c "cat > /etc/icingaweb2/config.ini" <<EOF
 [global]
@@ -322,15 +320,16 @@ type = "ido"
 resource = "icinga_ido"
 EOF
 
-    echo "[INFO] Füge Icinga Web 2 Admin-Benutzer hinzu."
-    icingacli user add icingaadmin --password "$ICINGAWEB_ADMIN_PASS"
-
     echo "[INFO] Alle Services werden neu gestartet."
     systemctl restart mariadb
     systemctl restart icinga2
     systemctl restart php${PHP_VERSION}-fpm
     systemctl restart nginx
     systemctl restart grafana-server
+
+    # KORREKTUR: Der 'user add' Befehl wird NACH dem Neustart der Dienste ausgeführt.
+    echo "[INFO] Füge Icinga Web 2 Admin-Benutzer hinzu."
+    icingacli user add icingaadmin --password "$ICINGAWEB_ADMIN_PASS"
 
     echo "[INFO] Warte auf Icinga2 API..."
     sleep 15
