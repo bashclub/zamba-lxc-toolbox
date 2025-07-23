@@ -268,16 +268,12 @@ _setup() {
     if [ ! -f "$IDO_SCHEMA" ]; then echo "[ERROR] IDO-Schema nicht gefunden: $IDO_SCHEMA" >&2; exit 1; fi
     if [ ! -f "$IWEB_SCHEMA" ]; then echo "[ERROR] IcingaWeb-Schema nicht gefunden: $IWEB_SCHEMA" >&2; exit 1; fi
 
-    if mysql -e "use icinga_ido; show tables;" | grep -q "icinga_dbversion"; then
-        echo "[INFO] Icinga IDO-Schema scheint bereits importiert zu sein."
-    else
+    if ! mysql -e "use icinga_ido; show tables;" | grep -q "icinga_dbversion"; then
         echo "[INFO] Importiere Icinga IDO-Schema..."
         mysql icinga_ido < "$IDO_SCHEMA"
     fi
 
-    if mysql -e "use icingaweb2; show tables;" | grep -q "icingaweb_user"; then
-        echo "[INFO] IcingaWeb2-Schema scheint bereits importiert zu sein."
-    else
+    if ! mysql -e "use icingaweb2; show tables;" | grep -q "icingaweb_user"; then
         echo "[INFO] Importiere IcingaWeb2-Schema..."
         mysql icingaweb2 < "$IWEB_SCHEMA"
     fi
@@ -291,26 +287,50 @@ _setup() {
     icingacli module enable incubator
     icingacli module enable director
 
+    # KORREKTUR: Die fehlerhaften 'icingacli setup' Befehle werden durch
+    # das manuelle Erstellen der Konfigurationsdateien ersetzt.
+    echo "[INFO] Erstelle Icinga Web 2 Kernkonfiguration."
+    bash -c "cat > /etc/icingaweb2/config.ini" <<EOF
+[global]
+show_stacktraces = "0"
+config_backend = "db"
+config_resource = "icingaweb_db"
+
+[logging]
+log = "file"
+log_file = "/var/log/icingaweb2/icingaweb2.log"
+level = "ERROR"
+EOF
+
+    bash -c "cat > /etc/icingaweb2/authentication.ini" <<EOF
+[icinga-web-admin]
+backend = "db"
+resource = "icingaweb_db"
+EOF
+
+    bash -c "cat > /etc/icingaweb2/roles.ini" <<EOF
+[Administrators]
+users = "icingaadmin"
+permissions = "*"
+groups = "Administrators"
+EOF
+    
+    mkdir -p /etc/icingaweb2/modules/monitoring
+    bash -c "cat > /etc/icingaweb2/modules/monitoring/config.ini" <<EOF
+[backend]
+type = "ido"
+resource = "icinga_ido"
+EOF
+
+    echo "[INFO] Füge Icinga Web 2 Admin-Benutzer hinzu."
+    icingacli user add icingaadmin --password "$ICINGAWEB_ADMIN_PASS"
+
     echo "[INFO] Alle Services werden neu gestartet."
     systemctl restart mariadb
     systemctl restart icinga2
     systemctl restart php${PHP_VERSION}-fpm
     systemctl restart nginx
     systemctl restart grafana-server
-
-    echo "[INFO] Icinga Web 2 Setup wird ausgeführt."
-    ICINGAWEB_SETUP_TOKEN=$(icingacli setup token create)
-    icingacli setup config webserver nginx --document-root /usr/share/icingaweb2/public
-    
-    # KORREKTUR: 'config' wurde zu den setup-Befehlen hinzugefügt.
-    icingacli setup config module --unattended --module icingaweb2 --setup-token "$ICINGAWEB_SETUP_TOKEN" \
-        --db-type mysql --db-host localhost --db-name icingaweb2 \
-        --db-user icingaweb2 --db-pass "$ICINGAWEB_DB_PASS"
-        
-    icingacli setup config module --unattended --module monitoring --setup-token "$ICINGAWEB_SETUP_TOKEN" \
-        --backend-type ido --resource icinga_ido
-        
-    icingacli user add icingaadmin --password "$ICINGAWEB_ADMIN_PASS" --role "Administrators"
 
     echo "[INFO] Warte auf Icinga2 API..."
     sleep 15
