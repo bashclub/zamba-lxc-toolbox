@@ -264,7 +264,6 @@ _setup() {
     echo "[INFO] Datenbank-Schemas werden importiert."
     local IDO_SCHEMA="/usr/share/icinga2-ido-mysql/schema/mysql.sql"
     local IWEB_SCHEMA="/usr/share/icingaweb2/schema/mysql.schema.sql"
-    # KORREKTUR: Pfad zum Director-Schema hinzugefügt
     local DIRECTOR_SCHEMA="/usr/share/icingaweb2/modules/director/schema/mysql.sql"
 
     if [ ! -f "$IDO_SCHEMA" ]; then echo "[ERROR] IDO-Schema nicht gefunden: $IDO_SCHEMA" >&2; exit 1; fi
@@ -281,7 +280,6 @@ _setup() {
         mysql icingaweb2 < "$IWEB_SCHEMA"
     fi
     
-    # KORREKTUR: Director-Schema wird manuell importiert.
     if ! mysql -e "use director; show tables;" | grep -q "director_datafield"; then
         echo "[INFO] Importiere Icinga Director-Schema..."
         mysql director < "$DIRECTOR_SCHEMA"
@@ -343,7 +341,8 @@ EOF
     echo "[INFO] Warte auf Icinga2 API..."
     sleep 15
     echo "[INFO] Icinga Director Setup wird ausgeführt."
-    # KORREKTUR: kickstart wird nicht mehr benötigt, da das Schema manuell importiert wurde.
+    # KORREKTUR: Reihenfolge der Director-Befehle getauscht
+    icingacli director kickstart run --endpoint localhost --user director --password "${ICINGA_API_USER_PASS}"
     icingacli director migration run
     icingacli director config set 'endpoint' 'localhost' --user 'director' --password "${ICINGA_API_USER_PASS}"
     icingacli director automation run
