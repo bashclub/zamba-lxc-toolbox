@@ -74,6 +74,7 @@ _install() {
     
     install_icinga_module "ipl" "icingaweb2-module-ipl"
     install_icinga_module "reactbundle" "icingaweb2-module-reactbundle"
+    install_icinga_module "incubator" "icingaweb2-module-incubator"
     install_icinga_module "director" "icingaweb2-module-director"
 
     echo "[INFO] Systemd Services werden aktiviert."
@@ -202,28 +203,13 @@ datasources:
 EOF
     chown grafana:grafana /etc/grafana/provisioning/datasources/influxdb.yaml
     
-    # 8. Nginx und Icinga2 API TLS Konfiguration
-    echo "[INFO] Nginx und Icinga2 API für TLS werden konfiguriert."
+    # 8. Nginx TLS Konfiguration
+    echo "[INFO] Nginx für TLS wird konfiguriert."
     mkdir -p /etc/nginx/ssl
     if [ ! -L /etc/nginx/ssl/fullchain.pem ]; then
         ln -s /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/nginx/ssl/fullchain.pem
         ln -s /etc/ssl/private/ssl-cert-snakeoil.key /etc/nginx/ssl/privkey.pem
     fi
-
-    if ! id -u icinga >/dev/null 2>&1; then
-        useradd --system --shell /usr/sbin/nologin --home-dir /var/lib/icinga2 icinga
-    fi
-    usermod -a -G ssl-cert icinga
-
-    bash -c "cat > /etc/icinga2/features-available/api.conf" <<EOF
-object ApiListener "api" {
-  cert_path = "/etc/nginx/ssl/fullchain.pem"
-  key_path = "/etc/nginx/ssl/privkey.pem"
-  ca_path = "/etc/ssl/certs/ca-certificates.crt"
-  accept_config = true
-  accept_commands = true
-}
-EOF
 
     bash -c "cat > /etc/nginx/sites-available/icinga-stack" <<EOF
 server {
@@ -265,6 +251,9 @@ _setup() {
     echo "================================================="
     echo ""
     
+    echo "[INFO] Icinga2 API wird initialisiert und Zertifikate werden erstellt."
+    icinga2 api setup
+    
     echo "[INFO] Warte auf MariaDB-Dienst..."
     while ! mysqladmin ping -h localhost --silent; do
         echo "[INFO] MariaDB ist noch nicht bereit, warte 2 Sekunden..."
@@ -296,9 +285,10 @@ _setup() {
     echo "[INFO] Icinga2 Features werden aktiviert."
     icinga2 feature enable ido-mysql api influxdb2-writer >/dev/null
 
-    echo "[INFO] Icinga Web 2 Module werden aktiviert."
+    echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
     icingacli module enable ipl
     icingacli module enable reactbundle
+    icingacli module enable incubator
     icingacli module enable director
 
     echo "[INFO] Alle Services werden neu gestartet."
