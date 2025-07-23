@@ -288,12 +288,6 @@ _setup() {
     echo "[INFO] Icinga2 Features werden aktiviert."
     icinga2 feature enable ido-mysql api influxdb2-writer >/dev/null
 
-    echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
-    icingacli module enable ipl
-    icingacli module enable reactbundle
-    icingacli module enable incubator
-    icingacli module enable director
-
     echo "[INFO] Erstelle Icinga Web 2 Kernkonfiguration."
     bash -c "cat > /etc/icingaweb2/config.ini" <<EOF
 [global]
@@ -327,17 +321,17 @@ type = "ido"
 resource = "icinga_ido"
 EOF
 
-    # KORREKTUR: Director API-Verbindung wird direkt in die Konfigurationsdatei geschrieben.
     mkdir -p /etc/icingaweb2/modules/director
     bash -c "cat > /etc/icingaweb2/modules/director/config.ini" <<EOF
 [db]
 resource = "director_db"
-
-[api]
-endpoint = "localhost"
-user = "director"
-password = "${ICINGA_API_USER_PASS}"
 EOF
+
+    echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
+    icingacli module enable ipl
+    icingacli module enable reactbundle
+    icingacli module enable incubator
+    icingacli module enable director
 
     echo "[INFO] Alle Services werden neu gestartet."
     systemctl restart mariadb
@@ -350,12 +344,22 @@ EOF
     local PASSWORD_HASH=$(php -r "echo password_hash('${ICINGAWEB_ADMIN_PASS}', PASSWORD_BCRYPT);")
     mysql icingaweb2 -e "INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('icingaadmin', 1, '${PASSWORD_HASH}') ON DUPLICATE KEY UPDATE password_hash='${PASSWORD_HASH}';"
     
-    echo "[INFO] Warte auf Icinga2 API..."
-    sleep 15
+    echo "[INFO] Warte auf Icinga Web 2 und API..."
+    # KORREKTUR: Robuste Warteschleife, die prüft, ob der Director bereit ist
+    local counter=0
+    while ! icingacli director migration run >/dev/null 2>&1; do
+        counter=$((counter + 1))
+        if [ "$counter" -gt 15 ]; then
+            echo "[ERROR] Icinga Director wurde nach 30 Sekunden nicht bereit." >&2
+            exit 1
+        fi
+        echo "[INFO] Director ist noch nicht bereit, warte 2 Sekunden... (Versuch ${counter}/15)"
+        sleep 2
+    done
+    echo "[INFO] Icinga Director ist bereit."
+
     echo "[INFO] Icinga Director Setup wird ausgeführt."
-    # KORREKTUR: kickstart wird nicht mehr benötigt.
-    icingacli director migration run
-    icingacli director automation run
+    icingacli director config set 'endpoint' 'localhost' --user 'director' --password "${ICINGA_API_USER_PASS}"
     echo "[INFO] Director Konfiguration wird angewendet."
     icingacli director config deploy
 }
