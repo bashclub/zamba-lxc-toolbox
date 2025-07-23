@@ -368,15 +368,17 @@ _info() {
 #   exit 1
 # fi
 #
+source zamba.conf
+source constants-service.conf
 # # Load constants if running standalone
-# ZAMBA_HOSTNAME=$(hostname -f)
-# source ./constants-service.conf
+ZAMBA_HOSTNAME=$(hostname -f)
+source ./constants-service.conf
 #
 # set -e # Exit on first error
-# _install
-# _configure
-# _setup
-# _info
-# set +e
+_install
+_configure
+_setup
+_info
+set +e
 #
-# exit 0
+exit 0
