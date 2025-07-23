@@ -146,12 +146,13 @@ object ApiUser "director" {
   permissions = [ "object/modify/*", "object/query/*", "status/query", "actions/*", "events/*" ]
 }
 EOF
+    # KORREKTUR: 'token' wurde zu 'auth_token' geändert.
     bash -c "cat > /etc/icinga2/features-available/influxdb2-writer.conf" <<EOF
 object Influxdb2Writer "influxdb2-writer" {
   host = "http://127.0.0.1:8086"
   organization = "icinga"
   bucket = "icinga"
-  token = "${INFLUX_ICINGA_TOKEN}"
+  auth_token = "${INFLUX_ICINGA_TOKEN}"
 }
 EOF
 
