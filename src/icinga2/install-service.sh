@@ -327,9 +327,9 @@ EOF
     systemctl restart nginx
     systemctl restart grafana-server
 
-    # KORREKTUR: Füge den Admin-Benutzer direkt in die Datenbank ein.
+    # KORREKTUR: Erzeuge den Passwort-Hash mit PHP und füge den Benutzer direkt in die DB ein.
     echo "[INFO] Füge Icinga Web 2 Admin-Benutzer direkt in die Datenbank ein."
-    local PASSWORD_HASH=$(icingacli security account password-hash --password "${ICINGAWEB_ADMIN_PASS}")
+    local PASSWORD_HASH=$(php -r "echo password_hash('${ICINGAWEB_ADMIN_PASS}', PASSWORD_BCRYPT);")
     mysql icingaweb2 -e "INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('icingaadmin', 1, '${PASSWORD_HASH}') ON DUPLICATE KEY UPDATE password_hash='${PASSWORD_HASH}';"
     
     echo "[INFO] Warte auf Icinga2 API..."
