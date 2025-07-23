@@ -389,13 +389,37 @@ _info() {
 }
 
 # --- Main Execution Logic ---
-# This part is executed by the Zamba LXC Toolbox framework,
-# which calls the _install, _configure, _setup, and _info functions in order.
-# For standalone testing, you could uncomment the lines below.
+# Dieser Block wird nur ausgeführt, wenn das Skript direkt aufgerufen wird,
+# nicht wenn es von der Zamba Toolbox als Bibliothek geladen wird.
+# Ideal für Standalone-Tests.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    
+    if [ "$EUID" -ne 0 ]; then
+      echo "[ERROR] Dieses Skript muss als Root ausgeführt werden."
+      exit 1
+    fi
 
-# if [ "$EUID" -ne 0 ]; then
-#   echo "[ERROR] Dieses Skript muss als Root ausgeführt werden."
-#   exit 1
-# fi
-#
-# # Load constants if runn
+    # Lade Konstanten, wenn das Skript standalone läuft
+    if [ -f ./constants-service.conf ]; then
+        source ./constants-service.conf
+    else
+        echo "[ERROR] Die Datei 'constants-service.conf' wird für den Standalone-Betrieb benötigt."
+        exit 1
+    fi
+    
+    # Setze einen Fallback-Hostnamen, falls ZAMBA_HOSTNAME nicht gesetzt ist
+    ZAMBA_HOSTNAME=${ZAMBA_HOSTNAME:-$(hostname -f)}
+
+    # Aktiviere den Bash Strict Mode für eine sichere Ausführung
+    set -euo pipefail
+
+    # Führe die Installationsphasen nacheinander aus
+    _install
+    _configure
+    _setup
+    _info
+
+    set +euo pipefail
+    
+    exit 0
+fi
