@@ -65,7 +65,7 @@ _install() {
     apt-get install -y \
         icinga2 icinga2-ido-pgsql \
         nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-pgsql php${PHP_VERSION}-intl php${PHP_VERSION}-imagick php${PHP_VERSION}-xml php${PHP_VERSION}-gd php${PHP_VERSION}-ldap \
-        postgresql \
+        postgresql postgresql-client \
         influxdb2 \
         grafana \
         icingaweb2 icingacli
@@ -228,7 +228,7 @@ EOF
     
     # 7. Grafana konfigurieren
     echo "[INFO] Grafana wird konfiguriert."
-    # KORREKTUR: Grafana-Dienst stoppen, um DB-Sperre zu vermeiden
+    # Grafana-Dienst stoppen, um DB-Sperre zu vermeiden
     echo "[INFO] Stoppe Grafana-Dienst für Passwort-Reset..."
     systemctl stop grafana-server
     grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
@@ -338,23 +338,55 @@ _setup() {
     echo "================================================="
     echo ""
     
-    # 1. Datenbank-Schemas importieren (BEVOR Icinga2 gestartet wird)
+    # 1. Warten, bis PostgreSQL bereit ist
+    echo "[INFO] Warte auf PostgreSQL-Dienst..."
+    while ! pg_isready -q -h localhost -U postgres; do
+        echo "[INFO] PostgreSQL ist noch nicht bereit, warte 2 Sekunden..."
+        sleep 2
+    done
+    echo "[INFO] PostgreSQL ist bereit."
+
+    # 2. Datenbank-Schemas importieren (als postgres-Benutzer für Robustheit)
     echo "[INFO] Datenbank-Schemas werden importiert."
-    sudo -u postgres psql -d icinga_ido -c "SELECT current_user;" # Warmup
-    PGPASSWORD="${ICINGA_IDO_DB_PASS}" psql -h localhost -U icinga_ido -d icinga_ido -f /usr/share/icinga2-ido-pgsql/schema/pgsql.sql &>/dev/null
-    PGPASSWORD="${ICINGAWEB_DB_PASS}" psql -h localhost -U icingaweb2 -d icingaweb2 -f /usr/share/icingaweb2/etc/schema/pgsql.schema.sql &>/dev/null
     
-    # 2. Icinga2 Features aktivieren (NACHDEM die DB bereit ist)
+    local IDO_SCHEMA="/usr/share/icinga2-ido-pgsql/schema/pgsql.sql"
+    local IWEB_SCHEMA="/usr/share/icingaweb2/etc/schema/pgsql.schema.sql"
+
+    if [ ! -f "$IDO_SCHEMA" ]; then
+        echo "[ERROR] IDO-Schema-Datei nicht gefunden: $IDO_SCHEMA" >&2
+        exit 1
+    fi
+    if [ ! -f "$IWEB_SCHEMA" ]; then
+        echo "[ERROR] IcingaWeb-Schema-Datei nicht gefunden: $IWEB_SCHEMA" >&2
+        exit 1
+    fi
+
+    # Prüfen, ob die Tabellen bereits existieren, um Idempotenz zu gewährleisten
+    if sudo -u postgres psql -d icinga_ido -tAc "SELECT 1 FROM information_schema.tables WHERE table_name = 'icinga_dbversion'" | grep -q 1; then
+        echo "[INFO] Icinga IDO-Schema scheint bereits importiert zu sein."
+    else
+        echo "[INFO] Importiere Icinga IDO-Schema..."
+        sudo -u postgres psql -d icinga_ido -f "$IDO_SCHEMA" &>/dev/null
+    fi
+
+    if sudo -u postgres psql -d icingaweb2 -tAc "SELECT 1 FROM information_schema.tables WHERE table_name = 'icingaweb_user'" | grep -q 1; then
+        echo "[INFO] IcingaWeb2-Schema scheint bereits importiert zu sein."
+    else
+        echo "[INFO] Importiere IcingaWeb2-Schema..."
+        sudo -u postgres psql -d icingaweb2 -f "$IWEB_SCHEMA" &>/dev/null
+    fi
+    
+    # 3. Icinga2 Features aktivieren (NACHDEM die DB bereit ist)
     echo "[INFO] Icinga2 Features werden aktiviert."
     icinga2 feature enable ido-pgsql api influxdb2-writer >/dev/null
 
-    # 3. Icinga Web 2 Module in korrekter Reihenfolge aktivieren
+    # 4. Icinga Web 2 Module in korrekter Reihenfolge aktivieren
     echo "[INFO] Icinga Web 2 Module werden aktiviert."
     icingacli module enable ipl
     icingacli module enable reactbundle
     icingacli module enable director
 
-    # 4. Alle Dienste neu starten
+    # 5. Alle Dienste neu starten
     echo "[INFO] Alle Services werden neu gestartet, um Konfigurationen zu laden."
     systemctl restart postgresql
     systemctl restart icinga2
@@ -362,7 +394,7 @@ _setup() {
     systemctl restart nginx
     systemctl restart grafana-server
 
-    # 5. Icinga Web 2 Setup ausführen (NACHDEM die Dienste laufen)
+    # 6. Icinga Web 2 Setup ausführen (NACHDEM die Dienste laufen)
     echo "[INFO] Icinga Web 2 Setup wird ausgeführt."
     ICINGAWEB_SETUP_TOKEN=$(icingacli setup token create)
     icingacli setup config webserver nginx --document-root /usr/share/icingaweb2/public
@@ -373,7 +405,7 @@ _setup() {
         --backend-type ido --resource icinga_ido
     icingacli user add icingaadmin --password "$ICINGAWEB_ADMIN_PASS" --role "Administrators"
 
-    # 6. Director Setup ausführen (als letzter Schritt)
+    # 7. Director Setup ausführen (als letzter Schritt)
     echo "[INFO] Warte auf Icinga2 API..."
     sleep 15 # Gibt Icinga2 Zeit, vollständig zu starten
     echo "[INFO] Icinga Director Setup wird ausgeführt."
