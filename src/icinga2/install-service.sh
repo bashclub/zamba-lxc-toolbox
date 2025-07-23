@@ -3,60 +3,66 @@
 # Zamba LXC Toolbox - Service Installer
 # Service: icinga-stack
 #
-# Description: Installs and configures a full Icinga2 monitoring stack.
-# This script is designed to be easily adaptable for future OS releases.
+# Description: Führt die Installation und Konfiguration des Icinga2 Stacks durch.
+# Dieses Skript ist eigenständig und verwendet nur Standard-OS-Befehle.
 #
 
-# --- OS & Version Configuration ---
-# This section contains variables that may need to be updated for a new OS release.
+# --- Internal Helper Functions ---
+# Diese Funktion ist skript-spezifisch und nicht Teil eines Frameworks.
+_generate_local_password() {
+    # Erzeugt eine sichere, zufällige Zeichenkette.
+    # $1: Länge der Zeichenkette
+    openssl rand -base64 "$1"
+}
 
-# Automatically detect the OS codename (e.g., "bookworm", "trixie")
-# This should work without changes on future Debian versions.
-OS_CODENAME=$(source /etc/os-release && echo "$VERSION_CODENAME")
 
-# --- Service Functions ---
+# --- Service Functions (_install, _configure, _setup, _info) ---
 
 _install() {
-    zamba_header "Phase 1: Installation der Pakete"
+    echo ""
+    echo "================================================="
+    echo "  Phase 1: Installation der Pakete"
+    echo "================================================="
+    echo ""
     
-    zamba_log "System wird aktualisiert und Basispakete werden installiert."
+    echo "[INFO] System wird aktualisiert und Basispakete werden installiert."
     export DEBIAN_FRONTEND=noninteractive
-    zamba_run_cmd apt-get update
-    zamba_run_cmd apt-get install -y wget gpg apt-transport-https curl sudo lsb-release
+    apt-get update
+    apt-get install -y wget gpg apt-transport-https curl sudo lsb-release
 
-    zamba_log "Repositories für Icinga, InfluxDB und Grafana werden hinzugefügt."
+    echo "[INFO] Repositories für Icinga, InfluxDB und Grafana werden hinzugefügt."
     # Icinga Repo
     if [ ! -f /etc/apt/sources.list.d/icinga.list ]; then
-        zamba_run_cmd curl -fsSL https://packages.icinga.com/icinga.key | gpg --dearmor -o /usr/share/keyrings/icinga-archive-keyring.gpg
+        curl -fsSL https://packages.icinga.com/icinga.key | gpg --dearmor -o /usr/share/keyrings/icinga-archive-keyring.gpg
         echo "deb [signed-by=/usr/share/keyrings/icinga-archive-keyring.gpg] https://packages.icinga.com/debian icinga-${OS_CODENAME} main" > /etc/apt/sources.list.d/icinga.list
-        zamba_log "Icinga Repository für ${OS_CODENAME} hinzugefügt."
+        echo "[INFO] Icinga Repository für ${OS_CODENAME} hinzugefügt."
     else
-        zamba_log "Icinga Repository existiert bereits."
+        echo "[INFO] Icinga Repository existiert bereits."
     fi
 
     # InfluxDB Repo
     if [ ! -f /etc/apt/sources.list.d/influxdata.list ]; then
-        zamba_run_cmd curl -fsSL https://repos.influxdata.com/influxdata-archive_compat.key | gpg --dearmor -o /usr/share/keyrings/influxdata-archive_compat-keyring.gpg
+        curl -fsSL https://repos.influxdata.com/influxdata-archive_compat.key | gpg --dearmor -o /usr/share/keyrings/influxdata-archive_compat-keyring.gpg
         echo "deb [signed-by=/usr/share/keyrings/influxdata-archive_compat-keyring.gpg] https://repos.influxdata.com/debian ${OS_CODENAME} stable" > /etc/apt/sources.list.d/influxdata.list
-        zamba_log "InfluxDB Repository für ${OS_CODENAME} hinzugefügt."
+        echo "[INFO] InfluxDB Repository für ${OS_CODENAME} hinzugefügt."
     else
-        zamba_log "InfluxDB Repository existiert bereits."
+        echo "[INFO] InfluxDB Repository existiert bereits."
     fi
 
     # Grafana Repo
     if [ ! -f /etc/apt/sources.list.d/grafana.list ]; then
-        zamba_run_cmd wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor -o /usr/share/keyrings/grafana-archive-keyring.gpg
+        wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor -o /usr/share/keyrings/grafana-archive-keyring.gpg
         echo "deb [signed-by=/usr/share/keyrings/grafana-archive-keyring.gpg] https://apt.grafana.com stable main" > /etc/apt/sources.list.d/grafana.list
-        zamba_log "Grafana Repository hinzugefügt."
+        echo "[INFO] Grafana Repository hinzugefügt."
     else
-        zamba_log "Grafana Repository existiert bereits."
+        echo "[INFO] Grafana Repository existiert bereits."
     fi
     
-    zamba_log "Paketlisten werden erneut aktualisiert."
-    zamba_run_cmd apt-get update
+    echo "[INFO] Paketlisten werden erneut aktualisiert."
+    apt-get update
 
-    zamba_log "Hauptkomponenten werden installiert (PHP Version: ${PHP_VERSION})."
-    zamba_run_cmd apt-get install -y \
+    echo "[INFO] Hauptkomponenten werden installiert (PHP Version: ${PHP_VERSION})."
+    apt-get install -y \
         icinga2 icinga2-ido-pgsql \
         nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-pgsql php${PHP_VERSION}-intl php${PHP_VERSION}-imagick php${PHP_VERSION}-xml php${PHP_VERSION}-gd php${PHP_VERSION}-ldap \
         postgresql \
@@ -64,35 +70,39 @@ _install() {
         grafana \
         icingaweb2 icingacli
 
-    zamba_log "Icinga Director Modul wird installiert."
+    echo "[INFO] Icinga Director Modul wird installiert."
     if [ ! -d /usr/share/icingaweb2/modules/director ]; then
         ICINGA_DIRECTOR_VERSION=$(curl -s "https://api.github.com/repos/Icinga/icingaweb2-module-director/releases/latest" | grep -Po '"tag_name": "v\K[0-9.]+')
-        zamba_run_cmd wget -O /tmp/director.tar.gz "https://github.com/Icinga/icingaweb2-module-director/archive/refs/tags/v${ICINGA_DIRECTOR_VERSION}.tar.gz"
-        zamba_run_cmd tar -C /usr/share/icingaweb2/modules -xzf /tmp/director.tar.gz
-        zamba_run_cmd mv /usr/share/icingaweb2/modules/icingaweb2-module-director-* /usr/share/icingaweb2/modules/director
-        zamba_run_cmd rm /tmp/director.tar.gz
-        zamba_log "Icinga Director v${ICINGA_DIRECTOR_VERSION} installiert."
+        wget -O /tmp/director.tar.gz "https://github.com/Icinga/icingaweb2-module-director/archive/refs/tags/v${ICINGA_DIRECTOR_VERSION}.tar.gz"
+        tar -C /usr/share/icingaweb2/modules -xzf /tmp/director.tar.gz
+        mv /usr/share/icingaweb2/modules/icingaweb2-module-director-* /usr/share/icingaweb2/modules/director
+        rm /tmp/director.tar.gz
+        echo "[INFO] Icinga Director v${ICINGA_DIRECTOR_VERSION} installiert."
     else
-        zamba_log "Icinga Director ist bereits installiert."
+        echo "[INFO] Icinga Director ist bereits installiert."
     fi
 
-    zamba_log "Systemd Services werden aktiviert."
-    zamba_run_cmd systemctl enable --now icinga2 postgresql nginx php${PHP_VERSION}-fpm influxdb2 grafana-server
+    echo "[INFO] Systemd Services werden aktiviert."
+    systemctl enable --now icinga2 postgresql nginx php${PHP_VERSION}-fpm influxdb2 grafana-server
 }
 
 _configure() {
-    zamba_header "Phase 2: Konfiguration der Komponenten"
+    echo ""
+    echo "================================================="
+    echo "  Phase 2: Konfiguration der Komponenten"
+    echo "================================================="
+    echo ""
 
     # 1. Passwörter und Credentials generieren und speichern
-    zamba_log "Passwörter und API-Keys werden generiert und in ${CRED_FILE} gespeichert."
-    ICINGAWEB_DB_PASS=$(zamba_generate_password 24)
-    DIRECTOR_DB_PASS=$(zamba_generate_password 24)
-    ICINGA_IDO_DB_PASS=$(zamba_generate_password 24)
-    ICINGA_API_USER_PASS=$(zamba_generate_password 24)
-    ICINGAWEB_ADMIN_PASS=$(zamba_generate_password 16)
-    GRAFANA_ADMIN_PASS=$(zamba_generate_password 16)
-    INFLUX_ADMIN_TOKEN=$(zamba_generate_password 40)
-    INFLUX_ICINGA_TOKEN=$(zamba_generate_password 40)
+    echo "[INFO] Passwörter und API-Keys werden generiert und in ${CRED_FILE} gespeichert."
+    ICINGAWEB_DB_PASS=$(_generate_local_password 24)
+    DIRECTOR_DB_PASS=$(_generate_local_password 24)
+    ICINGA_IDO_DB_PASS=$(_generate_local_password 24)
+    ICINGA_API_USER_PASS=$(_generate_local_password 24)
+    ICINGAWEB_ADMIN_PASS=$(_generate_local_password 16)
+    GRAFANA_ADMIN_PASS=$(_generate_local_password 16)
+    INFLUX_ADMIN_TOKEN=$(_generate_local_password 40)
+    INFLUX_ICINGA_TOKEN=$(_generate_local_password 40)
     
     mkdir -p "$(dirname "$CRED_FILE")"
     chmod 700 "$(dirname "$CRED_FILE")"
@@ -102,12 +112,12 @@ _configure() {
       echo "# OS: Debian ${OS_CODENAME}"
       echo ""
       echo "## Icinga Web 2"
-      echo "URL: https://${ZAMBA_HOSTNAME}/icingaweb2"
+      echo "URL: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingaweb2"
       echo "Benutzer: icingaadmin"
       echo "Passwort: ${ICINGAWEB_ADMIN_PASS}"
       echo ""
       echo "## Grafana"
-      echo "URL: https://${ZAMBA_HOSTNAME}/grafana"
+      echo "URL: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/grafana"
       echo "Benutzer: admin"
       echo "Passwort: ${GRAFANA_ADMIN_PASS}"
       echo ""
@@ -125,20 +135,20 @@ _configure() {
     chmod 600 "$CRED_FILE"
 
     # 2. PostgreSQL konfigurieren
-    zamba_log "PostgreSQL wird konfiguriert."
-    sudo -u postgres psql -c "CREATE ROLE icingaweb2 WITH LOGIN PASSWORD '${ICINGAWEB_DB_PASS}';" &>/dev/null || zamba_log "Postgres-Rolle 'icingaweb2' existiert bereits."
-    sudo -u postgres psql -c "CREATE ROLE director WITH LOGIN PASSWORD '${DIRECTOR_DB_PASS}';" &>/dev/null || zamba_log "Postgres-Rolle 'director' existiert bereits."
-    sudo -u postgres psql -c "CREATE ROLE icinga_ido WITH LOGIN PASSWORD '${ICINGA_IDO_DB_PASS}';" &>/dev/null || zamba_log "Postgres-Rolle 'icinga_ido' existiert bereits."
-    sudo -u postgres createdb -O icingaweb2 icingaweb2 &>/dev/null || zamba_log "Postgres-DB 'icingaweb2' existiert bereits."
-    sudo -u postgres createdb -O director director &>/dev/null || zamba_log "Postgres-DB 'director' existiert bereits."
-    sudo -u postgres createdb -O icinga_ido icinga_ido &>/dev/null || zamba_log "Postgres-DB 'icinga_ido' existiert bereits."
+    echo "[INFO] PostgreSQL wird konfiguriert."
+    sudo -u postgres psql -c "CREATE ROLE icingaweb2 WITH LOGIN PASSWORD '${ICINGAWEB_DB_PASS}';" &>/dev/null || echo "[INFO] Postgres-Rolle 'icingaweb2' existiert bereits."
+    sudo -u postgres psql -c "CREATE ROLE director WITH LOGIN PASSWORD '${DIRECTOR_DB_PASS}';" &>/dev/null || echo "[INFO] Postgres-Rolle 'director' existiert bereits."
+    sudo -u postgres psql -c "CREATE ROLE icinga_ido WITH LOGIN PASSWORD '${ICINGA_IDO_DB_PASS}';" &>/dev/null || echo "[INFO] Postgres-Rolle 'icinga_ido' existiert bereits."
+    sudo -u postgres createdb -O icingaweb2 icingaweb2 &>/dev/null || echo "[INFO] Postgres-DB 'icingaweb2' existiert bereits."
+    sudo -u postgres createdb -O director director &>/dev/null || echo "[INFO] Postgres-DB 'director' existiert bereits."
+    sudo -u postgres createdb -O icinga_ido icinga_ido &>/dev/null || echo "[INFO] Postgres-DB 'icinga_ido' existiert bereits."
     sudo -u postgres psql -d icinga_ido -c "GRANT ALL ON SCHEMA public TO icinga_ido;"
 
     # 3. Icinga2 konfigurieren
-    zamba_log "Icinga2 (ido-pgsql, api, influxdb2-writer) wird konfiguriert."
-    zamba_run_cmd icinga2 feature enable ido-pgsql api influxdb2-writer >/dev/null
+    echo "[INFO] Icinga2 (ido-pgsql, api, influxdb2-writer) wird konfiguriert."
+    icinga2 feature enable ido-pgsql api influxdb2-writer >/dev/null
     
-    zamba_run_cmd bash -c "cat > /etc/icinga2/features-available/ido-pgsql.conf" <<EOF
+    bash -c "cat > /etc/icinga2/features-available/ido-pgsql.conf" <<EOF
 object IdoPgsqlConnection "ido-pgsql" {
   user = "icinga_ido",
   password = "${ICINGA_IDO_DB_PASS}",
@@ -146,13 +156,13 @@ object IdoPgsqlConnection "ido-pgsql" {
   database = "icinga_ido"
 }
 EOF
-    zamba_run_cmd bash -c "cat > /etc/icinga2/conf.d/api-users.conf" <<EOF
+    bash -c "cat > /etc/icinga2/conf.d/api-users.conf" <<EOF
 object ApiUser "director" {
   password = "${ICINGA_API_USER_PASS}"
   permissions = [ "object/modify/*", "object/query/*", "status/query", "actions/*", "events/*" ]
 }
 EOF
-    zamba_run_cmd bash -c "cat > /etc/icinga2/features-available/influxdb2-writer.conf" <<EOF
+    bash -c "cat > /etc/icinga2/features-available/influxdb2-writer.conf" <<EOF
 object Influxdb2Writer "influxdb2-writer" {
   host = "http://127.0.0.1:8086"
   organization = "icinga"
@@ -164,10 +174,10 @@ object Influxdb2Writer "influxdb2-writer" {
 EOF
 
     # 4. Icinga Web 2 & Director konfigurieren
-    zamba_log "Icinga Web 2 und Director werden konfiguriert."
-    zamba_run_cmd icingacli module enable director
+    echo "[INFO] Icinga Web 2 und Director werden konfiguriert."
+    icingacli module enable director
     mkdir -p /etc/icingaweb2
-    zamba_run_cmd bash -c "cat > /etc/icingaweb2/resources.ini" <<EOF
+    bash -c "cat > /etc/icingaweb2/resources.ini" <<EOF
 [icingaweb_db]
 type = "db"
 db = "pgsql"
@@ -197,16 +207,16 @@ password = "${ICINGA_IDO_DB_PASS}"
 EOF
     
     # 5. InfluxDB 2 konfigurieren
-    zamba_log "InfluxDB 2 wird konfiguriert."
-    zamba_run_cmd influx setup --skip-verify --username admin --password "$GRAFANA_ADMIN_PASS" --org icinga --bucket icinga --token "$INFLUX_ADMIN_TOKEN" -f
-    zamba_run_cmd influx auth create --org icinga --all-access-org icinga --token "$INFLUX_ICINGA_TOKEN"
+    echo "[INFO] InfluxDB 2 wird konfiguriert."
+    influx setup --skip-verify --username admin --password "$GRAFANA_ADMIN_PASS" --org icinga --bucket icinga --token "$INFLUX_ADMIN_TOKEN" -f
+    influx auth create --org icinga --all-access-org icinga --token "$INFLUX_ICINGA_TOKEN"
     
     # 6. Grafana konfigurieren
-    zamba_log "Grafana wird konfiguriert."
-    zamba_run_cmd grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
+    echo "[INFO] Grafana wird konfiguriert."
+    grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
     
     mkdir -p /etc/grafana/provisioning/datasources
-    zamba_run_cmd bash -c "cat > /etc/grafana/provisioning/datasources/influxdb.yaml" <<EOF
+    bash -c "cat > /etc/grafana/provisioning/datasources/influxdb.yaml" <<EOF
 apiVersion: 1
 datasources:
 - name: InfluxDB-Icinga
@@ -221,28 +231,28 @@ datasources:
   secureJsonData:
     token: "${INFLUX_ICINGA_TOKEN}"
 EOF
-    zamba_run_cmd chown grafana:grafana /etc/grafana/provisioning/datasources/influxdb.yaml
+    chown grafana:grafana /etc/grafana/provisioning/datasources/influxdb.yaml
     
     # 7. Nginx konfigurieren
-    zamba_log "Nginx als Reverse Proxy wird konfiguriert."
+    echo "[INFO] Nginx als Reverse Proxy wird konfiguriert."
     mkdir -p /etc/nginx/ssl
     if [ ! -L /etc/nginx/ssl/fullchain.pem ]; then
-        zamba_run_cmd ln -s /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/nginx/ssl/fullchain.pem
-        zamba_run_cmd ln -s /etc/ssl/private/ssl-cert-snakeoil.key /etc/nginx/ssl/privkey.pem
+        ln -s /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/nginx/ssl/fullchain.pem
+        ln -s /etc/ssl/private/ssl-cert-snakeoil.key /etc/nginx/ssl/privkey.pem
     fi
     
-    zamba_run_cmd bash -c "cat > /etc/nginx/sites-available/icinga-stack" <<EOF
+    bash -c "cat > /etc/nginx/sites-available/icinga-stack" <<EOF
 server {
     listen 80;
     listen [::]:80;
-    server_name ${ZAMBA_HOSTNAME};
+    server_name ${ZAMBA_HOSTNAME:-$(hostname -f)};
     return 301 https://\$host\$request_uri;
 }
 
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name ${ZAMBA_HOSTNAME};
+    server_name ${ZAMBA_HOSTNAME:-$(hostname -f)};
 
     ssl_certificate /etc/nginx/ssl/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/privkey.pem;
@@ -273,25 +283,29 @@ server {
     }
 }
 EOF
-    zamba_run_cmd ln -sf /etc/nginx/sites-available/icinga-stack /etc/nginx/sites-enabled/
+    ln -sf /etc/nginx/sites-available/icinga-stack /etc/nginx/sites-enabled/
     rm -f /etc/nginx/sites-enabled/default
 
     # PHP-FPM für Nginx anpassen
-    zamba_run_cmd sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' "/etc/php/${PHP_VERSION}/fpm/php.ini"
-    zamba_run_cmd sed -i "s|;date.timezone =|date.timezone = $(cat /etc/timezone)|" "/etc/php/${PHP_VERSION}/fpm/php.ini"
+    sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' "/etc/php/${PHP_VERSION}/fpm/php.ini"
+    sed -i "s|;date.timezone =|date.timezone = $(cat /etc/timezone)|" "/etc/php/${PHP_VERSION}/fpm/php.ini"
 }
 
 _setup() {
-    zamba_header "Phase 3: Setup und finaler Neustart"
+    echo ""
+    echo "================================================="
+    echo "  Phase 3: Setup und finaler Neustart"
+    echo "================================================="
+    echo ""
     
     # 1. Schemas importieren
-    zamba_log "Datenbank-Schemas werden importiert."
+    echo "[INFO] Datenbank-Schemas werden importiert."
     sudo -u postgres psql -d icinga_ido -c "SELECT current_user;" # Warmup
     PGPASSWORD="${ICINGA_IDO_DB_PASS}" psql -h localhost -U icinga_ido -d icinga_ido -f /usr/share/icinga2-ido-pgsql/schema/pgsql.sql &>/dev/null
     PGPASSWORD="${ICINGAWEB_DB_PASS}" psql -h localhost -U icingaweb2 -d icingaweb2 -f /usr/share/icingaweb2/etc/schema/pgsql.schema.sql &>/dev/null
     
     # 2. Icinga Web 2 Setup
-    zamba_log "Icinga Web 2 Setup wird ausgeführt."
+    echo "[INFO] Icinga Web 2 Setup wird ausgeführt."
     ICINGAWEB_SETUP_TOKEN=$(icingacli setup token create)
     icingacli setup config webserver nginx --document-root /usr/share/icingaweb2/public
     icingacli setup --unattended --module icingaweb2 --setup-token "$ICINGAWEB_SETUP_TOKEN" \
@@ -302,38 +316,41 @@ _setup() {
     icingacli user add icingaadmin --password "$ICINGAWEB_ADMIN_PASS" --role "Administrators"
 
     # 3. Director Setup
-    zamba_log "Icinga Director Setup wird ausgeführt."
+    echo "[INFO] Icinga Director Setup wird ausgeführt."
     icingacli director kickstart --endpoint localhost --user director --password "${ICINGA_API_USER_PASS}"
     icingacli director config set 'endpoint' 'localhost' --user 'director' --password "${ICINGA_API_USER_PASS}"
     icingacli director migration run
     icingacli director automation run
 
     # 4. Services neu starten, um alle Konfigurationen zu laden
-    zamba_log "Alle Services werden neu gestartet."
-    zamba_run_cmd systemctl restart postgresql
-    zamba_run_cmd systemctl restart icinga2
-    zamba_run_cmd systemctl restart php${PHP_VERSION}-fpm
-    zamba_run_cmd systemctl restart nginx
-    zamba_run_cmd systemctl restart grafana-server
+    echo "[INFO] Alle Services werden neu gestartet."
+    systemctl restart postgresql
+    systemctl restart icinga2
+    systemctl restart php${PHP_VERSION}-fpm
+    systemctl restart nginx
+    systemctl restart grafana-server
     
-    zamba_log "Warte auf Icinga2 API..."
+    echo "[INFO] Warte auf Icinga2 API..."
     sleep 15
-    zamba_log "Director Konfiguration wird angewendet."
-    zamba_run_cmd icingacli director config deploy
+    echo "[INFO] Director Konfiguration wird angewendet."
+    icingacli director config deploy
 }
 
 _info() {
-    zamba_header "Installation des Icinga Monitoring Stacks abgeschlossen"
+    echo ""
+    echo "================================================="
+    echo "  Installation des Icinga Monitoring Stacks abgeschlossen"
+    echo "================================================="
     echo ""
     echo "Die Konfiguration wurde erfolgreich abgeschlossen."
     echo "Alle notwendigen Passwörter, Logins und API-Keys wurden generiert."
     echo ""
     echo "Sie finden alle Zugangsdaten in der folgenden Datei:"
-    echo -e "  \e[1;33m${CRED_FILE}\e[0m"
+    echo "  ${CRED_FILE}"
     echo ""
     echo "Wichtige URLs:"
-    echo -e "  Icinga Web 2: \e[1;34mhttps://${ZAMBA_HOSTNAME}/icingaweb2\e[0m"
-    echo -e "  Grafana:      \e[1;34mhttps://${ZAMBA_HOSTNAME}/grafana\e[0m"
+    echo "  Icinga Web 2: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingaweb2"
+    echo "  Grafana:      https://${ZAMBA_HOSTNAME:-$(hostname -f)}/grafana"
     echo ""
     echo "Hinweis zu TLS: Der Server verwendet aktuell ein selbst-signiertes 'snakeoil'-Zertifikat."
     echo "Ersetzen Sie die Symlinks in /etc/nginx/ssl/ mit Ihren echten Zertifikaten und starten Sie Nginx neu:"
@@ -341,3 +358,25 @@ _info() {
     echo ""
 }
 
+# --- Main Execution Logic ---
+# This part is executed by the Zamba LXC Toolbox framework,
+# which calls the _install, _configure, _setup, and _info functions in order.
+# For standalone testing, you could uncomment the lines below.
+
+# if [ "$EUID" -ne 0 ]; then
+#   echo "[ERROR] Dieses Skript muss als Root ausgeführt werden."
+#   exit 1
+# fi
+#
+# # Load constants if running standalone
+# ZAMBA_HOSTNAME=$(hostname -f)
+# source ./constants-service.conf
+#
+# set -e # Exit on first error
+# _install
+# _configure
+# _setup
+# _info
+# set +e
+#
+# exit 0
