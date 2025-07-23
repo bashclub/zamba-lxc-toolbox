@@ -327,7 +327,6 @@ EOF
     systemctl restart nginx
     systemctl restart grafana-server
 
-    # KORREKTUR: Erzeuge den Passwort-Hash mit PHP und füge den Benutzer direkt in die DB ein.
     echo "[INFO] Füge Icinga Web 2 Admin-Benutzer direkt in die Datenbank ein."
     local PASSWORD_HASH=$(php -r "echo password_hash('${ICINGAWEB_ADMIN_PASS}', PASSWORD_BCRYPT);")
     mysql icingaweb2 -e "INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('icingaadmin', 1, '${PASSWORD_HASH}') ON DUPLICATE KEY UPDATE password_hash='${PASSWORD_HASH}';"
@@ -335,8 +334,9 @@ EOF
     echo "[INFO] Warte auf Icinga2 API..."
     sleep 15
     echo "[INFO] Icinga Director Setup wird ausgeführt."
-    icingacli director migration run
+    # KORREKTUR: Reihenfolge der Director-Befehle getauscht
     icingacli director kickstart --endpoint localhost --user director --password "${ICINGA_API_USER_PASS}"
+    icingacli director migration run
     icingacli director config set 'endpoint' 'localhost' --user 'director' --password "${ICINGA_API_USER_PASS}"
     icingacli director automation run
     echo "[INFO] Director Konfiguration wird angewendet."
