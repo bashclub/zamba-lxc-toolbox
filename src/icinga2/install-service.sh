@@ -92,7 +92,7 @@ _install() {
     install_icinga_module "director" "icingaweb2-module-director"
 
     echo "[INFO] Systemd Services werden aktiviert."
-    # KORREKTUR: Der Service für InfluxDB v2 heißt 'influxdb', nicht 'influxdb2'
+    # Der Service für InfluxDB v2 heißt 'influxdb', nicht 'influxdb2'
     systemctl enable --now icinga2 postgresql nginx php${PHP_VERSION}-fpm influxdb grafana-server
 }
 
@@ -228,7 +228,12 @@ EOF
     
     # 7. Grafana konfigurieren
     echo "[INFO] Grafana wird konfiguriert."
+    # KORREKTUR: Grafana-Dienst stoppen, um DB-Sperre zu vermeiden
+    echo "[INFO] Stoppe Grafana-Dienst für Passwort-Reset..."
+    systemctl stop grafana-server
     grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
+    echo "[INFO] Starte Grafana-Dienst neu."
+    systemctl start grafana-server
     
     mkdir -p /etc/grafana/provisioning/datasources
     bash -c "cat > /etc/grafana/provisioning/datasources/influxdb.yaml" <<EOF
@@ -256,7 +261,7 @@ EOF
         ln -s /etc/ssl/private/ssl-cert-snakeoil.key /etc/nginx/ssl/privkey.pem
     fi
 
-    # KORREKTUR: Sicherstellen, dass der 'icinga'-Benutzer existiert, bevor er modifiziert wird.
+    # Sicherstellen, dass der 'icinga'-Benutzer existiert, bevor er modifiziert wird.
     if ! id -u icinga >/dev/null 2>&1; then
         echo "[WARN] Systembenutzer 'icinga' nicht gefunden. Wird erstellt."
         useradd --system --shell /usr/sbin/nologin --home-dir /var/lib/icinga2 icinga
