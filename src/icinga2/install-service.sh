@@ -345,7 +345,6 @@ EOF
     mysql icingaweb2 -e "INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('icingaadmin', 1, '${PASSWORD_HASH}') ON DUPLICATE KEY UPDATE password_hash='${PASSWORD_HASH}';"
     
     echo "[INFO] Warte auf Icinga Web 2 und API..."
-    # KORREKTUR: Robuste Warteschleife, die prüft, ob der Director bereit ist
     local counter=0
     while ! icingacli director migration run >/dev/null 2>&1; do
         counter=$((counter + 1))
@@ -359,7 +358,17 @@ EOF
     echo "[INFO] Icinga Director ist bereit."
 
     echo "[INFO] Icinga Director Setup wird ausgeführt."
-    icingacli director config set 'endpoint' 'localhost' --user 'director' --password "${ICINGA_API_USER_PASS}"
+    # KORREKTUR: Der Befehl 'icingacli director config set' ist falsch. Die Konfiguration
+    # wird stattdessen direkt in die Datei geschrieben.
+    bash -c "cat > /etc/icingaweb2/modules/director/kickstart.ini" <<EOF
+[config]
+endpoint = "localhost"
+user = "director"
+password = "${ICINGA_API_USER_PASS}"
+EOF
+    icingacli director kickstart run
+    rm /etc/icingaweb2/modules/director/kickstart.ini
+
     echo "[INFO] Director Konfiguration wird angewendet."
     icingacli director config deploy
 }
