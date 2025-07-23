@@ -128,8 +128,6 @@ _configure() {
     influx setup --skip-verify --username admin --password "$GRAFANA_ADMIN_PASS" --org icinga --bucket icinga --token "$INFLUX_ADMIN_TOKEN" -f
     
     echo "[INFO] Erstelle dedizierten InfluxDB Token für Icinga und Grafana."
-    # KORREKTUR: Der Parameter war '--all-access-org', korrekt ist '--all-access'.
-    # Die Logik wurde angepasst, um das von InfluxDB generierte Token zu verwenden.
     INFLUX_ICINGA_TOKEN=$(influx auth create --org icinga --all-access --json | grep -oP '"token": "\K[^"]+')
     if [ -z "$INFLUX_ICINGA_TOKEN" ]; then
         echo "[ERROR] Konnte InfluxDB Token für Icinga nicht erstellen." >&2
@@ -258,6 +256,11 @@ EOF
         ln -s /etc/ssl/private/ssl-cert-snakeoil.key /etc/nginx/ssl/privkey.pem
     fi
 
+    # KORREKTUR: Sicherstellen, dass der 'icinga'-Benutzer existiert, bevor er modifiziert wird.
+    if ! id -u icinga >/dev/null 2>&1; then
+        echo "[WARN] Systembenutzer 'icinga' nicht gefunden. Wird erstellt."
+        useradd --system --shell /usr/sbin/nologin --home-dir /var/lib/icinga2 icinga
+    fi
     # Icinga-Benutzer zur ssl-cert Gruppe hinzufügen, um den Schlüssel lesen zu können
     usermod -a -G ssl-cert icinga
 
