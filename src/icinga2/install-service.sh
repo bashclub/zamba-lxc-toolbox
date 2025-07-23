@@ -146,7 +146,6 @@ object ApiUser "director" {
   permissions = [ "object/modify/*", "object/query/*", "status/query", "actions/*", "events/*" ]
 }
 EOF
-    # KORREKTUR: 'token' wurde zu 'auth_token' geändert.
     bash -c "cat > /etc/icinga2/features-available/influxdb2-writer.conf" <<EOF
 object Influxdb2Writer "influxdb2-writer" {
   host = "http://127.0.0.1:8086"
@@ -302,11 +301,15 @@ _setup() {
     echo "[INFO] Icinga Web 2 Setup wird ausgeführt."
     ICINGAWEB_SETUP_TOKEN=$(icingacli setup token create)
     icingacli setup config webserver nginx --document-root /usr/share/icingaweb2/public
-    icingacli setup --unattended --module icingaweb2 --setup-token "$ICINGAWEB_SETUP_TOKEN" \
+    
+    # KORREKTUR: 'config' wurde zu den setup-Befehlen hinzugefügt.
+    icingacli setup config module --unattended --module icingaweb2 --setup-token "$ICINGAWEB_SETUP_TOKEN" \
         --db-type mysql --db-host localhost --db-name icingaweb2 \
         --db-user icingaweb2 --db-pass "$ICINGAWEB_DB_PASS"
-    icingacli setup --unattended --module monitoring --setup-token "$ICINGAWEB_SETUP_TOKEN" \
+        
+    icingacli setup config module --unattended --module monitoring --setup-token "$ICINGAWEB_SETUP_TOKEN" \
         --backend-type ido --resource icinga_ido
+        
     icingacli user add icingaadmin --password "$ICINGAWEB_ADMIN_PASS" --role "Administrators"
 
     echo "[INFO] Warte auf Icinga2 API..."
