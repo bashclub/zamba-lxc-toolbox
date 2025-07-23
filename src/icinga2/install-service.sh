@@ -350,14 +350,15 @@ _setup() {
     echo "[INFO] Datenbank-Schemas werden importiert."
     
     local IDO_SCHEMA="/usr/share/icinga2-ido-pgsql/schema/pgsql.sql"
-    local IWEB_SCHEMA="/usr/share/icingaweb2/etc/schema/pgsql.schema.sql"
+    # KORREKTUR: Korrekter Pfad zur komprimierten Schema-Datei
+    local IWEB_SCHEMA_GZ="/usr/share/doc/icingaweb2/schema/pgsql.schema.sql.gz"
 
     if [ ! -f "$IDO_SCHEMA" ]; then
         echo "[ERROR] IDO-Schema-Datei nicht gefunden: $IDO_SCHEMA" >&2
         exit 1
     fi
-    if [ ! -f "$IWEB_SCHEMA" ]; then
-        echo "[ERROR] IcingaWeb-Schema-Datei nicht gefunden: $IWEB_SCHEMA" >&2
+    if [ ! -f "$IWEB_SCHEMA_GZ" ]; then
+        echo "[ERROR] IcingaWeb-Schema-Datei nicht gefunden: $IWEB_SCHEMA_GZ" >&2
         exit 1
     fi
 
@@ -373,7 +374,8 @@ _setup() {
         echo "[INFO] IcingaWeb2-Schema scheint bereits importiert zu sein."
     else
         echo "[INFO] Importiere IcingaWeb2-Schema..."
-        sudo -u postgres psql -d icingaweb2 -f "$IWEB_SCHEMA" &>/dev/null
+        # Entpacke die Datei und leite sie per Pipe an psql weiter
+        gunzip -c "$IWEB_SCHEMA_GZ" | sudo -u postgres psql -d icingaweb2 &>/dev/null
     fi
     
     # 3. Icinga2 Features aktivieren (NACHDEM die DB bereit ist)
