@@ -332,7 +332,6 @@ resource = "director_db"
 EOF
 
     echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
-    icingacli module enable ipl
     icingacli module enable reactbundle
     # incubator wird als Abhängigkeit von director via apt installiert und muss nicht manuell aktiviert werden
     icingacli module enable director
