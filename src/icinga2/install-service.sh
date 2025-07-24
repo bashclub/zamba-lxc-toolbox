@@ -60,7 +60,6 @@ _install() {
         icingaweb2 icingacli \
         icinga-php-library \
         icingaweb2-module-reactbundle \
-        icingaweb2-module-incubator \
         icinga-director
 
     echo "[INFO] Systemd Services werden aktiviert."
@@ -335,7 +334,7 @@ EOF
     echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
     icingacli module enable ipl
     icingacli module enable reactbundle
-    icingacli module enable incubator
+    # incubator wird als Abhängigkeit von director via apt installiert und muss nicht manuell aktiviert werden
     icingacli module enable director
 
     echo "[INFO] Alle Services werden neu gestartet."
