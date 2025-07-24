@@ -283,7 +283,6 @@ backend = "influxdb2"
 EOF
 
 echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
-icingacli module enable ipl
 icingacli module enable reactbundle
 icingacli module enable incubator
 icingacli module enable director
