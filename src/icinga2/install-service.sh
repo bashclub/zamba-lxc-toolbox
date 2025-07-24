@@ -1,10 +1,8 @@
-#!/bin/bash
-#
-# Zamba LXC Toolbox - Service Installer
-# Service: icinga-stack
-#
-# Description: Führt die Installation und Konfiguration des Icinga2 Stacks mit IcingaDB durch.
-#
+
+source /root/functions.sh
+source /root/zamba.conf
+source /root/constants-service.conf
+source /etc/os-release
 
 # --- Internal Helper Functions ---
 _generate_local_password() {
@@ -12,148 +10,80 @@ _generate_local_password() {
 }
 
 
-# --- Service Functions (_install, _configure, _setup, _info) ---
+curl -fsSL https://packages.icinga.com/icinga.key | gpg --dearmor -o /usr/share/keyrings/icinga-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/icinga-archive-keyring.gpg] https://packages.icinga.com/debian icinga-$(lsb_release -cs) main" > /etc/apt/sources.list.d/icinga.list
 
-_install() {
-    echo ""
-    echo "================================================="
-    echo "  Phase 1: Installation der Pakete (IcingaDB Edition)"
-    echo "================================================="
-    echo ""
-    
-    echo "[INFO] System wird aktualisiert und Basispakete werden installiert."
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update
-    apt-get install -y wget gpg apt-transport-https curl sudo lsb-release
+curl -fsSL https://packages.netways.de/icinga/netways.key | gpg --dearmor -o /usr/share/keyrings/netways-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/netways-archive-keyring.gpg] https://packages.netways.de/icinga/debian/ icinga-$(lsb_release -cs) main" > /etc/apt/sources.list.d/netways.list
 
-    echo "[INFO] Repositories für Icinga, Netways, InfluxDB und Grafana werden hinzugefügt."
-    # Icinga Repo
-    if [ ! -f /etc/apt/sources.list.d/icinga.list ]; then
-        curl -fsSL https://packages.icinga.com/icinga.key | gpg --dearmor -o /usr/share/keyrings/icinga-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/icinga-archive-keyring.gpg] https://packages.icinga.com/debian icinga-${OS_CODENAME} main" > /etc/apt/sources.list.d/icinga.list
-    fi
+curl -fsSL https://repos.influxdata.com/influxdata-archive_compat.key | gpg --dearmor -o /usr/share/keyrings/influxdata-archive_compat-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/influxdata-archive_compat-keyring.gpg] https://repos.influxdata.com/debian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/influxdata.list
 
-    # Netways Repo for additional modules
-    if [ ! -f /etc/apt/sources.list.d/netways.list ]; then
-        curl -fsSL https://packages.netways.de/icinga/netways.key | gpg --dearmor -o /usr/share/keyrings/netways-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/netways-archive-keyring.gpg] https://packages.netways.de/icinga/debian/ icinga-${OS_CODENAME} main" > /etc/apt/sources.list.d/netways.list
-    fi
+wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor -o /usr/share/keyrings/grafana-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/grafana-archive-keyring.gpg] https://apt.grafana.com stable main" > /etc/apt/sources.list.d/grafana.list
 
-    # InfluxDB Repo
-    if [ ! -f /etc/apt/sources.list.d/influxdata.list ]; then
-        curl -fsSL https://repos.influxdata.com/influxdata-archive_compat.key | gpg --dearmor -o /usr/share/keyrings/influxdata-archive_compat-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/influxdata-archive_compat-keyring.gpg] https://repos.influxdata.com/debian ${OS_CODENAME} stable" > /etc/apt/sources.list.d/influxdata.list
-    fi
+apt update
 
-    # Grafana Repo
-    if [ ! -f /etc/apt/sources.list.d/grafana.list ]; then
-        wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor -o /usr/share/keyrings/grafana-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/grafana-archive-keyring.gpg] https://apt.grafana.com stable main" > /etc/apt/sources.list.d/grafana.list
-    fi
-    
-    echo "[INFO] Paketlisten werden erneut aktualisiert."
-    apt-get update
+apt-get install -y icinga2 nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-mysql php${PHP_VERSION}-intl php${PHP_VERSION}-xml php${PHP_VERSION}-gd php${PHP_VERSION}-ldap php${PHP_VERSION}-imagick \
+        mariadb-server mariadb-client influxdb2 grafana imagemagick icingaweb2 icingacli icinga-php-library icingaweb2-module-reactbundle \
+        icinga-director icingadb icingadb-redis icingadb-web icingaweb2-module-perfdatagraphs icingaweb2-module-perfdatagraphs-influxdbv2
 
-    echo "[INFO] Hauptkomponenten werden installiert (PHP Version: ${PHP_VERSION})."
-    apt-get install -y \
-        icinga2 \
-        nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-mysql php${PHP_VERSION}-intl php${PHP_VERSION}-xml php${PHP_VERSION}-gd php${PHP_VERSION}-ldap php${PHP_VERSION}-imagick \
-        mariadb-server mariadb-client \
-        redis-server redis-tools \
-        influxdb2 \
-        grafana \
-        imagemagick \
-        icingaweb2 icingacli \
-        icinga-php-library \
-        icingaweb2-module-reactbundle \
-        icinga-director \
-        icingadb \
-        icingadb-redis \
-        icingadb-web \
-        icingaweb2-module-perfdatagraphs \
-        icingaweb2-module-perfdatagraphs-influxdbv2
-}
 
-_configure() {
-    echo ""
-    echo "================================================="
-    echo "  Phase 2: Konfiguration der Komponenten (IcingaDB Edition)"
-    echo "================================================="
-    echo ""
+ICINGAWEB_DB_PASS=$(_generate_local_password 24)
+DIRECTOR_DB_PASS=$(_generate_local_password 24)
+ICINGA_IDO_DB_PASS=$(_generate_local_password 24)
+ICINGA_API_USER_PASS=$(_generate_local_password 24)
+ICINGAWEB_ADMIN_PASS=$(_generate_local_password 16)
+GRAFANA_ADMIN_PASS=$(_generate_local_password 16)
+INFLUX_ADMIN_TOKEN=$(_generate_local_password 40)
 
-    # 1. Passwörter generieren
-    echo "[INFO] Passwörter und API-Keys werden generiert."
-    ICINGAWEB_DB_PASS=$(_generate_local_password 24)
-    DIRECTOR_DB_PASS=$(_generate_local_password 24)
-    ICINGADB_PASS=$(_generate_local_password 24)
-    ICINGA_API_USER_PASS=$(_generate_local_password 24)
-    ICINGAWEB_ADMIN_PASS=$(_generate_local_password 16)
-    GRAFANA_ADMIN_PASS=$(_generate_local_password 16)
-    INFLUX_ADMIN_TOKEN=$(_generate_local_password 40)
-    
-    # 2. MariaDB konfigurieren
-    echo "[INFO] MariaDB wird konfiguriert."
-    # Ensure MariaDB is running for configuration
-    systemctl start mariadb
-    while ! mysqladmin ping -h localhost --silent; do sleep 1; done
-    
-    mysql -e "CREATE DATABASE IF NOT EXISTS icingaweb2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    mysql -e "CREATE DATABASE IF NOT EXISTS director CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    mysql -e "CREATE DATABASE IF NOT EXISTS icingadb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    
-    mysql -e "CREATE USER IF NOT EXISTS 'icingaweb2'@'localhost' IDENTIFIED BY '${ICINGAWEB_DB_PASS}';"
-    mysql -e "CREATE USER IF NOT EXISTS 'director'@'localhost' IDENTIFIED BY '${DIRECTOR_DB_PASS}';"
-    mysql -e "CREATE USER IF NOT EXISTS 'icingadb'@'localhost' IDENTIFIED BY '${ICINGADB_PASS}';"
+systemctl start mariadb
+while ! mysqladmin ping -h localhost --silent; do sleep 1; done
 
-    mysql -e "GRANT ALL PRIVILEGES ON icingaweb2.* TO 'icingaweb2'@'localhost';"
-    mysql -e "GRANT ALL PRIVILEGES ON director.* TO 'director'@'localhost';"
-    mysql -e "GRANT ALL PRIVILEGES ON icingadb.* TO 'icingadb'@'localhost';"
-    mysql -e "FLUSH PRIVILEGES;"
+mysql -e "CREATE DATABASE IF NOT EXISTS icingaweb2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -e "CREATE DATABASE IF NOT EXISTS director CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -e "CREATE DATABASE IF NOT EXISTS icinga_ido CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-    # 3. Redis konfigurieren
-    echo "[INFO] Erstelle systemd-Override für Redis-Server."
-    mkdir -p /etc/systemd/system/redis-server.service.d
-    bash -c "cat > /etc/systemd/system/redis-server.service.d/override.conf" <<EOF
-[Service]
-# Deaktiviert die systemd-Benachrichtigung, um Kompatibilitätsprobleme in Containern zu vermeiden.
-Supervised=no
-EOF
-    
-    # 4. InfluxDB 2 konfigurieren
-    echo "[INFO] InfluxDB 2 wird konfiguriert."
-    systemctl start influxdb
-    influx setup --skip-verify --username admin --password "$GRAFANA_ADMIN_PASS" --org icinga --bucket icinga --token "$INFLUX_ADMIN_TOKEN" -f
-    INFLUX_ICINGA_TOKEN=$(influx auth create --org icinga --all-access --json | grep -oP '"token": "\K[^"]+')
-    if [ -z "$INFLUX_ICINGA_TOKEN" ]; then echo "[ERROR] Konnte InfluxDB Token nicht erstellen." >&2; exit 1; fi
+mysql -e "CREATE USER IF NOT EXISTS 'icingaweb2'@'localhost' IDENTIFIED BY '${ICINGAWEB_DB_PASS}';"
+mysql -e "CREATE USER IF NOT EXISTS 'director'@'localhost' IDENTIFIED BY '${DIRECTOR_DB_PASS}';"
+mysql -e "CREATE USER IF NOT EXISTS 'icinga_ido'@'localhost' IDENTIFIED BY '${ICINGA_IDO_DB_PASS}';"
 
-    # 5. Credentials-Datei schreiben
-    echo "[INFO] Zugangsdaten werden in ${CRED_FILE} gespeichert."
-    mkdir -p "$(dirname "$CRED_FILE")" && chmod 700 "$(dirname "$CRED_FILE")"
-    {
-      echo "# --- Icinga Monitoring Stack Credentials ---"
-      echo "URL: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingaweb2; Benutzer: icingaadmin; Passwort: ${ICINGAWEB_ADMIN_PASS}"
-      echo "URL: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/grafana; Benutzer: admin; Passwort: ${GRAFANA_ADMIN_PASS}"
-      echo "InfluxDB Admin Token: ${INFLUX_ADMIN_TOKEN}"
-      echo "Icinga Director API: Benutzer: director; Passwort: ${ICINGA_API_USER_PASS}"
-    } > "$CRED_FILE" && chmod 600 "$CRED_FILE"
+mysql -e "GRANT ALL PRIVILEGES ON icingaweb2.* TO 'icingaweb2'@'localhost';"
+mysql -e "GRANT ALL PRIVILEGES ON director.* TO 'director'@'localhost';"
+mysql -e "GRANT ALL PRIVILEGES ON icinga_ido.* TO 'icinga_ido'@'localhost';"
+mysql -e "FLUSH PRIVILEGES;"
 
-    # 6. Icinga2 Konfigurationsdateien schreiben
-    echo "[INFO] Icinga2 Konfigurationsdateien werden geschrieben."
-    bash -c "cat > /etc/icinga2/features-available/icingadb.conf" <<EOF
+systemctl start influxdb
+influx setup --skip-verify --username admin --password "$GRAFANA_ADMIN_PASS" --org icinga --bucket icinga --token "$INFLUX_ADMIN_TOKEN" -f
+INFLUX_ICINGA_TOKEN=$(influx auth create --org icinga --all-access --json | grep -oP '"token": "\K[^"]+')
+if [ -z "$INFLUX_ICINGA_TOKEN" ]; then echo "[ERROR] Konnte InfluxDB Token nicht erstellen." >&2; exit 1; fi
+
+
+mkdir -p "$(dirname "$CRED_FILE")" && chmod 700 "$(dirname "$CRED_FILE")"
+{
+    echo "# --- Icinga Monitoring Stack Credentials ---"
+    echo "URL: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingaweb2; Benutzer: icingaadmin; Passwort: ${ICINGAWEB_ADMIN_PASS}"
+    echo "URL: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/grafana; Benutzer: admin; Passwort: ${GRAFANA_ADMIN_PASS}"
+    echo "InfluxDB Admin Token: ${INFLUX_ADMIN_TOKEN}"
+    echo "Icinga Director API: Benutzer: director; Passwort: ${ICINGA_API_USER_PASS}"
+} > "$CRED_FILE" && chmod 600 "$CRED_FILE"
+
+systemctl enable --now icingadb-redis
+bash -c "cat > /etc/icinga2/features-available/icingadb.conf" <<EOF
 library "icingadb"
 
 object IcingaDB "icingadb" {
   host = "127.0.0.1"
-  port = 6379
+  port = 6380
 }
 EOF
-    bash -c "cat > /etc/icinga2/conf.d/api-users.conf" <<EOF
+bash -c "cat > /etc/icinga2/conf.d/api-users.conf" <<EOF
 object ApiUser "director" {
   password = "${ICINGA_API_USER_PASS}"
   permissions = [ "object/modify/*", "object/query/*", "status/query", "actions/*", "events/*" ]
 }
 EOF
-    bash -c "cat > /etc/icinga2/features-available/influxdb2-writer.conf" <<EOF
+bash -c "cat > /etc/icinga2/features-available/influxdb2-writer.conf" <<EOF
 object Influxdb2Writer "influxdb2-writer" {
   host = "http://127.0.0.1:8086"
   organization = "icinga"
@@ -161,31 +91,27 @@ object Influxdb2Writer "influxdb2-writer" {
   auth_token = "${INFLUX_ICINGA_TOKEN}"
 }
 EOF
-    local FQDN=$(hostname -f)
     bash -c "cat > /etc/icinga2/zones.conf" <<EOF
-object Endpoint "${FQDN}" {}
-object Zone "master" { endpoints = [ "${FQDN}" ] }
+object Endpoint "$(hostname -f)" {}
+object Zone "master" { endpoints = [ "$(hostname -f)" ] }
 object Zone "global-templates" { global = true }
 object Zone "director-global" { global = true }
 EOF
-
-    # 7. IcingaDB konfigurieren
-    echo "[INFO] IcingaDB wird konfiguriert."
-    bash -c "cat > /etc/icingadb/config.yml" <<EOF
+bash -c "cat > /etc/icingadb/config.yml" <<EOF
 database:
   dsn: icingadb@tcp(127.0.0.1:3306)/icingadb
   password: ${ICINGADB_PASS}
 redis:
   host: 127.0.0.1
-  port: 6379
+  port: 6380
 logging:
   level: info
   output: stdout
 EOF
+icinga2 feature enable icingadb
+systemctl restart icinga2
 
-    # 8. Icinga Web 2 Konfigurationsdateien schreiben
-    echo "[INFO] Icinga Web 2 Konfigurationsdateien werden geschrieben."
-    mkdir -p /etc/icingaweb2
+mkdir -p /etc/icingaweb2
     bash -c "cat > /etc/icingaweb2/resources.ini" <<EOF
 [icingaweb_db]
 type = "db"
@@ -214,15 +140,13 @@ username = "icingadb"
 password = "${ICINGADB_PASS}"
 charset = "utf8mb4"
 EOF
-    
-    # 9. Grafana konfigurieren
-    echo "[INFO] Grafana wird konfiguriert."
-    systemctl stop grafana-server
-    grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
-    systemctl start grafana-server
-    
-    mkdir -p /etc/grafana/provisioning/datasources
-    bash -c "cat > /etc/grafana/provisioning/datasources/influxdb.yaml" <<EOF
+
+systemctl stop grafana-server
+grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
+systemctl start grafana-server
+
+mkdir -p /etc/grafana/provisioning/datasources
+bash -c "cat > /etc/grafana/provisioning/datasources/influxdb.yaml" <<EOF
 apiVersion: 1
 datasources:
 - name: InfluxDB-Icinga
@@ -232,17 +156,15 @@ datasources:
   jsonData: { version: "Flux", organization: "icinga", defaultBucket: "icinga" }
   secureJsonData: { token: "${INFLUX_ICINGA_TOKEN}" }
 EOF
-    chown grafana:grafana /etc/grafana/provisioning/datasources/influxdb.yaml
-    
-    # 10. Nginx TLS Konfiguration
-    echo "[INFO] Nginx für TLS wird konfiguriert."
-    mkdir -p /etc/nginx/ssl
-    if [ ! -L /etc/nginx/ssl/fullchain.pem ]; then
-        ln -s /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/nginx/ssl/fullchain.pem
-        ln -s /etc/ssl/private/ssl-cert-snakeoil.key /etc/nginx/ssl/privkey.pem
-    fi
+chown grafana:grafana /etc/grafana/provisioning/datasources/influxdb.yaml
 
-    bash -c "cat > /etc/nginx/sites-available/icinga-stack" <<EOF
+mkdir -p /etc/nginx/ssl
+if [ ! -L /etc/nginx/ssl/fullchain.pem ]; then
+    ln -s /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/nginx/ssl/fullchain.pem
+    ln -s /etc/ssl/private/ssl-cert-snakeoil.key /etc/nginx/ssl/privkey.pem
+fi
+
+bash -c "cat > /etc/nginx/sites-available/icinga-stack" <<EOF
 server {
     listen 80;
     server_name ${ZAMBA_HOSTNAME:-$(hostname -f)};
@@ -272,70 +194,46 @@ server {
     }
 }
 EOF
-    ln -sf /etc/nginx/sites-available/icinga-stack /etc/nginx/sites-enabled/
-    rm -f /etc/nginx/sites-enabled/default
 
-    sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' "/etc/php/${PHP_VERSION}/fpm/php.ini"
-    sed -i "s|;date.timezone =|date.timezone = $(cat /etc/timezone)|" "/etc/php/${PHP_VERSION}/fpm/php.ini"
-}
+ln -sf /etc/nginx/sites-available/icinga-stack /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
 
-_setup() {
-    echo ""
-    echo "================================================="
-    echo "  Phase 3: Setup und finaler Neustart (IcingaDB Edition)"
-    echo "================================================="
-    echo ""
-    
-    echo "[INFO] Icinga2 API wird initialisiert und Zertifikate werden erstellt."
-    icinga2 api setup
-    
-    echo "[INFO] Aktiviere und starte alle Dienste in der korrekten Reihenfolge."
-    systemctl enable icinga2 mariadb redis-server nginx php${PHP_VERSION}-fpm influxdb grafana-server icingadb
-    systemctl daemon-reload # Um Redis-Override zu laden
+sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' "/etc/php/${PHP_VERSION}/fpm/php.ini"
+sed -i "s|;date.timezone =|date.timezone = $(cat /etc/timezone)|" "/etc/php/${PHP_VERSION}/fpm/php.ini"
 
-    systemctl start mariadb
-    systemctl start redis-server
+icinga2 api setup
+systemctl enable icinga2 mariadb nginx php${PHP_VERSION}-fpm influxdb grafana-server icingadb icingadb-redis
 
-    echo "[INFO] Warte auf MariaDB-Dienst..."
-    while ! mysqladmin ping -h localhost --silent; do sleep 2; done
-    echo "[INFO] MariaDB ist bereit."
+systemctl start mariadb
+while ! mysqladmin ping -h localhost --silent; do sleep 2; done
+systemctl start icinga2 icingadb-redis nginx php${PHP_VERSION}-fpm influxdb grafana-server icingadb
 
-    echo "[INFO] Warte auf Redis-Dienst..."
-    while ! redis-cli ping | grep -q PONG; do sleep 2; done
-    echo "[INFO] Redis ist bereit."
+IWEB_SCHEMA="/usr/share/icingaweb2/schema/mysql.schema.sql"
+DIRECTOR_SCHEMA="/usr/share/icingaweb2/modules/director/schema/mysql.sql"
+ICINGADB_SCHEMA="/usr/share/icingadb/schema/mysql/schema.sql"
 
-    # Starte restliche Dienste
-    systemctl start icinga2 nginx php${PHP_VERSION}-fpm influxdb grafana-server icingadb
-    
-    echo "[INFO] Datenbank-Schemas werden importiert."
-    local IWEB_SCHEMA="/usr/share/icingaweb2/schema/mysql.schema.sql"
-    local DIRECTOR_SCHEMA="/usr/share/icingaweb2/modules/director/schema/mysql.sql"
-    local ICINGADB_SCHEMA="/usr/share/icingadb/schema/mysql/schema.sql"
+if [ ! -f "$IWEB_SCHEMA" ]; then echo "[ERROR] IcingaWeb-Schema nicht gefunden: $IWEB_SCHEMA" >&2; exit 1; fi
+if [ ! -f "$DIRECTOR_SCHEMA" ]; then echo "[ERROR] Director-Schema nicht gefunden: $DIRECTOR_SCHEMA" >&2; exit 1; fi
+if [ ! -f "$ICINGADB_SCHEMA" ]; then echo "[ERROR] IcingaDB-Schema nicht gefunden: $ICINGADB_SCHEMA" >&2; exit 1; fi
 
-    if [ ! -f "$IWEB_SCHEMA" ]; then echo "[ERROR] IcingaWeb-Schema nicht gefunden: $IWEB_SCHEMA" >&2; exit 1; fi
-    if [ ! -f "$DIRECTOR_SCHEMA" ]; then echo "[ERROR] Director-Schema nicht gefunden: $DIRECTOR_SCHEMA" >&2; exit 1; fi
-    if [ ! -f "$ICINGADB_SCHEMA" ]; then echo "[ERROR] IcingaDB-Schema nicht gefunden: $ICINGADB_SCHEMA" >&2; exit 1; fi
 
-    if ! mysql -e "use icingaweb2; show tables;" | grep -q "icingaweb_user"; then
-        echo "[INFO] Importiere IcingaWeb2-Schema..."
-        mysql icingaweb2 < "$IWEB_SCHEMA"
-    fi
-    
-    if ! mysql -e "use director; show tables;" | grep -q "director_datafield"; then
-        echo "[INFO] Importiere Icinga Director-Schema..."
-        mysql director < "$DIRECTOR_SCHEMA"
-    fi
-    
-    if ! mysql -e "use icingadb; show tables;" | grep -q "icingadb_schema_migration"; then
-        echo "[INFO] Importiere IcingaDB-Schema..."
-        mysql icingadb < "$ICINGADB_SCHEMA"
-    fi
-    
-    echo "[INFO] Icinga2 Features werden aktiviert."
-    icinga2 feature enable icingadb api influxdb2-writer >/dev/null
+if ! mysql -e "use icingaweb2; show tables;" | grep -q "icingaweb_user"; then
+    echo "[INFO] Importiere IcingaWeb2-Schema..."
+    mysql icingaweb2 < "$IWEB_SCHEMA"
+fi
 
-    echo "[INFO] Erstelle Icinga Web 2 Kernkonfiguration."
-    bash -c "cat > /etc/icingaweb2/config.ini" <<EOF
+if ! mysql -e "use director; show tables;" | grep -q "director_datafield"; then
+    echo "[INFO] Importiere Icinga Director-Schema..."
+    mysql director < "$DIRECTOR_SCHEMA"
+fi
+
+if ! mysql -e "use icingadb; show tables;" | grep -q "icingadb_schema_migration"; then
+    echo "[INFO] Importiere IcingaDB-Schema..."
+    mysql icingadb < "$ICINGADB_SCHEMA"
+fi
+icinga2 feature enable icingadb api influxdb2-writer
+
+bash -c "cat > /etc/icingaweb2/config.ini" <<EOF
 [global]
 show_stacktraces = "0"
 config_backend = "db"
@@ -345,34 +243,35 @@ log = "file"
 log_file = "/var/log/icingaweb2/icingaweb2.log"
 level = "ERROR"
 EOF
-    bash -c "cat > /etc/icingaweb2/authentication.ini" <<EOF
+
+bash -c "cat > /etc/icingaweb2/authentication.ini" <<EOF
 [icinga-web-admin]
 backend = "db"
 resource = "icingaweb_db"
 EOF
-    bash -c "cat > /etc/icingaweb2/roles.ini" <<EOF
+
+bash -c "cat > /etc/icingaweb2/roles.ini" <<EOF
 [Administrators]
 users = "icingaadmin"
 permissions = "*"
 groups = "Administrators"
 EOF
     
-    mkdir -p /etc/icingaweb2/modules/monitoring
-    bash -c "cat > /etc/icingaweb2/modules/monitoring/backends.ini" <<EOF
+mkdir -p /etc/icingaweb2/modules/monitoring
+bash -c "cat > /etc/icingaweb2/modules/monitoring/backends.ini" <<EOF
 [icingadb]
 backend = "icingadb"
 resource = "icingadb"
 EOF
     
-    mkdir -p /etc/icingaweb2/modules/director
-    bash -c "cat > /etc/icingaweb2/modules/director/config.ini" <<EOF
+mkdir -p /etc/icingaweb2/modules/director
+bash -c "cat > /etc/icingaweb2/modules/director/config.ini" <<EOF
 [db]
 resource = "director_db"
 EOF
 
-    # Konfiguration für perfdatagraphs
-    mkdir -p /etc/icingaweb2/modules/perfdatagraphs
-    bash -c "cat > /etc/icingaweb2/modules/perfdatagraphs/config.ini" <<EOF
+mkdir -p /etc/icingaweb2/modules/perfdatagraphs
+bash -c "cat > /etc/icingaweb2/modules/perfdatagraphs/config.ini" <<EOF
 [influxdb2]
 backend = "influxdb2"
 url = "http://127.0.0.1:8086"
@@ -384,42 +283,42 @@ bucket = "icinga"
 backend = "influxdb2"
 EOF
 
-    echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
-    icingacli module enable ipl
-    icingacli module enable reactbundle
-    icingacli module enable incubator
-    icingacli module enable director
-    icingacli module enable icingadb
-    icingacli module enable perfdatagraphs
+echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
+icingacli module enable ipl
+icingacli module enable reactbundle
+icingacli module enable incubator
+icingacli module enable director
+icingacli module enable icingadb
+icingacli module enable perfdatagraphs
 
-    echo "[INFO] Alle Services werden neu gestartet, um die finale Konfiguration zu laden."
-    systemctl restart mariadb
-    systemctl restart redis-server
-    systemctl restart icinga2
-    systemctl restart php${PHP_VERSION}-fpm
-    systemctl restart nginx
-    systemctl restart grafana-server
-    systemctl restart icingadb
+echo "[INFO] Alle Services werden neu gestartet, um die finale Konfiguration zu laden."
+systemctl restart mariadb
+systemctl restart redis-server
+systemctl restart icinga2
+systemctl restart php${PHP_VERSION}-fpm
+systemctl restart nginx
+systemctl restart grafana-server
+systemctl restart icingadb
 
-    echo "[INFO] Füge Icinga Web 2 Admin-Benutzer direkt in die Datenbank ein."
-    local PASSWORD_HASH=$(php -r "echo password_hash('${ICINGAWEB_ADMIN_PASS}', PASSWORD_BCRYPT);")
-    mysql icingaweb2 -e "INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('icingaadmin', 1, '${PASSWORD_HASH}') ON DUPLICATE KEY UPDATE password_hash='${PASSWORD_HASH}';"
-    
-    echo "[INFO] Warte auf Icinga Web 2 und API..."
-    local counter=0
-    while ! icingacli director migration run >/dev/null 2>&1; do
-        counter=$((counter + 1))
-        if [ "$counter" -gt 15 ]; then
-            echo "[ERROR] Icinga Director wurde nach 30 Sekunden nicht bereit." >&2
-            exit 1
-        fi
-        echo "[INFO] Director ist noch nicht bereit, warte 2 Sekunden... (Versuch ${counter}/15)"
-        sleep 2
-    done
-    echo "[INFO] Icinga Director ist bereit."
+echo "[INFO] Füge Icinga Web 2 Admin-Benutzer direkt in die Datenbank ein."
+PASSWORD_HASH=$(php -r "echo password_hash('${ICINGAWEB_ADMIN_PASS}', PASSWORD_BCRYPT);")
+mysql icingaweb2 -e "INSERT INTO icingaweb_user (name, active, password_hash) VALUES ('icingaadmin', 1, '${PASSWORD_HASH}') ON DUPLICATE KEY UPDATE password_hash='${PASSWORD_HASH}';"
 
-    echo "[INFO] Icinga Director Setup wird ausgeführt."
-    bash -c "cat > /etc/icingaweb2/modules/director/kickstart.ini" <<EOF
+echo "[INFO] Warte auf Icinga Web 2 und API..."
+counter=0
+while ! icingacli director migration run >/dev/null 2>&1; do
+    counter=$((counter + 1))
+    if [ "$counter" -gt 15 ]; then
+        echo "[ERROR] Icinga Director wurde nach 30 Sekunden nicht bereit." >&2
+        exit 1
+    fi
+    echo "[INFO] Director ist noch nicht bereit, warte 2 Sekunden... (Versuch ${counter}/15)"
+    sleep 2
+done
+echo "[INFO] Icinga Director ist bereit."
+
+echo "[INFO] Icinga Director Setup wird ausgeführt."
+bash -c "cat > /etc/icingaweb2/modules/director/kickstart.ini" <<EOF
 [config]
 endpoint = "$(hostname -f)"
 host = "127.0.0.1"
@@ -427,50 +326,25 @@ port = "5665"
 username = "director"
 password = "${ICINGA_API_USER_PASS}"
 EOF
-    icingacli director kickstart run
-    rm /etc/icingaweb2/modules/director/kickstart.ini
+icingacli director kickstart run
+rm /etc/icingaweb2/modules/director/kickstart.ini
 
-    echo "[INFO] Director Konfiguration wird angewendet."
-    icingacli director config deploy
-}
+echo "[INFO] Director Konfiguration wird angewendet."
+icingacli director config deploy
 
-_info() {
-    echo ""
-    echo "================================================="
-    echo "  Installation des Icinga Monitoring Stacks abgeschlossen"
-    echo "================================================="
-    echo ""
-    echo "Die Konfiguration wurde erfolgreich abgeschlossen."
-    echo "Alle notwendigen Passwörter, Logins und API-Keys wurden generiert."
-    echo ""
-    echo "Sie finden alle Zugangsdaten in der folgenden Datei:"
-    echo "  ${CRED_FILE}"
-    echo ""
-    echo "Wichtige URLs:"
-    echo "  Icinga Web 2: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingaweb2"
-    echo "  IcingaDB Web: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingadb-web"
-    echo "  Grafana:      https://${ZAMBA_HOSTNAME:-$(hostname -f)}/grafana"
-    echo ""
-}
-
-# --- Main Execution Logic ---
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    if [ "$EUID" -ne 0 ]; then
-      echo "[ERROR] Dieses Skript muss als Root ausgeführt werden."
-      exit 1
-    fi
-    if [ -f ./constants-service.conf ]; then
-        source ./constants-service.conf
-    else
-        echo "[ERROR] Die Datei 'constants-service.conf' wird für den Standalone-Betrieb benötigt."
-        exit 1
-    fi
-    ZAMBA_HOSTNAME=${ZAMBA_HOSTNAME:-$(hostname -f)}
-    set -euo pipefail
-    _install
-    _configure
-    _setup
-    _info
-    set +euo pipefail
-    exit 0
-fi
+echo ""
+echo "================================================="
+echo "  Installation des Icinga Monitoring Stacks abgeschlossen"
+echo "================================================="
+echo ""
+echo "Die Konfiguration wurde erfolgreich abgeschlossen."
+echo "Alle notwendigen Passwörter, Logins und API-Keys wurden generiert."
+echo ""
+echo "Sie finden alle Zugangsdaten in der folgenden Datei:"
+echo "  ${CRED_FILE}"
+echo ""
+echo "Wichtige URLs:"
+echo "  Icinga Web 2: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingaweb2"
+echo "  IcingaDB Web: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingadb-web"
+echo "  Grafana:      https://${ZAMBA_HOSTNAME:-$(hostname -f)}/grafana"
+echo ""
