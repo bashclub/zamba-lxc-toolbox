@@ -154,6 +154,25 @@ object Influxdb2Writer "influxdb2-writer" {
   auth_token = "${INFLUX_ICINGA_TOKEN}"
 }
 EOF
+    # KORREKTUR: Essenzielle Zonen-Konfiguration für den Master erstellen
+    echo "[INFO] Erstelle Icinga2 Zonen-Konfiguration."
+    local FQDN=$(hostname -f)
+    bash -c "cat > /etc/icinga2/zones.conf" <<EOF
+object Endpoint "${FQDN}" {
+}
+
+object Zone "master" {
+    endpoints = [ "${FQDN}" ]
+}
+
+object Zone "global-templates" {
+    global = true
+}
+
+object Zone "director-global" {
+    global = true
+}
+EOF
 
     # 6. Icinga Web 2 Konfigurationsdateien schreiben
     echo "[INFO] Icinga Web 2 Konfigurationsdateien werden geschrieben."
@@ -358,12 +377,12 @@ EOF
     echo "[INFO] Icinga Director ist bereit."
 
     echo "[INFO] Icinga Director Setup wird ausgeführt."
-    # KORREKTUR: Der Befehl 'icingacli director config set' ist falsch. Die Konfiguration
-    # wird stattdessen direkt in die Datei geschrieben.
     bash -c "cat > /etc/icingaweb2/modules/director/kickstart.ini" <<EOF
 [config]
-endpoint = "localhost"
-user = "director"
+endpoint = "$(hostname -f)"
+host = "127.0.0.1"
+port = "5665"
+username = "director"
 password = "${ICINGA_API_USER_PASS}"
 EOF
     icingacli director kickstart run
