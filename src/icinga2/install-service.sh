@@ -3,8 +3,7 @@
 # Zamba LXC Toolbox - Service Installer
 # Service: icinga-stack
 #
-# Description: Führt die Installation und Konfiguration des Icinga2 Stacks mit MariaDB durch.
-# Dieses Skript ist eigenständig und verwendet nur Standard-OS-Befehle.
+# Description: Führt die Installation und Konfiguration des Icinga2 Stacks mit IcingaDB durch.
 #
 
 # --- Internal Helper Functions ---
@@ -18,7 +17,7 @@ _generate_local_password() {
 _install() {
     echo ""
     echo "================================================="
-    echo "  Phase 1: Installation der Pakete (MariaDB Edition)"
+    echo "  Phase 1: Installation der Pakete (IcingaDB Edition)"
     echo "================================================="
     echo ""
     
@@ -51,25 +50,29 @@ _install() {
 
     echo "[INFO] Hauptkomponenten werden installiert (PHP Version: ${PHP_VERSION})."
     apt-get install -y \
-        icinga2 icinga2-ido-mysql \
+        icinga2 \
         nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-mysql php${PHP_VERSION}-intl php${PHP_VERSION}-xml php${PHP_VERSION}-gd php${PHP_VERSION}-ldap php${PHP_VERSION}-imagick \
         mariadb-server mariadb-client \
+        redis-server \
         influxdb2 \
         grafana \
         imagemagick \
         icingaweb2 icingacli \
         icinga-php-library \
         icingaweb2-module-reactbundle \
-        icinga-director
+        icinga-director \
+        icingadb \
+        icingadb-redis \
+        icingadb-web
 
     echo "[INFO] Systemd Services werden aktiviert."
-    systemctl enable --now icinga2 mariadb nginx php${PHP_VERSION}-fpm influxdb grafana-server
+    systemctl enable --now icinga2 mariadb redis-server nginx php${PHP_VERSION}-fpm influxdb grafana-server icingadb
 }
 
 _configure() {
     echo ""
     echo "================================================="
-    echo "  Phase 2: Konfiguration der Komponenten (MariaDB Edition)"
+    echo "  Phase 2: Konfiguration der Komponenten (IcingaDB Edition)"
     echo "================================================="
     echo ""
 
@@ -77,7 +80,7 @@ _configure() {
     echo "[INFO] Passwörter und API-Keys werden generiert."
     ICINGAWEB_DB_PASS=$(_generate_local_password 24)
     DIRECTOR_DB_PASS=$(_generate_local_password 24)
-    ICINGA_IDO_DB_PASS=$(_generate_local_password 24)
+    ICINGADB_PASS=$(_generate_local_password 24)
     ICINGA_API_USER_PASS=$(_generate_local_password 24)
     ICINGAWEB_ADMIN_PASS=$(_generate_local_password 16)
     GRAFANA_ADMIN_PASS=$(_generate_local_password 16)
@@ -87,15 +90,15 @@ _configure() {
     echo "[INFO] MariaDB wird konfiguriert."
     mysql -e "CREATE DATABASE IF NOT EXISTS icingaweb2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     mysql -e "CREATE DATABASE IF NOT EXISTS director CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-    mysql -e "CREATE DATABASE IF NOT EXISTS icinga_ido CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    mysql -e "CREATE DATABASE IF NOT EXISTS icingadb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     
     mysql -e "CREATE USER IF NOT EXISTS 'icingaweb2'@'localhost' IDENTIFIED BY '${ICINGAWEB_DB_PASS}';"
     mysql -e "CREATE USER IF NOT EXISTS 'director'@'localhost' IDENTIFIED BY '${DIRECTOR_DB_PASS}';"
-    mysql -e "CREATE USER IF NOT EXISTS 'icinga_ido'@'localhost' IDENTIFIED BY '${ICINGA_IDO_DB_PASS}';"
+    mysql -e "CREATE USER IF NOT EXISTS 'icingadb'@'localhost' IDENTIFIED BY '${ICINGADB_PASS}';"
 
     mysql -e "GRANT ALL PRIVILEGES ON icingaweb2.* TO 'icingaweb2'@'localhost';"
     mysql -e "GRANT ALL PRIVILEGES ON director.* TO 'director'@'localhost';"
-    mysql -e "GRANT ALL PRIVILEGES ON icinga_ido.* TO 'icinga_ido'@'localhost';"
+    mysql -e "GRANT ALL PRIVILEGES ON icingadb.* TO 'icingadb'@'localhost';"
     mysql -e "FLUSH PRIVILEGES;"
 
     # 3. InfluxDB 2 konfigurieren
@@ -117,12 +120,12 @@ _configure() {
 
     # 5. Icinga2 Konfigurationsdateien schreiben
     echo "[INFO] Icinga2 Konfigurationsdateien werden geschrieben."
-    bash -c "cat > /etc/icinga2/features-available/ido-mysql.conf" <<EOF
-object IdoMysqlConnection "ido-mysql" {
-  user = "icinga_ido",
-  password = "${ICINGA_IDO_DB_PASS}",
-  host = "localhost",
-  database = "icinga_ido"
+    bash -c "cat > /etc/icinga2/features-available/icingadb.conf" <<EOF
+library "icingadb"
+
+object IcingaDB "icingadb" {
+  host = "127.0.0.1"
+  port = 6379
 }
 EOF
     bash -c "cat > /etc/icinga2/conf.d/api-users.conf" <<EOF
@@ -139,27 +142,29 @@ object Influxdb2Writer "influxdb2-writer" {
   auth_token = "${INFLUX_ICINGA_TOKEN}"
 }
 EOF
-    # KORREKTUR: Essenzielle Zonen-Konfiguration für den Master erstellen
-    echo "[INFO] Erstelle Icinga2 Zonen-Konfiguration."
     local FQDN=$(hostname -f)
     bash -c "cat > /etc/icinga2/zones.conf" <<EOF
-object Endpoint "${FQDN}" {
-}
-
-object Zone "master" {
-    endpoints = [ "${FQDN}" ]
-}
-
-object Zone "global-templates" {
-    global = true
-}
-
-object Zone "director-global" {
-    global = true
-}
+object Endpoint "${FQDN}" {}
+object Zone "master" { endpoints = [ "${FQDN}" ] }
+object Zone "global-templates" { global = true }
+object Zone "director-global" { global = true }
 EOF
 
-    # 6. Icinga Web 2 Konfigurationsdateien schreiben
+    # 6. IcingaDB konfigurieren
+    echo "[INFO] IcingaDB wird konfiguriert."
+    bash -c "cat > /etc/icingadb/config.yml" <<EOF
+database:
+  dsn: icingadb@tcp(127.0.0.1:3306)/icingadb
+  password: ${ICINGADB_PASS}
+redis:
+  host: 127.0.0.1
+  port: 6379
+logging:
+  level: info
+  output: stdout
+EOF
+
+    # 7. Icinga Web 2 Konfigurationsdateien schreiben
     echo "[INFO] Icinga Web 2 Konfigurationsdateien werden geschrieben."
     mkdir -p /etc/icingaweb2
     bash -c "cat > /etc/icingaweb2/resources.ini" <<EOF
@@ -170,6 +175,7 @@ host = "localhost"
 dbname = "icingaweb2"
 username = "icingaweb2"
 password = "${ICINGAWEB_DB_PASS}"
+charset = "utf8mb4"
 
 [director_db]
 type = "db"
@@ -178,17 +184,19 @@ host = "localhost"
 dbname = "director"
 username = "director"
 password = "${DIRECTOR_DB_PASS}"
+charset = "utf8mb4"
 
-[icinga_ido]
+[icingadb]
 type = "db"
 db = "mysql"
 host = "localhost"
-dbname = "icinga_ido"
-username = "icinga_ido"
-password = "${ICINGA_IDO_DB_PASS}"
+dbname = "icingadb"
+username = "icingadb"
+password = "${ICINGADB_PASS}"
+charset = "utf8mb4"
 EOF
     
-    # 7. Grafana konfigurieren
+    # 8. Grafana konfigurieren
     echo "[INFO] Grafana wird konfiguriert."
     systemctl stop grafana-server
     grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
@@ -207,7 +215,7 @@ datasources:
 EOF
     chown grafana:grafana /etc/grafana/provisioning/datasources/influxdb.yaml
     
-    # 8. Nginx TLS Konfiguration
+    # 9. Nginx TLS Konfiguration
     echo "[INFO] Nginx für TLS wird konfiguriert."
     mkdir -p /etc/nginx/ssl
     if [ ! -L /etc/nginx/ssl/fullchain.pem ]; then
@@ -239,6 +247,10 @@ server {
         proxy_pass http://localhost:3000;
         proxy_set_header Host \$http_host;
     }
+    location /icingadb-web {
+        proxy_pass http://localhost:8080/icingadb-web;
+        proxy_set_header Host \$http_host;
+    }
 }
 EOF
     ln -sf /etc/nginx/sites-available/icinga-stack /etc/nginx/sites-enabled/
@@ -251,7 +263,7 @@ EOF
 _setup() {
     echo ""
     echo "================================================="
-    echo "  Phase 3: Setup und finaler Neustart (MariaDB Edition)"
+    echo "  Phase 3: Setup und finaler Neustart (IcingaDB Edition)"
     echo "================================================="
     echo ""
     
@@ -259,25 +271,17 @@ _setup() {
     icinga2 api setup
     
     echo "[INFO] Warte auf MariaDB-Dienst..."
-    while ! mysqladmin ping -h localhost --silent; do
-        echo "[INFO] MariaDB ist noch nicht bereit, warte 2 Sekunden..."
-        sleep 2
-    done
+    while ! mysqladmin ping -h localhost --silent; do sleep 2; done
     echo "[INFO] MariaDB ist bereit."
 
     echo "[INFO] Datenbank-Schemas werden importiert."
-    local IDO_SCHEMA="/usr/share/icinga2-ido-mysql/schema/mysql.sql"
     local IWEB_SCHEMA="/usr/share/icingaweb2/schema/mysql.schema.sql"
     local DIRECTOR_SCHEMA="/usr/share/icingaweb2/modules/director/schema/mysql.sql"
+    local ICINGADB_SCHEMA="/usr/share/icingadb/schema/mysql/schema.sql"
 
-    if [ ! -f "$IDO_SCHEMA" ]; then echo "[ERROR] IDO-Schema nicht gefunden: $IDO_SCHEMA" >&2; exit 1; fi
     if [ ! -f "$IWEB_SCHEMA" ]; then echo "[ERROR] IcingaWeb-Schema nicht gefunden: $IWEB_SCHEMA" >&2; exit 1; fi
     if [ ! -f "$DIRECTOR_SCHEMA" ]; then echo "[ERROR] Director-Schema nicht gefunden: $DIRECTOR_SCHEMA" >&2; exit 1; fi
-
-    if ! mysql -e "use icinga_ido; show tables;" | grep -q "icinga_dbversion"; then
-        echo "[INFO] Importiere Icinga IDO-Schema..."
-        mysql icinga_ido < "$IDO_SCHEMA"
-    fi
+    if [ ! -f "$ICINGADB_SCHEMA" ]; then echo "[ERROR] IcingaDB-Schema nicht gefunden: $ICINGADB_SCHEMA" >&2; exit 1; fi
 
     if ! mysql -e "use icingaweb2; show tables;" | grep -q "icingaweb_user"; then
         echo "[INFO] Importiere IcingaWeb2-Schema..."
@@ -289,8 +293,13 @@ _setup() {
         mysql director < "$DIRECTOR_SCHEMA"
     fi
     
+    if ! mysql -e "use icingadb; show tables;" | grep -q "icingadb_schema_migration"; then
+        echo "[INFO] Importiere IcingaDB-Schema..."
+        mysql icingadb < "$ICINGADB_SCHEMA"
+    fi
+    
     echo "[INFO] Icinga2 Features werden aktiviert."
-    icinga2 feature enable ido-mysql api influxdb2-writer >/dev/null
+    icinga2 feature enable icingadb api influxdb2-writer >/dev/null
 
     echo "[INFO] Erstelle Icinga Web 2 Kernkonfiguration."
     bash -c "cat > /etc/icingaweb2/config.ini" <<EOF
@@ -298,19 +307,16 @@ _setup() {
 show_stacktraces = "0"
 config_backend = "db"
 config_resource = "icingaweb_db"
-
 [logging]
 log = "file"
 log_file = "/var/log/icingaweb2/icingaweb2.log"
 level = "ERROR"
 EOF
-
     bash -c "cat > /etc/icingaweb2/authentication.ini" <<EOF
 [icinga-web-admin]
 backend = "db"
 resource = "icingaweb_db"
 EOF
-
     bash -c "cat > /etc/icingaweb2/roles.ini" <<EOF
 [Administrators]
 users = "icingaadmin"
@@ -318,13 +324,14 @@ permissions = "*"
 groups = "Administrators"
 EOF
     
+    # KORREKTUR: Monitoring-Modul auf IcingaDB umstellen
     mkdir -p /etc/icingaweb2/modules/monitoring
-    bash -c "cat > /etc/icingaweb2/modules/monitoring/config.ini" <<EOF
-[backend]
-type = "ido"
-resource = "icinga_ido"
+    bash -c "cat > /etc/icingaweb2/modules/monitoring/backends.ini" <<EOF
+[icingadb]
+backend = "icingadb"
+resource = "icingadb"
 EOF
-
+    
     mkdir -p /etc/icingaweb2/modules/director
     bash -c "cat > /etc/icingaweb2/modules/director/config.ini" <<EOF
 [db]
@@ -332,9 +339,11 @@ resource = "director_db"
 EOF
 
     echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
+    icingacli module enable ipl
     icingacli module enable reactbundle
-    # incubator wird als Abhängigkeit von director via apt installiert und muss nicht manuell aktiviert werden
+    icingacli module enable incubator
     icingacli module enable director
+    icingacli module enable icingadb
 
     echo "[INFO] Alle Services werden neu gestartet."
     systemctl restart mariadb
@@ -342,6 +351,7 @@ EOF
     systemctl restart php${PHP_VERSION}-fpm
     systemctl restart nginx
     systemctl restart grafana-server
+    systemctl restart icingadb
 
     echo "[INFO] Füge Icinga Web 2 Admin-Benutzer direkt in die Datenbank ein."
     local PASSWORD_HASH=$(php -r "echo password_hash('${ICINGAWEB_ADMIN_PASS}', PASSWORD_BCRYPT);")
@@ -390,6 +400,7 @@ _info() {
     echo ""
     echo "Wichtige URLs:"
     echo "  Icinga Web 2: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingaweb2"
+    echo "  IcingaDB Web: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingadb-web"
     echo "  Grafana:      https://${ZAMBA_HOSTNAME:-$(hostname -f)}/grafana"
     echo ""
 }
