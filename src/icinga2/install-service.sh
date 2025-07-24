@@ -26,11 +26,17 @@ _install() {
     apt-get update
     apt-get install -y wget gpg apt-transport-https curl sudo lsb-release
 
-    echo "[INFO] Repositories für Icinga, InfluxDB und Grafana werden hinzugefügt."
+    echo "[INFO] Repositories für Icinga, Netways, InfluxDB und Grafana werden hinzugefügt."
     # Icinga Repo
     if [ ! -f /etc/apt/sources.list.d/icinga.list ]; then
         curl -fsSL https://packages.icinga.com/icinga.key | gpg --dearmor -o /usr/share/keyrings/icinga-archive-keyring.gpg
         echo "deb [signed-by=/usr/share/keyrings/icinga-archive-keyring.gpg] https://packages.icinga.com/debian icinga-${OS_CODENAME} main" > /etc/apt/sources.list.d/icinga.list
+    fi
+
+    # Netways Repo for additional modules
+    if [ ! -f /etc/apt/sources.list.d/netways.list ]; then
+        curl -fsSL https://packages.netways.de/icinga/netways.key | gpg --dearmor -o /usr/share/keyrings/netways-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/netways-archive-keyring.gpg] https://packages.netways.de/icinga/debian/ icinga-${OS_CODENAME} main" > /etc/apt/sources.list.d/netways.list
     fi
 
     # InfluxDB Repo
@@ -63,7 +69,9 @@ _install() {
         icinga-director \
         icingadb \
         icingadb-redis \
-        icingadb-web
+        icingadb-web \
+        icingaweb2-module-perfdatagraphs \
+        icingaweb2-module-perfdatagraphs-influxdbv2
 }
 
 _configure() {
@@ -362,12 +370,27 @@ EOF
 resource = "director_db"
 EOF
 
+    # Konfiguration für perfdatagraphs
+    mkdir -p /etc/icingaweb2/modules/perfdatagraphs
+    bash -c "cat > /etc/icingaweb2/modules/perfdatagraphs/config.ini" <<EOF
+[influxdb2]
+backend = "influxdb2"
+url = "http://127.0.0.1:8086"
+token = "${INFLUX_ICINGA_TOKEN}"
+organization = "icinga"
+bucket = "icinga"
+
+[default]
+backend = "influxdb2"
+EOF
+
     echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
     icingacli module enable ipl
     icingacli module enable reactbundle
     icingacli module enable incubator
     icingacli module enable director
     icingacli module enable icingadb
+    icingacli module enable perfdatagraphs
 
     echo "[INFO] Alle Services werden neu gestartet, um die finale Konfiguration zu laden."
     systemctl restart mariadb
