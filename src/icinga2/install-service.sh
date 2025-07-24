@@ -38,7 +38,6 @@ GRAFANA_ADMIN_PASS=$(_generate_local_password 16)
 INFLUX_ADMIN_TOKEN=$(_generate_local_password 40)
 
 systemctl start mariadb
-while ! mysqladmin ping -h localhost --silent; do sleep 1; done
 
 mysql -e "CREATE DATABASE IF NOT EXISTS icingaweb2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -e "CREATE DATABASE IF NOT EXISTS director CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
