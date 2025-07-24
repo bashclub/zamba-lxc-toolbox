@@ -13,8 +13,8 @@ _generate_local_password() {
 curl -fsSL https://packages.icinga.com/icinga.key | gpg --dearmor -o /usr/share/keyrings/icinga-archive-keyring.gpg
 echo "deb [signed-by=/usr/share/keyrings/icinga-archive-keyring.gpg] https://packages.icinga.com/debian icinga-$(lsb_release -cs) main" > /etc/apt/sources.list.d/icinga.list
 
-curl -fsSL https://packages.netways.de/icinga/netways.key | gpg --dearmor -o /usr/share/keyrings/netways-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/netways-archive-keyring.gpg] https://packages.netways.de/icinga/debian/ icinga-$(lsb_release -cs) main" > /etc/apt/sources.list.d/netways.list
+curl -fsSL https://packages.netways.de/netways-repo.asc | gpg --dearmor -o /usr/share/keyrings/netways-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/netways-archive-keyring.gpg] https://packages.netways.de/extras/debian/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/netways.list
 
 curl -fsSL https://repos.influxdata.com/influxdata-archive_compat.key | gpg --dearmor -o /usr/share/keyrings/influxdata-archive_compat-keyring.gpg
 echo "deb [signed-by=/usr/share/keyrings/influxdata-archive_compat-keyring.gpg] https://repos.influxdata.com/debian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/influxdata.list
