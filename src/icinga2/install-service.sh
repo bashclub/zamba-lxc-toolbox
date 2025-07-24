@@ -52,30 +52,16 @@ _install() {
     echo "[INFO] Hauptkomponenten werden installiert (PHP Version: ${PHP_VERSION})."
     apt-get install -y \
         icinga2 icinga2-ido-mysql \
-        nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-mysql php${PHP_VERSION}-intl php${PHP_VERSION}-imagick php${PHP_VERSION}-xml php${PHP_VERSION}-gd php${PHP_VERSION}-ldap \
+        nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-mysql php${PHP_VERSION}-intl php${PHP_VERSION}-xml php${PHP_VERSION}-gd php${PHP_VERSION}-ldap php${PHP_VERSION}-imagick \
         mariadb-server mariadb-client \
         influxdb2 \
         grafana \
-        icingaweb2 icingacli
-
-    echo "[INFO] Icinga Web 2 Module (Abhängigkeiten für Director) werden installiert."
-    install_icinga_module() {
-        local module_name="$1"
-        local repo_name="$2"
-        if [ ! -d "/usr/share/icingaweb2/modules/${module_name}" ]; then
-            echo "[INFO] Installiere Modul: ${module_name}"
-            local version=$(curl -s "https://api.github.com/repos/Icinga/${repo_name}/releases/latest" | grep -Po '"tag_name": "v\K[0-9.]+')
-            wget -O "/tmp/${module_name}.tar.gz" "https://github.com/Icinga/${repo_name}/archive/refs/tags/v${version}.tar.gz"
-            tar -C /usr/share/icingaweb2/modules -xzf "/tmp/${module_name}.tar.gz"
-            mv "/usr/share/icingaweb2/modules/${repo_name}-"* "/usr/share/icingaweb2/modules/${module_name}"
-            rm "/tmp/${module_name}.tar.gz"
-        fi
-    }
-    
-    install_icinga_module "ipl" "icingaweb2-module-ipl"
-    install_icinga_module "reactbundle" "icingaweb2-module-reactbundle"
-    install_icinga_module "incubator" "icingaweb2-module-incubator"
-    install_icinga_module "director" "icingaweb2-module-director"
+        imagemagick \
+        icingaweb2 icingacli \
+        icinga-php-library \
+        icingaweb2-module-reactbundle \
+        icingaweb2-module-incubator \
+        icinga-director
 
     echo "[INFO] Systemd Services werden aktiviert."
     systemctl enable --now icinga2 mariadb nginx php${PHP_VERSION}-fpm influxdb grafana-server
