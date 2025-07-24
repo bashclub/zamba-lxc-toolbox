@@ -53,7 +53,7 @@ _install() {
         icinga2 \
         nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-mysql php${PHP_VERSION}-intl php${PHP_VERSION}-xml php${PHP_VERSION}-gd php${PHP_VERSION}-ldap php${PHP_VERSION}-imagick \
         mariadb-server mariadb-client \
-        redis-server \
+        redis-server redis-tools \
         influxdb2 \
         grafana \
         imagemagick \
@@ -64,9 +64,6 @@ _install() {
         icingadb \
         icingadb-redis \
         icingadb-web
-
-    echo "[INFO] Systemd Services werden aktiviert."
-    systemctl enable --now icinga2 mariadb redis-server nginx php${PHP_VERSION}-fpm influxdb grafana-server icingadb
 }
 
 _configure() {
@@ -88,6 +85,10 @@ _configure() {
     
     # 2. MariaDB konfigurieren
     echo "[INFO] MariaDB wird konfiguriert."
+    # Ensure MariaDB is running for configuration
+    systemctl start mariadb
+    while ! mysqladmin ping -h localhost --silent; do sleep 1; done
+    
     mysql -e "CREATE DATABASE IF NOT EXISTS icingaweb2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     mysql -e "CREATE DATABASE IF NOT EXISTS director CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     mysql -e "CREATE DATABASE IF NOT EXISTS icingadb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
@@ -107,13 +108,12 @@ _configure() {
     bash -c "cat > /etc/systemd/system/redis-server.service.d/override.conf" <<EOF
 [Service]
 # Deaktiviert die systemd-Benachrichtigung, um Kompatibilitätsprobleme in Containern zu vermeiden.
-# Der Dienst wird weiterhin über seine PID überwacht.
 Supervised=no
 EOF
-    systemctl daemon-reload
-
+    
     # 4. InfluxDB 2 konfigurieren
     echo "[INFO] InfluxDB 2 wird konfiguriert."
+    systemctl start influxdb
     influx setup --skip-verify --username admin --password "$GRAFANA_ADMIN_PASS" --org icinga --bucket icinga --token "$INFLUX_ADMIN_TOKEN" -f
     INFLUX_ICINGA_TOKEN=$(influx auth create --org icinga --all-access --json | grep -oP '"token": "\K[^"]+')
     if [ -z "$INFLUX_ICINGA_TOKEN" ]; then echo "[ERROR] Konnte InfluxDB Token nicht erstellen." >&2; exit 1; fi
@@ -281,10 +281,24 @@ _setup() {
     echo "[INFO] Icinga2 API wird initialisiert und Zertifikate werden erstellt."
     icinga2 api setup
     
+    echo "[INFO] Aktiviere und starte alle Dienste in der korrekten Reihenfolge."
+    systemctl enable icinga2 mariadb redis-server nginx php${PHP_VERSION}-fpm influxdb grafana-server icingadb
+    systemctl daemon-reload # Um Redis-Override zu laden
+
+    systemctl start mariadb
+    systemctl start redis-server
+
     echo "[INFO] Warte auf MariaDB-Dienst..."
     while ! mysqladmin ping -h localhost --silent; do sleep 2; done
     echo "[INFO] MariaDB ist bereit."
 
+    echo "[INFO] Warte auf Redis-Dienst..."
+    while ! redis-cli ping | grep -q PONG; do sleep 2; done
+    echo "[INFO] Redis ist bereit."
+
+    # Starte restliche Dienste
+    systemctl start icinga2 nginx php${PHP_VERSION}-fpm influxdb grafana-server icingadb
+    
     echo "[INFO] Datenbank-Schemas werden importiert."
     local IWEB_SCHEMA="/usr/share/icingaweb2/schema/mysql.schema.sql"
     local DIRECTOR_SCHEMA="/usr/share/icingaweb2/modules/director/schema/mysql.sql"
@@ -355,7 +369,7 @@ EOF
     icingacli module enable director
     icingacli module enable icingadb
 
-    echo "[INFO] Alle Services werden neu gestartet."
+    echo "[INFO] Alle Services werden neu gestartet, um die finale Konfiguration zu laden."
     systemctl restart mariadb
     systemctl restart redis-server
     systemctl restart icinga2
