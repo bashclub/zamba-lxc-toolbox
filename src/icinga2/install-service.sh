@@ -101,13 +101,24 @@ _configure() {
     mysql -e "GRANT ALL PRIVILEGES ON icingadb.* TO 'icingadb'@'localhost';"
     mysql -e "FLUSH PRIVILEGES;"
 
-    # 3. InfluxDB 2 konfigurieren
+    # 3. Redis konfigurieren
+    echo "[INFO] Erstelle systemd-Override für Redis-Server."
+    mkdir -p /etc/systemd/system/redis-server.service.d
+    bash -c "cat > /etc/systemd/system/redis-server.service.d/override.conf" <<EOF
+[Service]
+# Deaktiviert die systemd-Benachrichtigung, um Kompatibilitätsprobleme in Containern zu vermeiden.
+# Der Dienst wird weiterhin über seine PID überwacht.
+Supervised=no
+EOF
+    systemctl daemon-reload
+
+    # 4. InfluxDB 2 konfigurieren
     echo "[INFO] InfluxDB 2 wird konfiguriert."
     influx setup --skip-verify --username admin --password "$GRAFANA_ADMIN_PASS" --org icinga --bucket icinga --token "$INFLUX_ADMIN_TOKEN" -f
     INFLUX_ICINGA_TOKEN=$(influx auth create --org icinga --all-access --json | grep -oP '"token": "\K[^"]+')
     if [ -z "$INFLUX_ICINGA_TOKEN" ]; then echo "[ERROR] Konnte InfluxDB Token nicht erstellen." >&2; exit 1; fi
 
-    # 4. Credentials-Datei schreiben
+    # 5. Credentials-Datei schreiben
     echo "[INFO] Zugangsdaten werden in ${CRED_FILE} gespeichert."
     mkdir -p "$(dirname "$CRED_FILE")" && chmod 700 "$(dirname "$CRED_FILE")"
     {
@@ -118,7 +129,7 @@ _configure() {
       echo "Icinga Director API: Benutzer: director; Passwort: ${ICINGA_API_USER_PASS}"
     } > "$CRED_FILE" && chmod 600 "$CRED_FILE"
 
-    # 5. Icinga2 Konfigurationsdateien schreiben
+    # 6. Icinga2 Konfigurationsdateien schreiben
     echo "[INFO] Icinga2 Konfigurationsdateien werden geschrieben."
     bash -c "cat > /etc/icinga2/features-available/icingadb.conf" <<EOF
 library "icingadb"
@@ -150,7 +161,7 @@ object Zone "global-templates" { global = true }
 object Zone "director-global" { global = true }
 EOF
 
-    # 6. IcingaDB konfigurieren
+    # 7. IcingaDB konfigurieren
     echo "[INFO] IcingaDB wird konfiguriert."
     bash -c "cat > /etc/icingadb/config.yml" <<EOF
 database:
@@ -164,7 +175,7 @@ logging:
   output: stdout
 EOF
 
-    # 7. Icinga Web 2 Konfigurationsdateien schreiben
+    # 8. Icinga Web 2 Konfigurationsdateien schreiben
     echo "[INFO] Icinga Web 2 Konfigurationsdateien werden geschrieben."
     mkdir -p /etc/icingaweb2
     bash -c "cat > /etc/icingaweb2/resources.ini" <<EOF
@@ -196,7 +207,7 @@ password = "${ICINGADB_PASS}"
 charset = "utf8mb4"
 EOF
     
-    # 8. Grafana konfigurieren
+    # 9. Grafana konfigurieren
     echo "[INFO] Grafana wird konfiguriert."
     systemctl stop grafana-server
     grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
@@ -215,7 +226,7 @@ datasources:
 EOF
     chown grafana:grafana /etc/grafana/provisioning/datasources/influxdb.yaml
     
-    # 9. Nginx TLS Konfiguration
+    # 10. Nginx TLS Konfiguration
     echo "[INFO] Nginx für TLS wird konfiguriert."
     mkdir -p /etc/nginx/ssl
     if [ ! -L /etc/nginx/ssl/fullchain.pem ]; then
@@ -324,7 +335,6 @@ permissions = "*"
 groups = "Administrators"
 EOF
     
-    # KORREKTUR: Monitoring-Modul auf IcingaDB umstellen
     mkdir -p /etc/icingaweb2/modules/monitoring
     bash -c "cat > /etc/icingaweb2/modules/monitoring/backends.ini" <<EOF
 [icingadb]
@@ -347,6 +357,7 @@ EOF
 
     echo "[INFO] Alle Services werden neu gestartet."
     systemctl restart mariadb
+    systemctl restart redis-server
     systemctl restart icinga2
     systemctl restart php${PHP_VERSION}-fpm
     systemctl restart nginx
