@@ -86,11 +86,28 @@ object ApiUser "director" {
 EOF
 
 cat > /etc/icinga2/features-available/influxdb2-writer.conf <<EOF
-object Influxdb2Writer "influxdb2-writer" {
-  host = "http://127.0.0.1:8086"
+  host = "127.0.0.1"
+  port = 8086
   organization = "icinga"
   bucket = "icinga"
   auth_token = "${INFLUX_ICINGA_TOKEN}"
+  
+  flush_threshold = 1024
+  flush_interval = 10s
+
+  host_template = {
+    measurement = "$host.check_command$"
+    tags = {
+      hostname = "$host.name$"
+    }
+  }
+  service_template = {
+    measurement = "$service.check_command$"
+    tags = {
+      hostname = "$host.name$"
+      service = "$service.name$"
+    }
+  }
 }
 EOF
 cat > /etc/icinga2/zones.conf <<EOF
