@@ -93,7 +93,6 @@ object Influxdb2Writer "influxdb2-writer" {
   auth_token = "${INFLUX_ICINGA_TOKEN}"
 }
 EOF
-
 cat > /etc/icinga2/zones.conf <<EOF
 object Endpoint "$(hostname -f)" { host = "127.0.0.1" }
 object Zone "master" { endpoints = [ "$(hostname -f)" ] }
@@ -245,8 +244,6 @@ if ! mysql -e "use icingadb; show tables;" | grep -q "icingadb_schema_migration"
     echo "[INFO] Importiere IcingaDB-Schema..."
     mysql icingadb < "$ICINGADB_SCHEMA"
 fi
-icinga2 feature enable icingadb api influxdb2-writer
-
 cat > /etc/icingaweb2/config.ini <<EOF
 [global]
 show_stacktraces = "0"
@@ -285,17 +282,22 @@ resource = "director_db"
 EOF
 
 mkdir -p /etc/icingaweb2/modules/perfdatagraphs
-cat > /etc/icingaweb2/modules/perfdatagraphs/config.ini <<EOF
-[influxdb2]
-backend = "influxdb2"
-url = "http://127.0.0.1:8086"
-token = "${INFLUX_ICINGA_TOKEN}"
-organization = "icinga"
-bucket = "icinga"
-
-[default]
-backend = "influxdb2"
+cat > /etc/icingaweb2/modules/perfdatagraphsinfluxdbv2/config.ini <<EOF
+[influx]
+api_url = "http://127.0.0.1:8086"
+api_token = "${INFLUX_ICINGA_TOKEN}"
+api_org = "icinga"
+api_bucket = "icinga"
+api_tls_insecure = "1"
 EOF
+
+cat > /etc/icingaweb2/modules/perfdatagraphs/config.ini << EOF
+[perfdatagraphs]
+default_timerange = "PT12H"
+default_backend = "InfluxDBv2"
+EOF
+
+icinga2 feature enable icingadb api influxdb2-writer perfdata
 
 chown -R grafana:grafana /var/lib/grafana/grafana.db
 
@@ -305,6 +307,7 @@ icingacli module enable incubator
 icingacli module enable director
 icingacli module enable icingadb
 icingacli module enable perfdatagraphs
+icingacli module enable perfdatagraphsinfluxdbv2
 
 echo "[INFO] Alle Services werden neu gestartet, um die finale Konfiguration zu laden."
 systemctl restart mariadb
