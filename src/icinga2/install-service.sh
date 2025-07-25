@@ -81,14 +81,7 @@ EOF
 cat > /etc/icinga2/conf.d/api-users.conf <<EOF
 object ApiUser "director" {
   password = "${ICINGA_API_USER_PASS}"
-  permissions = [
-    "object/modify/*",
-    "object/query/*",
-    "object/list/*",
-    "status/query",
-    "actions/*",
-    "events/*"
-  ]
+  permissions = [ "*" ]
 }
 EOF
 
