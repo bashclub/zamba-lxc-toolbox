@@ -96,16 +96,16 @@ cat > /etc/icinga2/features-available/influxdb2-writer.conf <<EOF
   flush_interval = 10s
 
   host_template = {
-    measurement = "$host.check_command$"
+    measurement = "\$host.check_command\$"
     tags = {
-      hostname = "$host.name$"
+      hostname = "\$host.name\$"
     }
   }
   service_template = {
-    measurement = "$service.check_command$"
+    measurement = "\$service.check_command\$"
     tags = {
-      hostname = "$host.name$"
-      service = "$service.name$"
+      hostname = "\$host.name$\"
+      service = "\$service.name\$"
     }
   }
 }
