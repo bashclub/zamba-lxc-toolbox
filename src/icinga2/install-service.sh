@@ -144,6 +144,7 @@ charset = "utf8mb4"
 EOF
 
 systemctl stop grafana-server
+chown -R grafana:grafana /var/lib/grafana/grafana.db
 grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
 systemctl start grafana-server
 
