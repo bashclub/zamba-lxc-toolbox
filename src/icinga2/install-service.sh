@@ -302,7 +302,6 @@ icingacli module enable perfdatagraphs
 
 echo "[INFO] Alle Services werden neu gestartet, um die finale Konfiguration zu laden."
 systemctl restart mariadb
-systemctl restart icinga2
 systemctl restart php${PHP_VERSION}-fpm
 systemctl restart nginx
 systemctl restart grafana-server
@@ -334,6 +333,7 @@ port = "5665"
 username = "director"
 password = "${ICINGA_API_USER_PASS}"
 EOF
+systemctl restart icinga2
 icingacli director kickstart run
 #rm /etc/icingaweb2/modules/director/kickstart.ini
 
