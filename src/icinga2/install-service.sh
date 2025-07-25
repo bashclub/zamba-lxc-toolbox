@@ -85,6 +85,7 @@ object ApiUser "director" {
 EOF
 
 cat > /etc/icinga2/features-available/influxdb2-writer.conf <<EOF
+object Influxdb2Writer "influxdb2" {
   host = "127.0.0.1"
   port = 8086
   organization = "icinga"
