@@ -282,6 +282,7 @@ resource = "director_db"
 EOF
 
 mkdir -p /etc/icingaweb2/modules/perfdatagraphs
+mkdir -p /etc/icingaweb2/modules/perfdatagraphsinfluxdbv2
 cat > /etc/icingaweb2/modules/perfdatagraphsinfluxdbv2/config.ini <<EOF
 [influx]
 api_url = "http://127.0.0.1:8086"
