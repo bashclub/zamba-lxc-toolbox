@@ -41,15 +41,15 @@ systemctl start mariadb
 
 mysql -e "CREATE DATABASE IF NOT EXISTS icingaweb2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -e "CREATE DATABASE IF NOT EXISTS director CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -e "CREATE DATABASE IF NOT EXISTS icinga_ido CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -e "CREATE DATABASE IF NOT EXISTS icingadb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 mysql -e "CREATE USER IF NOT EXISTS 'icingaweb2'@'localhost' IDENTIFIED BY '${ICINGAWEB_DB_PASS}';"
 mysql -e "CREATE USER IF NOT EXISTS 'director'@'localhost' IDENTIFIED BY '${DIRECTOR_DB_PASS}';"
-mysql -e "CREATE USER IF NOT EXISTS 'icinga_ido'@'localhost' IDENTIFIED BY '${ICINGA_IDO_DB_PASS}';"
+mysql -e "CREATE USER IF NOT EXISTS 'icingadb'@'localhost' IDENTIFIED BY '${ICINGADB_PASS}';"
 
 mysql -e "GRANT ALL PRIVILEGES ON icingaweb2.* TO 'icingaweb2'@'localhost';"
 mysql -e "GRANT ALL PRIVILEGES ON director.* TO 'director'@'localhost';"
-mysql -e "GRANT ALL PRIVILEGES ON icinga_ido.* TO 'icinga_ido'@'localhost';"
+mysql -e "GRANT ALL PRIVILEGES ON icingadb.* TO 'icingadb'@'localhost';"
 mysql -e "FLUSH PRIVILEGES;"
 
 systemctl start influxdb
