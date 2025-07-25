@@ -104,7 +104,7 @@ cat > /etc/icinga2/features-available/influxdb2-writer.conf <<EOF
   service_template = {
     measurement = "\$service.check_command\$"
     tags = {
-      hostname = "\$host.name$\"
+      hostname = "\$host.name\$"
       service = "\$service.name\$"
     }
   }
