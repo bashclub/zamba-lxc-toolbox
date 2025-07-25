@@ -175,6 +175,99 @@ password = "${ICINGADB_PASS}"
 charset = "utf8mb4"
 EOF
 
+cat << EOF > /etc/icinga2/conf.d/services.conf
+apply Service "ping4" {
+  import "generic-service"
+
+  check_command = "ping4"
+
+  assign where host.address
+}
+
+apply Service "ping6" {
+  import "generic-service"
+
+  check_command = "ping6"
+
+  assign where host.address6
+}
+
+apply Service "ssh" {
+  import "generic-service"
+
+  check_command = "ssh"
+
+  assign where (host.address || host.address6) && host.vars.os == "Linux"
+}
+
+
+
+apply Service for (http_vhost => config in host.vars.http_vhosts) {
+  import "generic-service"
+
+  check_command = "http"
+
+  vars += config
+}
+
+apply Service for (disk => config in host.vars.disks) {
+  import "generic-service"
+
+  check_command = "disk"
+
+  vars += config
+}
+
+apply Service "icinga" {
+  import "generic-service"
+
+  check_command = "icinga"
+
+  assign where host.name == NodeName
+}
+
+apply Service "load" {
+  import "generic-service"
+
+  check_command = "load"
+
+  assign where host.name == NodeName
+}
+
+apply Service "procs" {
+  import "generic-service"
+
+  check_command = "procs"
+
+  assign where host.name == NodeName
+}
+
+apply Service "users" {
+  import "generic-service"
+
+  check_command = "users"
+
+  assign where host.name == NodeName
+}
+
+apply Service "ssl" {
+  import "generic-service"
+
+  check_command = "ssl"
+
+  assign where host.name == NodeName
+}
+
+apply Service "smtp" {
+  import "generic-service"
+
+  check_command = "smtp"
+
+  assign where host.name == NodeName
+}
+
+EOF
+
 #systemctl stop grafana-server
 #grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
 
