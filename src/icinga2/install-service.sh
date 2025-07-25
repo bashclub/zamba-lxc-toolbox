@@ -335,7 +335,7 @@ username = "director"
 password = "${ICINGA_API_USER_PASS}"
 EOF
 icingacli director kickstart run
-rm /etc/icingaweb2/modules/director/kickstart.ini
+#rm /etc/icingaweb2/modules/director/kickstart.ini
 
 echo "[INFO] Director Konfiguration wird angewendet."
 icingacli director config deploy
