@@ -31,7 +31,7 @@ apt-get install -y icinga2 nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-mysql p
 
 ICINGAWEB_DB_PASS=$(_generate_local_password 24)
 DIRECTOR_DB_PASS=$(_generate_local_password 24)
-ICINGA_IDO_DB_PASS=$(_generate_local_password 24)
+ICINGA_DB_PASS=$(_generate_local_password 24)
 ICINGA_API_USER_PASS=$(_generate_local_password 24)
 ICINGAWEB_ADMIN_PASS=$(_generate_local_password 16)
 GRAFANA_ADMIN_PASS=$(_generate_local_password 16)
