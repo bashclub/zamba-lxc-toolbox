@@ -116,6 +116,12 @@ logging:
   output: systemd-journald
 EOF
 
+mkdir -p /etc/icingaweb2/modules/icingadb
+cat << EOF > /etc/icingaweb2/modules/icingadb/config.ini
+[icingadb]
+resource = icingadb
+EOF
+
 icinga2 feature enable icingadb
 systemctl restart icinga2
 
