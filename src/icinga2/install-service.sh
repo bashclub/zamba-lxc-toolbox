@@ -81,7 +81,14 @@ EOF
 cat > /etc/icinga2/conf.d/api-users.conf <<EOF
 object ApiUser "director" {
   password = "${ICINGA_API_USER_PASS}"
-  permissions = [ "object/modify/*", "object/query/*", "status/query", "actions/*", "events/*" ]
+  permissions = [
+    "object/modify/*",
+    "object/query/*",
+    "object/list/*",
+    "status/query",
+    "actions/*",
+    "events/*"
+  ]
 }
 EOF
 
@@ -117,7 +124,7 @@ logging:
 EOF
 
 icinga2 feature enable icingadb
-#systemctl restart icinga2
+systemctl restart icinga2
 
 mkdir -p /etc/icingaweb2
 
