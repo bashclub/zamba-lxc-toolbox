@@ -348,6 +348,12 @@ database:
   password: ${NOTIFICATIONS_DB_PASS}
 EOF
 
+cat << EOF > /etc/icingaweb2/modules/notifications/config.ini 
+[database]
+resource = "notifications"
+EOF
+
+
 ln -sf /etc/nginx/sites-available/icinga-stack /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 
