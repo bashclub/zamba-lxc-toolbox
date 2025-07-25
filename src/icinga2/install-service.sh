@@ -139,7 +139,6 @@ resource = icingadb
 EOF
 
 icinga2 feature enable icingadb
-systemctl restart icinga2
 
 mkdir -p /etc/icingaweb2
 
