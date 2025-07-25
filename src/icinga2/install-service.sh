@@ -68,7 +68,8 @@ mkdir -p "$(dirname "$CRED_FILE")" && chmod 700 "$(dirname "$CRED_FILE")"
 } > "$CRED_FILE" && chmod 600 "$CRED_FILE"
 
 systemctl enable --now icingadb-redis
-bash -c "cat > /etc/icinga2/features-available/icingadb.conf" <<EOF
+
+cat > /etc/icinga2/features-available/icingadb.conf <<EOF
 library "icingadb"
 
 object IcingaDB "icingadb" {
@@ -76,13 +77,15 @@ object IcingaDB "icingadb" {
   port = 6380
 }
 EOF
-bash -c "cat > /etc/icinga2/conf.d/api-users.conf" <<EOF
+
+cat > /etc/icinga2/conf.d/api-users.conf <<EOF
 object ApiUser "director" {
   password = "${ICINGA_API_USER_PASS}"
   permissions = [ "object/modify/*", "object/query/*", "status/query", "actions/*", "events/*" ]
 }
 EOF
-bash -c "cat > /etc/icinga2/features-available/influxdb2-writer.conf" <<EOF
+
+cat > /etc/icinga2/features-available/influxdb2-writer.conf <<EOF
 object Influxdb2Writer "influxdb2-writer" {
   host = "http://127.0.0.1:8086"
   organization = "icinga"
@@ -90,13 +93,15 @@ object Influxdb2Writer "influxdb2-writer" {
   auth_token = "${INFLUX_ICINGA_TOKEN}"
 }
 EOF
-    bash -c "cat > /etc/icinga2/zones.conf" <<EOF
+
+cat > /etc/icinga2/zones.conf <<EOF
 object Endpoint "$(hostname -f)" {}
 object Zone "master" { endpoints = [ "$(hostname -f)" ] }
 object Zone "global-templates" { global = true }
 object Zone "director-global" { global = true }
 EOF
-bash -c "cat > /etc/icingadb/config.yml" <<EOF
+
+cat > /etc/icingadb/config.yml <<EOF
 database:
   type: mysql
   host: localhost
@@ -110,11 +115,13 @@ logging:
   level: info
   output: systemd-journald
 EOF
+
 icinga2 feature enable icingadb
 #systemctl restart icinga2
 
 mkdir -p /etc/icingaweb2
-    bash -c "cat > /etc/icingaweb2/resources.ini" <<EOF
+
+cat > /etc/icingaweb2/resources.ini <<EOF
 [icingaweb_db]
 type = "db"
 db = "mysql"
@@ -149,7 +156,8 @@ grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
 systemctl start grafana-server
 
 mkdir -p /etc/grafana/provisioning/datasources
-bash -c "cat > /etc/grafana/provisioning/datasources/influxdb.yaml" <<EOF
+
+cat > /etc/grafana/provisioning/datasources/influxdb.yaml <<EOF
 apiVersion: 1
 datasources:
 - name: InfluxDB-Icinga
@@ -167,7 +175,7 @@ if [ ! -L /etc/nginx/ssl/fullchain.pem ]; then
     ln -s /etc/ssl/private/ssl-cert-snakeoil.key /etc/nginx/ssl/privkey.pem
 fi
 
-bash -c "cat > /etc/nginx/sites-available/icinga-stack" <<EOF
+cat > /etc/nginx/sites-available/icinga-stack <<EOF
 server {
     listen 80;
     server_name ${ZAMBA_HOSTNAME:-$(hostname -f)};
@@ -235,7 +243,7 @@ if ! mysql -e "use icingadb; show tables;" | grep -q "icingadb_schema_migration"
 fi
 icinga2 feature enable icingadb api influxdb2-writer
 
-bash -c "cat > /etc/icingaweb2/config.ini" <<EOF
+cat > /etc/icingaweb2/config.ini <<EOF
 [global]
 show_stacktraces = "0"
 config_backend = "db"
@@ -246,13 +254,13 @@ log_file = "/var/log/icingaweb2/icingaweb2.log"
 level = "ERROR"
 EOF
 
-bash -c "cat > /etc/icingaweb2/authentication.ini" <<EOF
+cat > /etc/icingaweb2/authentication.ini <<EOF
 [icinga-web-admin]
 backend = "db"
 resource = "icingaweb_db"
 EOF
 
-bash -c "cat > /etc/icingaweb2/roles.ini" <<EOF
+cat > /etc/icingaweb2/roles.ini <<EOF
 [Administrators]
 users = "icingaadmin"
 permissions = "*"
@@ -260,20 +268,20 @@ groups = "Administrators"
 EOF
     
 mkdir -p /etc/icingaweb2/modules/monitoring
-bash -c "cat > /etc/icingaweb2/modules/monitoring/backends.ini" <<EOF
+cat > /etc/icingaweb2/modules/monitoring/backends.ini <<EOF
 [icingadb]
 backend = "icingadb"
 resource = "icingadb"
 EOF
     
 mkdir -p /etc/icingaweb2/modules/director
-bash -c "cat > /etc/icingaweb2/modules/director/config.ini" <<EOF
+cat > /etc/icingaweb2/modules/director/config.ini <<EOF
 [db]
 resource = "director_db"
 EOF
 
 mkdir -p /etc/icingaweb2/modules/perfdatagraphs
-bash -c "cat > /etc/icingaweb2/modules/perfdatagraphs/config.ini" <<EOF
+cat > /etc/icingaweb2/modules/perfdatagraphs/config.ini <<EOF
 [influxdb2]
 backend = "influxdb2"
 url = "http://127.0.0.1:8086"
@@ -318,7 +326,7 @@ done
 echo "[INFO] Icinga Director ist bereit."
 
 echo "[INFO] Icinga Director Setup wird ausgeführt."
-bash -c "cat > /etc/icingaweb2/modules/director/kickstart.ini" <<EOF
+cat > /etc/icingaweb2/modules/director/kickstart.ini <<EOF
 [config]
 endpoint = "$(hostname -f)"
 host = "127.0.0.1"
