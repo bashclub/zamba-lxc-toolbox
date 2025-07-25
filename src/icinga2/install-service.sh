@@ -335,6 +335,19 @@ server {
 }
 EOF
 
+cat << EOF > /etc/icinga-notifications/config.yml
+database:
+  type: mysql
+
+  host: localhost
+  
+  database: notifications
+
+  user: notifications
+
+  password: ${NOTIFICATIONS_DB_PASS}
+EOF
+
 ln -sf /etc/nginx/sites-available/icinga-stack /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 
