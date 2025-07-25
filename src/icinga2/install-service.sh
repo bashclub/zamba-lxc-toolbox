@@ -151,9 +151,7 @@ charset = "utf8mb4"
 EOF
 
 systemctl stop grafana-server
-chown -R grafana:grafana /var/lib/grafana/grafana.db
 grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
-systemctl start grafana-server
 
 mkdir -p /etc/grafana/provisioning/datasources
 
@@ -292,6 +290,8 @@ bucket = "icinga"
 [default]
 backend = "influxdb2"
 EOF
+
+chown -R grafana:grafana /var/lib/grafana/grafana.db
 
 echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
 icingacli module enable reactbundle
