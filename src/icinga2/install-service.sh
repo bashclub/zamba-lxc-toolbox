@@ -23,7 +23,8 @@ apt update
 
 apt-get install -y icinga2 nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-mysql php${PHP_VERSION}-intl php${PHP_VERSION}-xml php${PHP_VERSION}-gd php${PHP_VERSION}-ldap php${PHP_VERSION}-imagick \
         mariadb-server mariadb-client influxdb2 imagemagick icingaweb2 icingacli icinga-php-library icingaweb2-module-reactbundle icinga-notifications icinga-notifications-web \
-        icinga-director icingadb icingadb-redis icingadb-web icingaweb2-module-perfdatagraphs icingaweb2-module-perfdatagraphs-influxdbv2
+        icinga-director icingadb icingadb-redis icingadb-web icingaweb2-module-perfdatagraphs icingaweb2-module-perfdatagraphs-influxdbv2 \
+        monitoring-plugins monitoring-plugins-basic monitoring-plugins-common monitoring-plugins-standard monitoring-plugins-systemd
 
 
 ICINGAWEB_DB_PASS=$(_generate_local_password 24)
