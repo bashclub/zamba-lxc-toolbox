@@ -98,14 +98,17 @@ object Zone "director-global" { global = true }
 EOF
 bash -c "cat > /etc/icingadb/config.yml" <<EOF
 database:
-  dsn: icingadb@tcp(127.0.0.1:3306)/icingadb
+  type: mysql
+  host: localhost
+  database: icingadb
+  user: icingadb
   password: ${ICINGADB_PASS}
 redis:
   host: 127.0.0.1
   port: 6380
 logging:
   level: info
-  output: stdout
+  output: systemd-journald
 EOF
 icinga2 feature enable icingadb
 #systemctl restart icinga2
