@@ -25,7 +25,7 @@ echo "deb [signed-by=/usr/share/keyrings/influxdata-archive_compat-keyring.gpg] 
 apt update
 
 apt-get install -y icinga2 nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-mysql php${PHP_VERSION}-intl php${PHP_VERSION}-xml php${PHP_VERSION}-gd php${PHP_VERSION}-ldap php${PHP_VERSION}-imagick \
-        mariadb-server mariadb-client influxdb2 imagemagick icingaweb2 icingacli icinga-php-library icingaweb2-module-reactbundle \
+        mariadb-server mariadb-client influxdb2 imagemagick icingaweb2 icingacli icinga-php-library icingaweb2-module-reactbundle icinga-notifications icinga-notifications-web \
         icinga-director icingadb icingadb-redis icingadb-web icingaweb2-module-perfdatagraphs icingaweb2-module-perfdatagraphs-influxdbv2
 
 
@@ -33,6 +33,7 @@ ICINGAWEB_DB_PASS=$(_generate_local_password 24)
 DIRECTOR_DB_PASS=$(_generate_local_password 24)
 ICINGADB_PASS=$(_generate_local_password 24)
 ICINGA_API_USER_PASS=$(_generate_local_password 24)
+NOTIFICATIONS_DB_PASS=$(_generate_local_password 24)
 ICINGAWEB_ADMIN_PASS=$(_generate_local_password 16)
 INFLUX_ADMIN_PASS=$(_generate_local_password 16)
 INFLUX_ADMIN_TOKEN=$(_generate_local_password 40)
@@ -42,14 +43,17 @@ systemctl start mariadb
 mysql -e "CREATE DATABASE IF NOT EXISTS icingaweb2 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -e "CREATE DATABASE IF NOT EXISTS director CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -e "CREATE DATABASE IF NOT EXISTS icingadb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -e "CREATE DATABASE IF NOT EXISTS notifications CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 mysql -e "CREATE USER IF NOT EXISTS 'icingaweb2'@'localhost' IDENTIFIED BY '${ICINGAWEB_DB_PASS}';"
 mysql -e "CREATE USER IF NOT EXISTS 'director'@'localhost' IDENTIFIED BY '${DIRECTOR_DB_PASS}';"
 mysql -e "CREATE USER IF NOT EXISTS 'icingadb'@'localhost' IDENTIFIED BY '${ICINGADB_PASS}';"
+mysql -e "CREATE USER IF NOT EXISTS 'notifications'@'localhost' IDENTIFIED BY '${NOTIFICATIONS_DB_PASS}';"
 
 mysql -e "GRANT ALL PRIVILEGES ON icingaweb2.* TO 'icingaweb2'@'localhost';"
 mysql -e "GRANT ALL PRIVILEGES ON director.* TO 'director'@'localhost';"
 mysql -e "GRANT ALL PRIVILEGES ON icingadb.* TO 'icingadb'@'localhost';"
+mysql -e "GRANT ALL PRIVILEGES ON notifications.* TO 'notifications'@'localhost';"
 mysql -e "FLUSH PRIVILEGES;"
 
 systemctl start influxdb
@@ -172,6 +176,15 @@ host = "localhost"
 dbname = "icingadb"
 username = "icingadb"
 password = "${ICINGADB_PASS}"
+charset = "utf8mb4"
+
+[notifications]
+type = "db"
+db = "mysql"
+host = "localhost"
+dbname = "notifications"
+username = "notifications"
+password = "${NOTIFICATIONS_DB_PASS}"
 charset = "utf8mb4"
 EOF
 
@@ -329,18 +342,20 @@ sed -i 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' "/etc/php/${PHP_VERSION}/fpm/
 sed -i "s|;date.timezone =|date.timezone = $(cat /etc/timezone)|" "/etc/php/${PHP_VERSION}/fpm/php.ini"
 
 icinga2 api setup
-systemctl enable icinga2 mariadb nginx php${PHP_VERSION}-fpm influxdb icingadb icingadb-redis
+systemctl enable icinga2 mariadb nginx php${PHP_VERSION}-fpm influxdb icingadb icingadb-redis icinga-notifications
 
 systemctl start mariadb
-systemctl start icinga2 icingadb-redis nginx php${PHP_VERSION}-fpm influxdb icingadb
+systemctl start icinga2 icingadb-redis nginx php${PHP_VERSION}-fpm influxdb icingadb icinga-notifications
 
 IWEB_SCHEMA="/usr/share/icingaweb2/schema/mysql.schema.sql"
 DIRECTOR_SCHEMA="/usr/share/icingaweb2/modules/director/schema/mysql.sql"
 ICINGADB_SCHEMA="/usr/share/icingadb/schema/mysql/schema.sql"
+NOTIFICATIONS_SCHEMA="/usr/share/icinga-notifications/schema/mysql/schema.sql"
 
 if [ ! -f "$IWEB_SCHEMA" ]; then echo "[ERROR] IcingaWeb-Schema nicht gefunden: $IWEB_SCHEMA" >&2; exit 1; fi
 if [ ! -f "$DIRECTOR_SCHEMA" ]; then echo "[ERROR] Director-Schema nicht gefunden: $DIRECTOR_SCHEMA" >&2; exit 1; fi
 if [ ! -f "$ICINGADB_SCHEMA" ]; then echo "[ERROR] IcingaDB-Schema nicht gefunden: $ICINGADB_SCHEMA" >&2; exit 1; fi
+if [ ! -f "$NOTIFICATIONS_SCHEMA" ]; then echo "[ERROR] IcingaDB-Schema nicht gefunden: $NOTIFICATIONS_SCHEMA" >&2; exit 1; fi
 
 
 if ! mysql -e "use icingaweb2; show tables;" | grep -q "icingaweb_user"; then
@@ -357,6 +372,12 @@ if ! mysql -e "use icingadb; show tables;" | grep -q "icingadb_schema_migration"
     echo "[INFO] Importiere IcingaDB-Schema..."
     mysql icingadb < "$ICINGADB_SCHEMA"
 fi
+
+if ! mysql -e "use notifications; show tables;" | grep -q "icingadb_schema_migration"; then
+    echo "[INFO] Importiere IcingaDB-Schema..."
+    mysql notifications < "$NOTIFICATIONS_SCHEMA"
+fi
+
 cat > /etc/icingaweb2/config.ini <<EOF
 [global]
 show_stacktraces = "0"
@@ -422,6 +443,7 @@ icingacli module enable director
 icingacli module enable icingadb
 icingacli module enable perfdatagraphs
 icingacli module enable perfdatagraphsinfluxdbv2
+icingacli module enable notifications
 
 echo "[INFO] Alle Services werden neu gestartet, um die finale Konfiguration zu laden."
 systemctl restart mariadb
