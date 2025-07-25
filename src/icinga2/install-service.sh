@@ -95,7 +95,7 @@ object Influxdb2Writer "influxdb2-writer" {
 EOF
 
 cat > /etc/icinga2/zones.conf <<EOF
-object Endpoint "$(hostname -f)" {}
+object Endpoint "$(hostname -f)" { host = "127.0.0.1" }
 object Zone "master" { endpoints = [ "$(hostname -f)" ] }
 object Zone "global-templates" { global = true }
 object Zone "director-global" { global = true }
@@ -328,7 +328,6 @@ echo "[INFO] Icinga Director Setup wird ausgeführt."
 cat > /etc/icingaweb2/modules/director/kickstart.ini <<EOF
 [config]
 endpoint = "$(hostname -f)"
-host = "127.0.0.1"
 port = "5665"
 username = "director"
 password = "${ICINGA_API_USER_PASS}"
