@@ -290,7 +290,6 @@ icingacli module enable perfdatagraphs
 
 echo "[INFO] Alle Services werden neu gestartet, um die finale Konfiguration zu laden."
 systemctl restart mariadb
-systemctl restart redis-server
 systemctl restart icinga2
 systemctl restart php${PHP_VERSION}-fpm
 systemctl restart nginx
