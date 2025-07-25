@@ -19,9 +19,6 @@ echo "deb [signed-by=/usr/share/keyrings/netways-archive-keyring.gpg] https://pa
 curl -fsSL https://repos.influxdata.com/influxdata-archive_compat.key | gpg --dearmor -o /usr/share/keyrings/influxdata-archive_compat-keyring.gpg
 echo "deb [signed-by=/usr/share/keyrings/influxdata-archive_compat-keyring.gpg] https://repos.influxdata.com/debian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/influxdata.list
 
-#wget -q -O - https://apt.grafana.com/gpg.key | gpg --dearmor -o /usr/share/keyrings/grafana-archive-keyring.gpg
-#echo "deb [signed-by=/usr/share/keyrings/grafana-archive-keyring.gpg] https://apt.grafana.com stable main" > /etc/apt/sources.list.d/grafana.list
-
 apt update
 
 apt-get install -y icinga2 nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-mysql php${PHP_VERSION}-intl php${PHP_VERSION}-xml php${PHP_VERSION}-gd php${PHP_VERSION}-ldap php${PHP_VERSION}-imagick \
@@ -281,23 +278,6 @@ apply Service "smtp" {
 
 EOF
 
-#systemctl stop grafana-server
-#grafana-cli admin reset-admin-password "$GRAFANA_ADMIN_PASS"
-
-#mkdir -p /etc/grafana/provisioning/datasources
-
-#cat > /etc/grafana/provisioning/datasources/influxdb.yaml <<EOF
-#apiVersion: 1
-#datasources:
-#- name: InfluxDB-Icinga
-#  type: influxdb
-#  access: proxy
-#  url: http://localhost:8086
-#  jsonData: { version: "Flux", organization: "icinga", defaultBucket: "icinga" }
-#  secureJsonData: { token: "${INFLUX_ICINGA_TOKEN}" }
-#EOF
-#chown grafana:grafana /etc/grafana/provisioning/datasources/influxdb.yaml
-
 mkdir -p /etc/nginx/ssl
 if [ ! -L /etc/nginx/ssl/fullchain.pem ]; then
     ln -s /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/nginx/ssl/fullchain.pem
@@ -453,8 +433,6 @@ EOF
 
 icinga2 feature enable icingadb api influxdb2-writer perfdata
 
-#chown -R grafana:grafana /var/lib/grafana/grafana.db
-
 echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
 icingacli module enable reactbundle
 icingacli module enable incubator
@@ -468,7 +446,6 @@ echo "[INFO] Alle Services werden neu gestartet, um die finale Konfiguration zu 
 systemctl restart mariadb
 systemctl restart php${PHP_VERSION}-fpm
 systemctl restart nginx
-#systemctl restart grafana-server
 systemctl restart icingadb
 
 echo "[INFO] Füge Icinga Web 2 Admin-Benutzer direkt in die Datenbank ein."
@@ -498,7 +475,6 @@ password = "${ICINGA_API_USER_PASS}"
 EOF
 systemctl restart icinga2
 icingacli director kickstart run
-#rm /etc/icingaweb2/modules/director/kickstart.ini
 
 echo "[INFO] Director Konfiguration wird angewendet."
 icingacli director config deploy
