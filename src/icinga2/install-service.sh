@@ -108,7 +108,7 @@ logging:
   output: stdout
 EOF
 icinga2 feature enable icingadb
-systemctl restart icinga2
+#systemctl restart icinga2
 
 mkdir -p /etc/icingaweb2
     bash -c "cat > /etc/icingaweb2/resources.ini" <<EOF
@@ -204,7 +204,6 @@ icinga2 api setup
 systemctl enable icinga2 mariadb nginx php${PHP_VERSION}-fpm influxdb grafana-server icingadb icingadb-redis
 
 systemctl start mariadb
-while ! mysqladmin ping -h localhost --silent; do sleep 2; done
 systemctl start icinga2 icingadb-redis nginx php${PHP_VERSION}-fpm influxdb grafana-server icingadb
 
 IWEB_SCHEMA="/usr/share/icingaweb2/schema/mysql.schema.sql"
