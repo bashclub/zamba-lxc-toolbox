@@ -137,6 +137,10 @@ cat << EOF > /etc/icingaweb2/modules/icingadb/config.ini
 [icingadb]
 resource = icingadb
 EOF
+cat << EOF > /etc/icingaweb2/modules/icingadb/redis.ini
+[redis1]
+host = "localhost"
+EOF
 
 icinga2 feature enable icingadb
 
