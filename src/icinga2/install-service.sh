@@ -345,7 +345,7 @@ icinga2 api setup
 systemctl enable icinga2 mariadb nginx php${PHP_VERSION}-fpm influxdb icingadb icingadb-redis icinga-notifications
 
 systemctl start mariadb
-systemctl start icinga2 icingadb-redis nginx php${PHP_VERSION}-fpm influxdb icingadb icinga-notifications
+systemctl start icinga2 icingadb-redis nginx php${PHP_VERSION}-fpm influxdb icingadb
 
 IWEB_SCHEMA="/usr/share/icingaweb2/schema/mysql.schema.sql"
 DIRECTOR_SCHEMA="/usr/share/icingaweb2/modules/director/schema/mysql.sql"
@@ -448,6 +448,7 @@ systemctl restart mariadb
 systemctl restart php${PHP_VERSION}-fpm
 systemctl restart nginx
 systemctl restart icingadb
+systemctl restart icinga-notifications
 
 echo "[INFO] Füge Icinga Web 2 Admin-Benutzer direkt in die Datenbank ein."
 PASSWORD_HASH=$(php -r "echo password_hash('${ICINGAWEB_ADMIN_PASS}', PASSWORD_BCRYPT);")
@@ -495,3 +496,4 @@ echo "Wichtige URLs:"
 echo "  Icinga Web 2: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingaweb2"
 echo "  IcingaDB Web: https://${ZAMBA_HOSTNAME:-$(hostname -f)}/icingadb-web"
 echo ""
+cat ${CRED_FILE}
