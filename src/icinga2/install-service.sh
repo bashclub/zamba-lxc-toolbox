@@ -145,6 +145,16 @@ cat << EOF > /etc/icingaweb2/modules/icingadb/redis.ini
 [redis1]
 host = "localhost"
 EOF
+cat << EOF > /etc/icingaweb2/modules/icingadb/commandtransports.ini
+[$(hostname -f)]
+transport = "api"
+host = "$(hostname -f)"
+port = "5665"
+username = "director"
+password = "${ICINGA_API_USER_PASS}"
+EOF
+
+
 
 icinga2 feature enable icingadb
 
