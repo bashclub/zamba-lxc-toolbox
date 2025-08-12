@@ -24,7 +24,7 @@ apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq --no-install-recommends \
         icinga2 nginx php${PHP_VERSION}-fpm php${PHP_VERSION}-mysql php${PHP_VERSION}-intl php${PHP_VERSION}-xml php${PHP_VERSION}-gd php${PHP_VERSION}-ldap php${PHP_VERSION}-imagick \
         mariadb-server mariadb-client influxdb2 influxdb2-client imagemagick icingaweb2 icingacli icinga-php-library icingaweb2-module-reactbundle icinga-notifications icinga-notifications-web \
-        icinga-director icingadb icingadb-redis icingadb-web icingaweb2-module-perfdatagraphs icingaweb2-module-perfdatagraphs-influxdbv2 chromium fonts-liberation fonts-noto \
+        icinga-director icingadb icingadb-redis icingadb-web icingaweb2-module-perfdatagraphs icingaweb2-module-perfdatagraphs-influxdbv2 chromium fonts-liberation fonts-noto icinga-x509 \
         monitoring-plugins monitoring-plugins-basic monitoring-plugins-common monitoring-plugins-standard monitoring-plugins-systemd icingaweb2-module-pdfexport
 
 
@@ -32,6 +32,7 @@ DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq -
 ICINGAWEB_DB_PASS=$(_generate_local_password 24)
 DIRECTOR_DB_PASS=$(_generate_local_password 24)
 ICINGADB_PASS=$(_generate_local_password 24)
+ICINGA_X509_DB_PASS=$(_generate_local_password 24)
 ICINGA_API_USER_PASS=$(_generate_local_password 24)
 NOTIFICATIONS_DB_PASS=$(_generate_local_password 24)
 ICINGAWEB_ADMIN_PASS=$(_generate_local_password 16)
@@ -44,16 +45,19 @@ mysql -e "CREATE DATABASE IF NOT EXISTS icingaweb2 CHARACTER SET utf8mb4 COLLATE
 mysql -e "CREATE DATABASE IF NOT EXISTS director CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -e "CREATE DATABASE IF NOT EXISTS icingadb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -e "CREATE DATABASE IF NOT EXISTS notifications CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -e "CREATE DATABASE IF NOT EXISTS x509 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 mysql -e "CREATE USER IF NOT EXISTS 'icingaweb2'@'localhost' IDENTIFIED BY '${ICINGAWEB_DB_PASS}';"
 mysql -e "CREATE USER IF NOT EXISTS 'director'@'localhost' IDENTIFIED BY '${DIRECTOR_DB_PASS}';"
 mysql -e "CREATE USER IF NOT EXISTS 'icingadb'@'localhost' IDENTIFIED BY '${ICINGADB_PASS}';"
 mysql -e "CREATE USER IF NOT EXISTS 'notifications'@'localhost' IDENTIFIED BY '${NOTIFICATIONS_DB_PASS}';"
+mysql -e "CREATE USER IF NOT EXISTS 'x509'@'localhost' IDENTIFIED BY '${ICINGA_X509_DB_PASS}';"
 
 mysql -e "GRANT ALL PRIVILEGES ON icingaweb2.* TO 'icingaweb2'@'localhost';"
 mysql -e "GRANT ALL PRIVILEGES ON director.* TO 'director'@'localhost';"
 mysql -e "GRANT ALL PRIVILEGES ON icingadb.* TO 'icingadb'@'localhost';"
 mysql -e "GRANT ALL PRIVILEGES ON notifications.* TO 'notifications'@'localhost';"
+mysql -e "GRANT ALL PRIVILEGES ON x509.* TO 'x509'@'localhost';"
 mysql -e "FLUSH PRIVILEGES;"
 
 systemctl start influxdb
@@ -371,11 +375,13 @@ IWEB_SCHEMA="/usr/share/icingaweb2/schema/mysql.schema.sql"
 DIRECTOR_SCHEMA="/usr/share/icingaweb2/modules/director/schema/mysql.sql"
 ICINGADB_SCHEMA="/usr/share/icingadb/schema/mysql/schema.sql"
 NOTIFICATIONS_SCHEMA="/usr/share/icinga-notifications/schema/mysql/schema.sql"
+X509_SCHEMA="/usr/share/icingaweb2/modules/x509/schema/mysql.schema.sql"
 
 if [ ! -f "$IWEB_SCHEMA" ]; then echo "[ERROR] IcingaWeb-Schema nicht gefunden: $IWEB_SCHEMA" >&2; exit 1; fi
 if [ ! -f "$DIRECTOR_SCHEMA" ]; then echo "[ERROR] Director-Schema nicht gefunden: $DIRECTOR_SCHEMA" >&2; exit 1; fi
 if [ ! -f "$ICINGADB_SCHEMA" ]; then echo "[ERROR] IcingaDB-Schema nicht gefunden: $ICINGADB_SCHEMA" >&2; exit 1; fi
 if [ ! -f "$NOTIFICATIONS_SCHEMA" ]; then echo "[ERROR] IcingaDB-Schema nicht gefunden: $NOTIFICATIONS_SCHEMA" >&2; exit 1; fi
+if [ ! -f "$X509_SCHEMA" ]; then echo "[ERROR] IcingaDB-Schema nicht gefunden: $X509_SCHEMA" >&2; exit 1; fi
 
 
 if ! mysql -e "use icingaweb2; show tables;" | grep -q "icingaweb_user"; then
@@ -393,10 +399,16 @@ if ! mysql -e "use icingadb; show tables;" | grep -q "icingadb_schema_migration"
     mysql icingadb < "$ICINGADB_SCHEMA"
 fi
 
-if ! mysql -e "use notifications; show tables;" | grep -q "icingadb_schema_migration"; then
-    echo "[INFO] Importiere IcingaDB-Schema..."
+if ! mysql -e "use notifications; show tables;" | grep -q "incident_rule_escalation_state"; then
+    echo "[INFO] Importiere Notifications-Schema..."
     mysql notifications < "$NOTIFICATIONS_SCHEMA"
 fi
+
+if ! mysql -e "use x509; show tables;" | grep -q "x509_schema"; then
+    echo "[INFO] Importiere x509-Schema..."
+    mysql x509 < "$X509_SCHEMA"
+fi
+
 
 cat > /etc/icingaweb2/config.ini <<EOF
 [global]
@@ -453,6 +465,8 @@ default_backend = "InfluxDBv2"
 EOF
 
 icinga2 feature enable icingadb api influxdb2-writer perfdata
+
+icingacli x509 import --file /etc/ssl/certs/ca-certificates.crt
 
 echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
 icingacli module enable reactbundle
