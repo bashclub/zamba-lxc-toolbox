@@ -176,7 +176,7 @@ EOF
 chmod +x /usr/local/bin/smb-backup
 
 cat << EOF > /etc/cron.d/smb-backup
-23 * * * * root /usr/local/bin/smb-backup 7 >> /var/log/smb-backup.log 2>&1
+0 23 * * * root /usr/local/bin/smb-backup 7 >> /var/log/smb-backup.log 2>&1
 EOF
 
 cat << EOF > /etc/logrotate.d/smb-backup

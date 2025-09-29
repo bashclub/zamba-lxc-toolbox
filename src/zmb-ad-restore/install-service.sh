@@ -13,17 +13,17 @@ ZMB_DNS_BACKEND="SAMBA_INTERNAL"
 
 for f in ${OPTIONAL_FEATURES[@]}; do
   if [[ "$f" == "wsdd" ]]; then
-      ADDITIONAL_PACKAGES="wsdd $ADDITIONAL_PACKAGES"
-      ADDITIONAL_SERVICES="wsdd $ADDITIONAL_SERVICES"
+    ADDITIONAL_PACKAGES="wsdd $ADDITIONAL_PACKAGES"
+    ADDITIONAL_SERVICES="wsdd $ADDITIONAL_SERVICES"
   elif [[ "$f" == "splitdns" ]]; then
-      ADDITIONAL_PACKAGES="nginx-full $ADDITIONAL_PACKAGES"
-      ADDITIONAL_SERVICES="nginx $ADDITIONAL_SERVICES"
+    ADDITIONAL_PACKAGES="nginx-full $ADDITIONAL_PACKAGES"
+    ADDITIONAL_SERVICES="nginx $ADDITIONAL_SERVICES"
   elif [[ "$f" == "bind9dlz" ]]; then
-      ZMB_DNS_BACKEND="BIND9_DLZ"
-      ADDITIONAL_PACKAGES="bind9 $ADDITIONAL_PACKAGES"
-      ADDITIONAL_SERVICES="bind9 $ADDITIONAL_SERVICES"
+    ZMB_DNS_BACKEND="BIND9_DLZ"
+    ADDITIONAL_PACKAGES="bind9 $ADDITIONAL_PACKAGES"
+    ADDITIONAL_SERVICES="bind9 $ADDITIONAL_SERVICES"
   else
-      echo "Unsupported optional feature $f"
+    echo "Unsupported optional feature $f"
   fi
 done
 
@@ -34,8 +34,7 @@ apt update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
 # install required packages
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" $LXC_TOOLSET $ADDITIONAL_PACKAGES ntpdate rpl net-tools dnsutils chrony sipcalc
-# DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -t bookworm-backports -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl attr samba smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils rsync cifs-utils
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl attr samba samba-ad-dc smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils rsync cifs-utils
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl attr samba samba-ad-dc smbclient winbind libpam-winbind libnss-winbind krb5-user samba-dsdb-modules samba-vfs-modules lmdb-utils
 
 mkdir -p /etc/chrony/conf.d
 mkdir -p /etc/systemd/system/chrony.service.d
@@ -63,7 +62,7 @@ ntpsigndsocket /var/lib/samba/ntp_signd
 EOF
 
 if [[ "$ADDITIONAL_PACKAGES" == *"nginx-full"* ]]; then
-	  cat << EOF > /etc/nginx/sites-available/default
+  cat << EOF > /etc/nginx/sites-available/default
 server {
     listen 80 default_server;
     server_name _;
@@ -78,6 +77,7 @@ if  [[ "$ADDITIONAL_PACKAGES" == *"bind9"* ]]; then
 #
 # run resolvconf?
 RESOLVCONF=no
+
 # startup options for the server
 OPTIONS="-4 -u bind"
 EOF
@@ -86,6 +86,7 @@ EOF
 //
 // Do any local configuration here
 //
+
 // Consider adding the 1918 zones here, if they are not used in your
 // organization
 //include "/etc/bind/zones.rfc1918";
@@ -97,14 +98,18 @@ EOF
   cat << EOF > /etc/bind/named.conf.options
 options {
   directory "/var/cache/bind";
+
   forwarders {
     $LXC_DNS;
   };
+
   allow-query {  any;};
   dnssec-validation no;
+
   auth-nxdomain no;    # conform to RFC1035
   listen-on-v6 { any; };
   listen-on { any; };
+
   tkey-gssapi-keytab "/var/lib/samba/bind-dns/dns.keytab";
   minimal-responses yes;
 };
@@ -113,50 +118,20 @@ EOF
   mkdir -p /var/lib/samba/bind-dns/dns
 fi
 
-mv /etc/krb5.conf /etc/krb5.conf.bak
-cat > /etc/krb5.conf <<EOF
-[libdefaults]
-	default_realm = $ZMB_REALM
-	ticket_lifetime = 600
-	dns_lookup_realm = true
-	dns_lookup_kdc = true
-	renew_lifetime = 7d
-EOF
-
 # stop + disable samba services and remove default config
 systemctl disable --now smbd nmbd winbind systemd-resolved > /dev/null 2>&1
 rm -f /etc/samba/smb.conf
+rm -f /etc/krb5.conf
 
-echo -e "$ZMB_ADMIN_PASS" | kinit -V $ZMB_ADMIN_USER
-samba-tool domain join $ZMB_REALM DC --use-kerberos=required --backend-store=mdb
+rm -r /var/lib/samba/*
 
+backupfile=$(find /backup/online -name samba-backup* | tail -1)
+samba-tool domain backup restore --backup-file=${backupfile} --newservername=${LXC_HOSTNAME} --targetdir=/var/lib/samba/ 
 
-rm /etc/krb5.conf
 ln -sf /var/lib/samba/private/krb5.conf /etc/krb5.conf
 
-mkdir -p /mnt/sysvol
-
-cat << EOF > /root/.smbcredentials
-username=$ZMB_ADMIN_USER
-password=$ZMB_ADMIN_PASS
-domain=$ZMB_DOMAIN
-EOF
-
-echo "//$LXC_DNS/sysvol /mnt/sysvol cifs credentials=/root/.smbcredentials 0 0" >> /etc/fstab
-
-mount.cifs //$LXC_DNS/sysvol /mnt/sysvol -o credentials=/root/.smbcredentials
-
-cat > /etc/cron.d/sysvol-sync << EOF
-*/15 * * * * root /usr/bin/rsync -XAavz --delete-after /mnt/sysvol/ /var/lib/samba/sysvol; if ! /usr/bin/samba-tool ntacl sysvolcheck > /dev/null 2>&1 ; then /usr/bin/samba-tool ntacl sysvolreset ; fi
-EOF
-
-/usr/bin/rsync -XAavz --delete-after /mnt/sysvol/ /var/lib/samba/sysvol
-
-if ! samba-tool ntacl sysvolcheck > /dev/null 2>&1 ; then
-  samba-tool ntacl sysvolreset
-fi
-
-ssh-keygen -q -f "$HOME/.ssh/id_rsa" -N "" -b 4096
+# disable password expiry for administrator
+samba-tool user setexpiry Administrator --noexpiry
 
 systemctl unmask samba-ad-dc
 systemctl enable samba-ad-dc
@@ -168,10 +143,7 @@ cat << EOF > /usr/local/bin/smb-backup
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 rc=0
-keep=$1
-if \$1 ; then
-  keep=\$1
-fi
+keep=\$1
 
 mkdir -p /${LXC_SHAREFS_MOUNTPOINT}/{online,offline}
 
@@ -205,7 +177,7 @@ EOF
 chmod +x /usr/local/bin/smb-backup
 
 cat << EOF > /etc/cron.d/smb-backup
-0 23 * * * root /usr/local/bin/smb-backup 7 >> /var/log/smb-backup.log 2>&1
+23 * * * * root /usr/local/bin/smb-backup 7 >> /var/log/smb-backup.log 2>&1
 EOF
 
 cat << EOF > /etc/logrotate.d/smb-backup
@@ -219,3 +191,5 @@ cat << EOF > /etc/logrotate.d/smb-backup
         create 644 root root
 }
 EOF
+
+exit 0

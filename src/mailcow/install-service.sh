@@ -17,7 +17,7 @@ chmod a+r /etc/apt/keyrings/docker.gpg
 # Add the repository to Apt sources:
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 apt-get update
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin jq
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq rsync docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin jq
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get purge -y -qq postfix
 
 SECRET=$(random_password)
@@ -156,7 +156,6 @@ POPS_PORT=995
 SIEVE_PORT=4190
 DOVEADM_PORT=127.0.0.1:19991
 SQL_PORT=127.0.0.1:13306
-SOLR_PORT=127.0.0.1:18983
 REDIS_PORT=127.0.0.1:7654
 
 # Your timezone
@@ -241,15 +240,6 @@ SKIP_CLAMD=n
 # Skip SOGo: Will disable SOGo integration and therefore webmail, DAV protocols and ActiveSync support (experimental, unsupported, not fully implemented) - y/n
 
 SKIP_SOGO=n
-
-# Skip Solr on low-memory systems or if you do not want to store a readable index of your mails in solr-vol-1.
-
-SKIP_SOLR=n
-
-# Solr heap size in MB, there is no recommendation, please see Solr docs.
-# Solr is a prone to run OOM and should be monitored. Unmonitored Solr setups are not recommended.
-
-SOLR_HEAP=1024
 
 # Allow admins to log into SOGo as email user (without any password)
 
@@ -361,35 +351,45 @@ WEBAUTHN_ONLY_TRUSTED_VENDORS=n
 # Otherwise it will work normally.
 SPAMHAUS_DQS_KEY=
 
+# Obtain certificates for autodiscover.* and autoconfig.* domains.
+# This can be useful to switch off in case you are in a scenario where a reverse proxy already handles those.
+# There are mixed scenarios where ports 80,443 are occupied and you do not want to share certs
+# between services. So acme-mailcow obtains for maildomains and all web-things get handled
+# in the reverse proxy.
+AUTODISCOVER_SAN=y
+# Skip Unbound (DNS Resolver) Healthchecks (NOT Recommended!) - y/n
+SKIP_UNBOUND_HEALTHCHECK=n
+# Prevent netfilter from setting an iptables/nftables rule to isolate the mailcow docker network - y/n
+# CAUTION: Disabling this may expose container ports to other neighbors on the same subnet, even if the ports are bound to localhost
+DISABLE_NETFILTER_ISOLATION_RULE=n
+
+# ------------------------------
+# REDIS configuration
+# ------------------------------
+
+REDISPASS=$(LC_ALL=C </dev/urandom tr -dc A-Za-z0-9 2> /dev/null | head -c 28)
+# Dovecot Indexing (FTS) Process maximum heap size in MB, there is no recommendation, please see Dovecot docs.
+# Flatcurve is used as FTS Engine. It is supposed to be pretty efficient in CPU and RAM consumption.
+# Please always monitor your Resource consumption!
+FTS_HEAP=128
+# Controls how many processes the Dovecot indexing process can spawn at max.
+# Too many indexing processes can use a lot of CPU and Disk I/O
+# Please visit: https://doc.dovecot.org/configuration_manual/service_configuration/#indexer-worker for more informations
+FTS_PROCS=1
+# Skip FTS (Fulltext Search) for Dovecot on low-memory, low-threaded systems or if you simply want to disable it.
+# Dovecot inside mailcow use Flatcurve as FTS Backend.
+SKIP_FTS=y
+# Redirect HTTP connections to HTTPS - y/n
+HTTP_REDIRECT=y
+
 EOF
 
 cat << EOF > /etc/cron.daily/mailcowbackup
-#!/bin/sh
-
-# Backup mailcow data
-# https://docs.mailcow.email/backup_restore/b_n_r-backup/
-
-set -e
-
-OUT="\$(mktemp)"
-export MAILCOW_BACKUP_LOCATION="/$LXC_SHAREFS_MOUNTPOINT/backup"
-SCRIPT="/opt/mailcow-dockerized/helper-scripts/backup_and_restore.sh"
-PARAMETERS="backup all"
-OPTIONS="--delete-days 7"
-mkdir -p \$MAILCOW_BACKUP_LOCATION
-
-# run command
-set +e
-"\${SCRIPT}" \${PARAMETERS} \${OPTIONS} 2>&1 > "\$OUT"
-RESULT=\$?
-
-if [ \$RESULT -ne 0 ]
-    then
-            echo "\${SCRIPT} \${PARAMETERS} \${OPTIONS} encounters an error:"
-            echo "RESULT=\$RESULT"
-            echo "STDOUT / STDERR:"
-            cat "\$OUT"
-fi
+#!/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+25 1 * * * rsync -aH --delete /opt/mailcow-dockerized /${LXC_SHAREFS_MOUNTPOINT}/mailcow-dockerized
+40 2 * * * rsync -aH --delete /var/lib/docker/volumes /${LXC_SHAREFS_MOUNTPOINT}/var_lib_docker_volumes
+5 4 * * * cd /opt/mailcow-dockerized/; BACKUP_LOCATION=/${LXC_SHAREFS_MOUNTPOINT}/db_crypt_redis /opt/mailcow-dockerized/helper-scripts/backup_and_restore.sh backup mysql crypt redis --delete-days 3
 EOF
 
 chmod +x /etc/cron.daily/mailcowbackup

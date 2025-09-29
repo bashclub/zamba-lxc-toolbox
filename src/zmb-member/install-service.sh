@@ -99,9 +99,9 @@ wbinfo -g
 mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
 # originally 'domain users' was set, added variable for domain admins group, samba wiki recommends separate group e.g. 'unix admins'
-chown "${ZMB_ADMIN_USER@L}" /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+chown "${ZMB_ADMIN_USER@L}":"${ZMB_DOMAIN_ADMINS@L}" /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
-setfacl -Rm u:${ZMB_ADMIN_USER@L}:rwx,g::-,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
-setfacl -Rdm u:${ZMB_ADMIN_USER@L}:rwx,g::-,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+setfacl -Rm u:${ZMB_ADMIN_USER@L}:rwx,g:"${ZMB_DOMAIN_ADMINS@L}":rwx,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+setfacl -Rdm u:${ZMB_ADMIN_USER@L}:rwx,g:"${ZMB_DOMAIN_ADMINS@L}":rwx,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
 systemctl restart smbd nmbd winbind wsdd
