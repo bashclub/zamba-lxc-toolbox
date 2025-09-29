@@ -17,7 +17,7 @@ chmod a+r /etc/apt/keyrings/docker.gpg
 # Add the repository to Apt sources:
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 apt-get update
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin jq
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get purge -y -qq postfix
 
 SECRET=$(random_password)
@@ -73,6 +73,21 @@ EOF
 
 }
 
+# fix docker errors for slow machines
+cat << EOF > /etc/docker/daemon.json
+{
+  "default-ulimits": {
+    "nproc": {
+      "name": "nproc",
+      "soft": -1,
+      "hard": -1
+    }
+  }
+}
+EOF
+systemctl restart docker
+
+
 cd /opt
 git clone https://github.com/mailcow/mailcow-dockerized
 cd mailcow-dockerized
@@ -103,6 +118,8 @@ DBUSER=mailcow
 
 DBPASS=$(LC_ALL=C </dev/urandom tr -dc A-Za-z0-9 2> /dev/null | head -c 28)
 DBROOT=$(LC_ALL=C </dev/urandom tr -dc A-Za-z0-9 2> /dev/null | head -c 28)
+
+REDISPASS=$(LC_ALL=C </dev/urandom tr -dc A-Za-z0-9 2> /dev/null | head -c 28)
 
 # ------------------------------
 # HTTP/S Bindings
@@ -344,23 +361,6 @@ WEBAUTHN_ONLY_TRUSTED_VENDORS=n
 # Otherwise it will work normally.
 SPAMHAUS_DQS_KEY=
 
-EOF
-
-cat << EOF > data/conf/nginx/redirect.conf
-server {
-  root /web;
-  listen 80 default_server;
-  listen [::]:80 default_server;
-  include /etc/nginx/conf.d/server_name.active;
-  if ( \$request_uri ~* "%0A|%0D" ) { return 403; }
-  location ^~ /.well-known/acme-challenge/ {
-    allow all;
-    default_type "text/plain";
-  }
-  location / {
-    return 301 https://\$host\$uri\$is_args\$args;
-  }
-}
 EOF
 
 cat << EOF > /etc/cron.daily/mailcowbackup
