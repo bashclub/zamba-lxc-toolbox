@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Konfiguration
+MAILCOW_PATH="/opt/mailcow-dockerized"
+SPOOL_DIR="/var/lib/check_mk_agent/spool"
+INTERVAL_SECONDS=87000  # z. B. alle 24 Stunden + Toleranz
+SPOOL_FILE="${SPOOL_DIR}/${INTERVAL_SECONDS}_mailcow_update"
+
+# Sicherstellen, dass das Spool-Verzeichnis existiert
+mkdir -p "$SPOOL_DIR"
+
+# Temporäre Datei vorbereiten
+TMP_FILE="$(mktemp)"
+
+# Header für Local Check
+echo "<<<local>>>" > "$TMP_FILE"
+
+# In das Mailcow-Verzeichnis wechseln
+if ! cd "$MAILCOW_PATH"; then
+  echo "2 Mailcow_Update - ERROR: Verzeichnis $MAILCOW_PATH nicht gefunden" >> "$TMP_FILE"
+  echo "3 Mailcow_Version - UNKNOWN: Verzeichnis nicht gefunden" >> "$TMP_FILE"
+  mv "$TMP_FILE" "$SPOOL_FILE"
+  exit 2
+fi
+
+# Aktuelle Uhrzeit für Log
+NOW="$(date '+%Y-%m-%d %H:%M:%S')"
+
+# Mailcow-Version auslesen
+GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null)
+GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null)
+
+if [[ -n "$GIT_TAG" ]]; then
+  echo "0 Mailcow_Version - OK: Version $GIT_TAG ($GIT_COMMIT)" >> "$TMP_FILE"
+else
+  echo "0 Mailcow_Version - OK: Commit $GIT_COMMIT (kein Tag)" >> "$TMP_FILE"
+fi
+
+# Auf Updates prüfen
+UPDATE_CHECK=$(./update.sh --check 2>&1)
+if echo "$UPDATE_CHECK" | grep -q "No updates available"; then
+  echo "0 Mailcow_Update - OK: Kein Update verfügbar ($NOW)" >> "$TMP_FILE"
+  mv "$TMP_FILE" "$SPOOL_FILE"
+  exit 0
+fi
+
+# Erstes Update versuchen
+UPDATE_OUTPUT=$(./update.sh --force --skip-ping-check 2>&1)
+EXIT_CODE=$?
+
+# Sonderfall: Skript wurde geändert und muss erneut ausgeführt werden
+if echo "$UPDATE_OUTPUT" | grep -q "update.sh changed, please run this script again"; then
+  UPDATE_OUTPUT_2=$(./update.sh --force --skip-ping-check 2>&1)
+  EXIT_CODE=$?
+  UPDATE_OUTPUT="${UPDATE_OUTPUT}\n--- retry ---\n${UPDATE_OUTPUT_2}"
+fi
+
+if [ "$EXIT_CODE" -eq 0 ]; then
+  echo "0 Mailcow_Update - OK: Update erfolgreich durchgeführt ($NOW)" >> "$TMP_FILE"
+else
+  echo "2 Mailcow_Update - CRITICAL: Update fehlgeschlagen ($NOW)" >> "$TMP_FILE"
+  echo "$UPDATE_OUTPUT" >> "$TMP_FILE"
+fi
+
+# Ergebnis schreiben
+mv "$TMP_FILE" "$SPOOL_FILE"
+exit "$EXIT_CODE"
