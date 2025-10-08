@@ -75,8 +75,13 @@ cat > /etc/samba/smb.conf <<EOF
 	shadow: snapprefix = ^zfs-auto-snap_\(frequent\)\{0,1\}\(hourly\)\{0,1\}\(daily\)\{0,1\}\(weekly\)\{0,1\}\(monthly\)\{0,1\}\(backup\)\{0,1\}\(manual\)\{0,1\}
 	shadow: delimiter = -20
 
+EOF
+
+IFS=',' read -r -a ZMB_SHARES_ARRAY <<< "$ZMB_SHARES"
+for ZMB_SHARE in "${ZMB_SHARES_ARRAY[@]}"
+do
+    cat >> /etc/samba/smb.conf << EOF
 [$ZMB_SHARE]
-	comment = Main Share
 	path = /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 	read only = No
 	create mask = 0660
@@ -84,6 +89,7 @@ cat > /etc/samba/smb.conf <<EOF
 	inherit acls = Yes
 
 EOF
+done
 
 systemctl restart smbd
 
@@ -96,12 +102,15 @@ systemctl restart winbind nmbd
 wbinfo -u
 wbinfo -g
 
-mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+for SHARE in "${ZMB_SHARES_ARRAY[@]}"
+do
+  mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
-# originally 'domain users' was set, added variable for domain admins group, samba wiki recommends separate group e.g. 'unix admins'
-chown "${ZMB_ADMIN_USER@L}":"${ZMB_DOMAIN_ADMINS@L}" /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+  # originally 'domain users' was set, added variable for domain admins group, samba wiki recommends separate group e.g. 'unix admins'
+  chown "${ZMB_ADMIN_USER@L}":"${ZMB_DOMAIN_ADMINS@L}" /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
-setfacl -Rm u:${ZMB_ADMIN_USER@L}:rwx,g:"${ZMB_DOMAIN_ADMINS@L}":rwx,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
-setfacl -Rdm u:${ZMB_ADMIN_USER@L}:rwx,g:"${ZMB_DOMAIN_ADMINS@L}":rwx,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+  setfacl -Rm u:${ZMB_ADMIN_USER@L}:rwx,g:"${ZMB_DOMAIN_ADMINS@L}":rwx,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+  setfacl -Rdm u:${ZMB_ADMIN_USER@L}:rwx,g:"${ZMB_DOMAIN_ADMINS@L}":rwx,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+done
 
 systemctl restart smbd nmbd winbind wsdd

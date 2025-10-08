@@ -114,8 +114,8 @@ ZMB_ADMIN_PASS='Start!123'
 # Name of the "domain admins" group (depends on your Active Directory language, valid on zmb-cups, lower case)
 ZMB_DOMAIN_ADMINS="domain admins"
 
-# Defines the name of your Zamba share
-ZMB_SHARE="share"
+# Defines the names of your Zamba shares in a comma separated list
+ZMB_SHARES="share1,share2"
 
 ############### Mailpiler-Section ###############
 
