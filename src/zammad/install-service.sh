@@ -44,10 +44,11 @@ sed -e "s|$(grep -m1 server_name /opt/zammad/contrib/nginx/zammad_ssl.conf)|serv
  -e "s|$(grep -m1 ssl_certificate /opt/zammad/contrib/nginx/zammad_ssl.conf)|ssl_certificate /etc/nginx/ssl/fullchain.pem;|g" \
  -e "s|$(grep -m1 ssl_certificate_key /opt/zammad/contrib/nginx/zammad_ssl.conf)|ssl_certificate_key /etc/nginx/ssl/privkey.pem;|g" \
  -e "s|$(grep -m1 ssl_protocols /opt/zammad/contrib/nginx/zammad_ssl.conf)|ssl_protocols TLSv1.2 TLSv1.3;|g" \
+ -e "s|$(grep -m1 ssl_dhparam /opt/zammad/contrib/nginx/zammad_ssl.conf)|ssl_dhparam /etc/nginx/ssl/dhparam.pem;|g" \
  -e "s|$(grep -m1 ssl_trusted_certificate /opt/zammad/contrib/nginx/zammad_ssl.conf)|#  ssl_trusted_certificate /etc/nginx/ssl/lets-encrypt-x3-cross-signed.pem;|g" \
  /opt/zammad/contrib/nginx/zammad_ssl.conf > /etc/nginx/sites-available/zammad_ssl.conf
 
-
+ ln -sf /etc/nginx/sites-available/zammad_ssl.conf /etc/nginx/sites-enabled/
 
 # configure elasticsearch
 /usr/share/elasticsearch/bin/elasticsearch-plugin install -b ingest-attachment
