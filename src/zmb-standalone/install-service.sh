@@ -65,14 +65,18 @@ EOF
 
 net conf import /etc/samba/import.template
 
-mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
-chmod -R 770 /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
-chown -R $USER:root /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+IFS=',' read -r -a ZMB_SHARES_ARRAY <<< "$ZMB_SHARES"
+for ZMB_SHARE in "${ZMB_SHARES_ARRAY[@]}"
+do
+    mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+    chmod -R 770 /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+    chown -R $USER:root /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
-net conf addshare $ZMB_SHARE /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
-net conf setparm $ZMB_SHARE readonly no
-net conf setparm $ZMB_SHARE browseable yes
-net conf setparm $ZMB_SHARE createmask 0660
-net conf setparm $ZMB_SHARE directorymask 0770
+    net conf addshare $ZMB_SHARE /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+    net conf setparm $ZMB_SHARE readonly no
+    net conf setparm $ZMB_SHARE browseable yes
+    net conf setparm $ZMB_SHARE createmask 0660
+    net conf setparm $ZMB_SHARE directorymask 0770
+done
 
 systemctl restart smbd nmbd wsdd
