@@ -102,7 +102,9 @@ systemctl restart winbind nmbd
 wbinfo -u
 wbinfo -g
 
-for SHARE in "${ZMB_SHARES_ARRAY[@]}"
+unset ZMB_SHARE
+
+for ZMB_SHARE in "${ZMB_SHARES_ARRAY[@]}"
 do
   mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
