@@ -24,29 +24,7 @@ EOF
 locale-gen $LXC_LOCALE 
 
 # Generate sources
-if [ "$LXC_TEMPLATE_VERSION" == "debian-10-standard" ] ; then
-
-cat << EOF > /etc/apt/sources.list
-deb http://deb.debian.org/debian/ buster main contrib
-
-deb http://deb.debian.org/debian/ buster-updates main contrib
-
-# security updates
-deb http://security.debian.org/debian-security buster/updates main contrib
-EOF
-
-elif [ "$LXC_TEMPLATE_VERSION" == "debian-11-standard" ] ; then
-
-cat << EOF > /etc/apt/sources.list
-deb http://deb.debian.org/debian/ bullseye main contrib
-
-deb http://deb.debian.org/debian/ bullseye-updates main contrib
-
-# security updates
-deb http://security.debian.org/debian-security bullseye-security main contrib
-EOF
-
-elif [ "$LXC_TEMPLATE_VERSION" == "debian-12-standard" ] ; then
+if [ "$LXC_TEMPLATE_VERSION" == "debian-12-standard" ] ; then
 
 cat << EOF > /etc/apt/sources.list
 deb http://deb.debian.org/debian/ bookworm main contrib
@@ -55,6 +33,24 @@ deb http://deb.debian.org/debian/ bookworm-updates main contrib
 
 # security updates
 deb http://security.debian.org/debian-security bookworm-security main contrib
+EOF
+elif [ "$LXC_TEMPLATE_VERSION" == "debian-13-standard" ] ; then
+
+if [ -f /etc/apt/sources.list ] ; then rm /etc/apt/sources.list ; fi
+cat << EOF > /etc/apt/sources.list.d/debian.sources
+Types: deb deb-src
+URIs: https://deb.debian.org/debian
+Suites: trixie trixie-updates
+Components: main non-free-firmware contrib non-free
+Enabled: yes
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb deb-src
+URIs: https://security.debian.org/debian-security
+Suites: trixie-security
+Components: main non-free-firmware contrib non-free
+Enabled: yes
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 EOF
 
 else echo "LXC Debian Version false. Please check configuration files!" ; exit
