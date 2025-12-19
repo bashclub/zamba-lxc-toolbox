@@ -84,3 +84,5 @@ chown $CMK_INSTANCE /opt/omd/sites/$CMK_INSTANCE/local/share/check_mk/notificati
 
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install cmk-push-server
+
+cmk-push-setup
