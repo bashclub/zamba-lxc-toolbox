@@ -9,12 +9,9 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-# echo "deb http://ftp.halifax.rwth-aachen.de/debian/ bookworm-backports main contrib" >> /etc/apt/sources.list
-
 apt update
 
-#DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -t bookworm-backports -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules wsdd
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules wsdd
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules
 
 mv /etc/krb5.conf /etc/krb5.conf.bak
 cat > /etc/krb5.conf <<EOF
@@ -78,8 +75,7 @@ cat > /etc/samba/smb.conf <<EOF
 EOF
 
 IFS=',' read -r -a ZMB_SHARES_ARRAY <<< "$ZMB_SHARES"
-for ZMB_SHARE in "${ZMB_SHARES_ARRAY[@]}"
-do
+for ZMB_SHARE in "${ZMB_SHARES_ARRAY[@]}" ; do
     cat >> /etc/samba/smb.conf << EOF
 [$ZMB_SHARE]
 	path = /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
@@ -115,4 +111,4 @@ do
   setfacl -Rdm u:${ZMB_ADMIN_USER@L}:rwx,g:"${ZMB_DOMAIN_ADMINS@L}":rwx,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 done
 
-systemctl restart smbd nmbd winbind wsdd
+systemctl restart smbd nmbd winbind
