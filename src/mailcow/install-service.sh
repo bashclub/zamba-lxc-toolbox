@@ -78,9 +78,9 @@ cat << EOF > /etc/docker/daemon.json
 {
   "default-ulimits": {
     "nproc": {
-      "name": "nproc",
-      "soft": -1,
-      "hard": -1
+      "Name": "nproc",
+      "Soft": 4096,
+      "Hard": 4096
     }
   }
 }
