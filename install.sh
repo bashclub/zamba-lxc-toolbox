@@ -154,6 +154,10 @@ pct create $LXC_NBR $TAGS $LXC_CORES $LXC_POOL --password $LXC_PWD -unprivileged
 set -u
 sleep 2;
 
+if [[ $SERVICE_TAGS == *"docker"* ]]; then
+  echo "lxc.apparmor.profile: unconfined" >> /etc/pve/lxc/${LXC_NBR}.conf
+fi
+
 # Check vlan configuration
 if [[ $LXC_VLAN != "NONE" ]];then VLAN=",tag=$LXC_VLAN"; else VLAN=""; fi
 # Reconfigure conatiner
