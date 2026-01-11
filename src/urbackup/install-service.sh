@@ -18,10 +18,11 @@ echo "deb http://download.opensuse.org/repositories/home:/uroni/$REPO_CODENAME/ 
 curl -fsSL https://download.opensuse.org/repositories/home:uroni/$REPO_CODENAME/Release.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/home_uroni.gpg > /dev/null
 
 apt update
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y --no-install-recommends -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" urbackup-server nginx
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y --no-install-recommends -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" ssl-cert urbackup-server nginx
 
-mkdir -p /etc/nginx/ssl
-openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/urbackup.key -out /etc/nginx/ssl/urbackup.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
+install -d -m 0750 -o root -g root /etc/nginx/ssl
+ln -s /etc/ssl/certs/ssl-cert-snakeoil.pem /etc/nginx/ssl/fullchain.pem
+ln -s /etc/ssl/private/ssl-cert-snakeoil.key /etc/nginx/ssl/privkey.pem
 
 ln -s /usr/share/urbackup/www /var/www/urbackup
 
@@ -45,8 +46,8 @@ server {
     index index.htm;
 
     ssl on;
-    ssl_certificate /etc/nginx/ssl/urbackup.crt;
-    ssl_certificate_key /etc/nginx/ssl/urbackup.key;
+    ssl_certificate /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
 
     location /x {
         include /etc/nginx/fastcgi_params;
