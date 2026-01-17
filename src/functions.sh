@@ -76,14 +76,18 @@ inst_nginx() {
 
 #### Set repo and install PHP ####
 inst_php() {
+    PHP_MODULES=${1}
+    PHP_VERSION=${2:-8.5}
     apt_repo "php" "https://packages.sury.org/php/apt.gpg" "https://packages.sury.org/php/" "$(lsb_release -sc)" "main"
-    apt update && DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends php-common php$NEXTCLOUD_PHP_VERSION-{fpm,gd,curl,pgsql,xml,zip,intl,mbstring,bz2,ldap,apcu,bcmath,gmp,imagick,igbinary,mysql,redis,smbclient,sqlite3,cli,common,opcache,readline}
+    apt update && DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends php-common php${PHP_VERSION}-${PHP_MODULES}
 }
 
 #### Set repo and install Postgresql ####
+# First paramater is postgres version, default ist curren version postgres 18
 inst_postgresql() {
+    POSTGRES_VERSION=${1:-18}
     apt_repo "postgresql" "https://www.postgresql.org/media/keys/ACCC4CF8.asc" "http://apt.postgresql.org/pub/repos/apt" "$(lsb_release -cs)-pgdg" "main"
-    apt update && DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends postgresql-$POSTGRES_VERSION
+    apt update && DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends postgresql-${POSTGRES_VERSION}
 }
 
 #### Set repo and install Crowdsec ####

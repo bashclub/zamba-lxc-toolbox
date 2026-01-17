@@ -549,7 +549,7 @@ echo "=> Modifying Nginx config for Nextcloud ..."
 mod_nginx
 
 echo "=> Installing PHP $NEXTCLOUD_PHP_VERSION ..."
-inst_php
+inst_php {fpm,gd,curl,pgsql,xml,zip,intl,mbstring,bz2,ldap,apcu,bcmath,gmp,imagick,igbinary,mysql,redis,smbclient,sqlite3,cli,common,opcache,readline} $NEXTCLOUD_PHP_VERSION
 echo "=> Modifying PHP config for Nextcloud ..."
 mod_php
 
