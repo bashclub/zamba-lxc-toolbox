@@ -79,7 +79,7 @@ inst_nginx() {
 #### Set repo and install PHP ####
 inst_php() {
     PHP_MODULES=${1}
-    PHP_VERSION=${2:-8.5}
+    PHP_VERSION=${2:-8.4}
     IFS=',' read -ra MODULE_ARRAY <<< "$PHP_MODULES"
     PKGS=()
     for PHP_MODULE in "${MODULE_ARRAY[@]}"; do

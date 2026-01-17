@@ -23,9 +23,6 @@ cat > /etc/krb5.conf <<EOF
 	renew_lifetime = 7d
 EOF
 
-echo -e "$ZMB_ADMIN_PASS" | kinit -V $ZMB_ADMIN_USER
-klist
-
 mv /etc/samba/smb.conf /etc/samba/smb.conf.bak
 cat > /etc/samba/smb.conf <<EOF
 [global]
@@ -86,6 +83,9 @@ for ZMB_SHARE in "${ZMB_SHARES_ARRAY[@]}" ; do
 
 EOF
 done
+
+echo -e "$ZMB_ADMIN_PASS" | kinit -V $ZMB_ADMIN_USER
+klist
 
 systemctl restart smbd
 
