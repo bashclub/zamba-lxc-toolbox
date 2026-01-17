@@ -80,14 +80,20 @@ inst_nginx() {
 inst_php() {
     PHP_MODULES=${1}
     PHP_VERSION=${2:-8.5}
+    IFS=',' read -ra MODULE_ARRAY <<< "$PHP_MODULES"
+    PKGS=()
+    for PHP_MODULE in "${MODULE_ARRAY[@]}"; do
+        PKGS+=( "php${PHP_VERSION}-${PHP_MODULE}" )
+    done
     apt_repo "php" "https://packages.sury.org/php/apt.gpg" "https://packages.sury.org/php/" "$(lsb_release -sc)" "main"
-    apt update && DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends php-common php${PHP_VERSION}-${PHP_MODULES}
+    apt update && DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends php-common "${PKGS[@]}"
 }
 
 #### Set repo and install Postgresql ####
 # First paramater is postgres version, default ist curren version postgres 18
 inst_postgresql() {
     POSTGRES_VERSION=${1:-18}
+    
     apt_repo "postgresql" "https://www.postgresql.org/media/keys/ACCC4CF8.asc" "http://apt.postgresql.org/pub/repos/apt" "$(lsb_release -cs)-pgdg" "main"
     apt update && DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends postgresql-${POSTGRES_VERSION}
 }
@@ -97,4 +103,10 @@ inst_crowdsec() {
     apt_repo "crowdsec" "https://packagecloud.io/crowdsec/crowdsec/gpgkey" "https://packagecloud.io/crowdsec/crowdsec/any" "any" "main"
     apt update && DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends crowdsec
     DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends crowdsec-firewall-bouncer-nftables
+}
+
+#### Set repo and install 45drives (cockpit) ####
+inst_45drives() {
+    apt_repo "45drives" "https://repo.45drives.com/key/gpg.asc" "https://repo.45drives.com/enterprise/debian" "bookworm" "main"
+    apt update
 }

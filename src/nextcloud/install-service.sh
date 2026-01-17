@@ -248,7 +248,7 @@ cp /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php.ini /etc/php/$NEXTCLOUD_PHP_VERSION/f
 cp /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php-fpm.conf /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/php-fpm.conf.bak
 cp /etc/php/$NEXTCLOUD_PHP_VERSION/mods-available/apcu.ini /etc/php/$NEXTCLOUD_PHP_VERSION/mods-available/apcu.ini.bak
 cp /etc/php/$NEXTCLOUD_PHP_VERSION/mods-available/opcache.ini /etc/php/$NEXTCLOUD_PHP_VERSION/mods-available/opcache.ini.bak
-cp /etc/ImageMagick-6/policy.xml /etc/ImageMagick-6/policy.xml.bak
+cp /etc/ImageMagick-7/policy.xml /etc/ImageMagick-7/policy.xml.bak
 
 sed -i "s/;env\[HOSTNAME\] = /env[HOSTNAME] = /" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/pool.d/www.conf
 sed -i "s/;env\[TMP\] = /env[TMP] = /" /etc/php/$NEXTCLOUD_PHP_VERSION/fpm/pool.d/www.conf
@@ -298,10 +298,10 @@ sed -i 's/opcache.jit=off/opcache.jit=on/' /etc/php/$NEXTCLOUD_PHP_VERSION/mods-
 sed -i '$aopcache.jit=1255' /etc/php/$NEXTCLOUD_PHP_VERSION/mods-available/opcache.ini
 sed -i '$aopcache.jit_buffer_size=256M' /etc/php/$NEXTCLOUD_PHP_VERSION/mods-available/opcache.ini
 
-sed -i "s/rights=\"none\" pattern=\"PS\"/rights=\"read|write\" pattern=\"PS\"/" /etc/ImageMagick-6/policy.xml
-sed -i "s/rights=\"none\" pattern=\"EPS\"/rights=\"read|write\" pattern=\"EPS\"/" /etc/ImageMagick-6/policy.xml
-sed -i "s/rights=\"none\" pattern=\"PDF\"/rights=\"read|write\" pattern=\"PDF\"/" /etc/ImageMagick-6/policy.xml
-sed -i "s/rights=\"none\" pattern=\"XPS\"/rights=\"read|write\" pattern=\"XPS\"/" /etc/ImageMagick-6/policy.xml
+sed -i "s/rights=\"none\" pattern=\"PS\"/rights=\"read|write\" pattern=\"PS\"/" /etc/ImageMagick-7/policy.xml
+sed -i "s/rights=\"none\" pattern=\"EPS\"/rights=\"read|write\" pattern=\"EPS\"/" /etc/ImageMagick-7/policy.xml
+sed -i "s/rights=\"none\" pattern=\"PDF\"/rights=\"read|write\" pattern=\"PDF\"/" /etc/ImageMagick-7/policy.xml
+sed -i "s/rights=\"none\" pattern=\"XPS\"/rights=\"read|write\" pattern=\"XPS\"/" /etc/ImageMagick-7/policy.xml
 
 sed -i '$apgsql.allow_persistent = On' /etc/php/$NEXTCLOUD_PHP_VERSION/mods-available/pgsql.ini
 sed -i '$apgsql.auto_reset_persistent = Off' /etc/php/$NEXTCLOUD_PHP_VERSION/mods-available/pgsql.ini
@@ -350,13 +350,12 @@ sed -i "s/unixsocketperm 700/unixsocketperm 770/" /etc/redis/redis.conf
 sed -i "s/# maxclients 10000/maxclients 10240/" /etc/redis/redis.conf
 sed -i "s/# requirepass foobared/requirepass $NEXTCLOUD_REDIS_PWD/" /etc/redis/redis.conf
 usermod -aG redis www-data
-cp /etc/sysctl.conf /etc/sysctl.conf.bak
-sed -i '$avm.overcommit_memory = 1' /etc/sysctl.conf
+echo 'vm.overcommit_memory = 1' > /etc/sysctl.d/overcommit_memory.conf
 }
 
 #### Install some more packages
 inst_packages() {
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends tree ldap-utils php-ldap cifs-utils locate screen zip ffmpeg ghostscript libfile-fcntllock-perl libfuse2 socat imagemagick libmagickcore-6.q16-6-extra
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends tree ldap-utils php-ldap cifs-utils locate screen zip ffmpeg ghostscript libfile-fcntllock-perl libfuse2 socat imagemagick libmagickcore-7.q16-10-extra
 timedatectl set-timezone $LXC_TIMEZONE
 mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$NEXTCLOUD_DATA /var/www /etc/letsencrypt
 chown -R www-data:www-data /$LXC_SHAREFS_MOUNTPOINT/$NEXTCLOUD_DATA /var/www
@@ -549,7 +548,7 @@ echo "=> Modifying Nginx config for Nextcloud ..."
 mod_nginx
 
 echo "=> Installing PHP $NEXTCLOUD_PHP_VERSION ..."
-inst_php {fpm,gd,curl,pgsql,xml,zip,intl,mbstring,bz2,ldap,apcu,bcmath,gmp,imagick,igbinary,mysql,redis,smbclient,sqlite3,cli,common,opcache,readline} $NEXTCLOUD_PHP_VERSION
+inst_php fpm,gd,curl,pgsql,xml,zip,intl,mbstring,bz2,ldap,apcu,bcmath,gmp,imagick,igbinary,mysql,redis,smbclient,sqlite3,cli,common,opcache,readline $NEXTCLOUD_PHP_VERSION
 echo "=> Modifying PHP config for Nextcloud ..."
 mod_php
 
