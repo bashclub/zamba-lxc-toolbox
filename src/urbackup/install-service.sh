@@ -45,7 +45,6 @@ server {
 
     index index.htm;
 
-    ssl on;
     ssl_certificate /etc/nginx/ssl/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/privkey.pem;
 
