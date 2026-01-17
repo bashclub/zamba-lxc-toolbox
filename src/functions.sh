@@ -110,3 +110,9 @@ inst_45drives() {
     apt_repo "45drives" "https://repo.45drives.com/key/gpg.asc" "https://repo.45drives.com/enterprise/debian" "bookworm" "main"
     apt update
 }
+
+inst_docker() {
+    apt_repo "docker" "https://download.docker.com/linux/debian/gpg" "https://download.docker.com/linux/debian" "$(lsb_release -cs)" stable
+    apt update
+    DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin pwgen
+}
