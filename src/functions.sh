@@ -22,7 +22,7 @@ EOF
 apt_repo() {
     apt_name=$1
     apt_key_url=$2
-    apt_key_path=/usr/share/keyrings/${apt_name}.gpg
+    apt_key_path=/usr/share/keyrings/${apt_name}-archive-keyring.gpg
     apt_repo_url=$3
     apt_suites=$4
     apt_components=$5
@@ -36,6 +36,7 @@ apt_repo() {
         echo "🔍 Format erkannt: ASCII. Konvertiere den Schlüssel..."
         # Wenn es ASCII ist, konvertiere es mit --dearmor
         if sudo gpg --dearmor -o "${apt_key_path}" "${tmp_key_file}"; then
+            chmod 644 ${apt_key_path}
             echo "✅ Schlüssel erfolgreich nach ${apt_key_path} konvertiert."
         else
             echo "❌ Fehler bei der Konvertierung des ASCII-Schlüssels."
@@ -47,6 +48,7 @@ apt_repo() {
         # Wenn es kein ASCII ist, gehen wir von Binär aus und verschieben die Datei
         if sudo mv "${tmp_key_file}" "${apt_key_path}"; then
             echo "✅ Schlüssel erfolgreich nach ${apt_key_path} kopiert."
+            chmod 644 ${apt_key_path}
         else
             echo "❌ Fehler beim Kopieren des binären Schlüssels."
             rm -f "${tmp_key_file}"
