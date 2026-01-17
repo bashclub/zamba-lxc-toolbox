@@ -49,6 +49,25 @@ systemctl disable --now smbd nmbd winbind > /dev/null 2>&1
 rm -f /etc/samba/smb.conf
 rm -f /etc/krb5.conf
 
+echo "fixing samba service to wait for lxc being online"
+
+install -d -m 0755 /etc/systemd/system/samba-ad-dc.service.d
+
+cat <<'EOF' > /etc/systemd/system/samba-ad-dc.service.d/wait-net.conf
+[Unit]
+After=networking.service
+Wants=networking.service
+
+[Service]
+# Wait up to 30s for eth0 to get an IPv4 address
+ExecStartPre=/bin/sh -c 'for i in $(seq 1 30); do ip -4 addr show dev eth0 scope global | grep -q inet && exit 0; sleep 1; done; echo "Network not ready" >&2; exit 1'
+
+Restart=on-failure
+RestartSec=3
+EOF
+
+systemctl daemon-reload
+
 echo "provisioning domain"
 # provision zamba domain
 samba-tool domain provision --use-rfc2307 --realm=$ZMB_REALM --domain=$ZMB_DOMAIN --adminpass=$ZMB_ADMIN_PASS --server-role=dc --backend-store=mdb --dns-backend=SAMBA_INTERNAL
