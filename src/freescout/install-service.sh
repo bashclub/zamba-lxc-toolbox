@@ -18,10 +18,12 @@ MYSQL_PASSWORD="$(random_password)"
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends unzip sudo nginx-full mariadb-server mariadb-client php php-cli php-zip php-curl php-intl php-fpm php-mysql php-imap php-xml php-mbstring php-gd ssl-cert git
+inst_php cli,zip,curl,intl,fpm,mysql,imap,xml,mbstring,gd $FS_PHP_VERSION
+
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends unzip sudo nginx-full mariadb-server mariadb-client ssl-cert git
 
 
-echo ‘cgi.fix_pathinfo=0’ >> /etc/php/8.2/fpm/php.ini
+echo ‘cgi.fix_pathinfo=0’ >> /etc/php/$FS_PHP_VERSION/fpm/php.ini
 
 cat << EOF > /etc/nginx/sites-available/default
 server {
@@ -52,7 +54,7 @@ server {
 
     location ~ .php$ {
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php${FS_PHP_VERSION}-fpm.sock;
         fastcgi_index index.php;
         fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
     	include fastcgi_params;
@@ -125,8 +127,8 @@ cat << EOF > /etc/cron.d/freescout
 * * * * * www-data /bin/php /var/www/html/freescout/artisan schedule:run >> /dev/null 2>&1
 EOF
 
-systemctl enable --now php8.2-fpm
-systemctl restart php8.2-fpm nginx
+systemctl enable --now php${FS_PHP_VERSION}-fpm
+systemctl restart php${FS_PHP_VERSION}-fpm nginx
 
 LXC_IP=$(ip address show dev eth0 | grep "inet " | cut -d ' ' -f6)
 
