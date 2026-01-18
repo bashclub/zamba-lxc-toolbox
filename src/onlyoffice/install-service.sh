@@ -11,6 +11,13 @@ source /root/constants-service.conf
 
 set -euo pipefail
 
+#### Set repo and install onlyoffice ####
+inst_onlyoffice() {
+    apt_repo "onlyoffice" "https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE" "https://download.onlyoffice.com/repo/debian" "squeeze" "main"
+    apt update
+    DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq ttf-mscorefonts-installer onlyoffice-documentserver
+}
+
 ONLYOFFICE_DB_PASS=$(random_password)
 
 inst_postgresql

@@ -11,6 +11,13 @@ source /root/constants-service.conf
 
 set -euo pipefail
 
+#### Set repo and install matrix ####
+inst_matrix() {
+    apt_repo "matrix" "https://packages.matrix.org/debian/matrix-org-archive-keyring.gpg" "https://packages.matrix.org/debian" "$(lsb_release -cs)" "main"
+    apt update
+    DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq matrix-synapse-py3 && systemctl enable matrix-synapse
+}
+
 MRX_PKE=$(random_password)
 
 ELE_DBNAME="synapse_db"

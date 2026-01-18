@@ -111,6 +111,7 @@ inst_45drives() {
     apt update
 }
 
+#### Set repo and install Docker ####
 inst_docker() {
     apt_repo "docker" "https://download.docker.com/linux/debian/gpg" "https://download.docker.com/linux/debian" "$(lsb_release -cs)" stable
     apt update
