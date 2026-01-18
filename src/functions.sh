@@ -115,5 +115,21 @@ inst_45drives() {
 inst_docker() {
     apt_repo "docker" "https://download.docker.com/linux/debian/gpg" "https://download.docker.com/linux/debian" "$(lsb_release -cs)" stable
     apt update
-    DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin pwgen
+    DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin pwgen
+}
+#### Set repo and install MongoDB ####
+inst_mongodb() {
+    MONGODB_VERSION=${1:-8.0}
+
+    apt_repo "mongodb" "https://www.mongodb.org/static/pgp/server-$MONGODB_VERSION.asc" "http://repo.mongodb.org/apt/debian" "bookworm/mongodb-org/$MONGODB_VERSION" "main"
+    apt update
+    DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq mongodb-org
+}
+
+#### Set repo and install MongoDB ####
+inst_bashclub() {
+    BASHCLUB_COMPONENT=${1:-release}
+
+    apt_repo "bashclub" "https://apt.bashclub.org/gpg/bashclub.pub" "https://apt.bashclub.org/$BASHCLUB_COMPONENT" "$(lsb_release -cs)" "main"
+    apt update
 }

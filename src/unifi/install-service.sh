@@ -11,12 +11,14 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-wget -O - https://www.mongodb.org/static/pgp/server-7.0.asc | gpg --dearmor > /usr/share/keyrings/mongodb-server-7.0.gpg
-wget -O - https://dl.ubnt.com/unifi/unifi-repo.gpg | gpg --dearmor > /usr/share/keyrings/unifi.gpg
+inst_unifi() {
+    apt_repo "unifi" "https://dl.ubnt.com/unifi/unifi-repo.gpg" "http://www.ui.com/downloads/unifi/debian" "stable" "ubiquiti"
+    apt update 
+    DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends unifi
+}
 
-echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] http://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
-echo "deb [ signed-by=/usr/share/keyrings/unifi.gpg ] http://www.ui.com/downloads/unifi/debian stable ubiquiti" > /etc/apt/sources.list.d/unifi.list 
+inst_mongodb
 
-apt update
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq default-jre-headless
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq default-jre-headless unifi
+inst_unifi
