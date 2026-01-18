@@ -13,7 +13,9 @@ source /root/constants-service.conf
 
 admin_token=$(openssl rand -base64 48)
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq postgresql nginx git ssl-cert
+inst_postgresql 
+
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq nginx git ssl-cert
 
 systemctl enable --now postgresql
 

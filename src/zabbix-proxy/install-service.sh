@@ -11,13 +11,14 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-apt_repo "zabbix" "https://repo.zabbix.com/zabbix-official-repo.key" "https://repo.zabbix.com/zabbix/${ZABBIX_VERSION}/debian/ $(lsb_release -cs) main"
-apt_repo "postgresql" "https://www.postgresql.org/media/keys/ACCC4CF8.asc" "http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main"
+apt_repo "zabbix" "https://repo.zabbix.com/zabbix-official-repo.key" "https://repo.zabbix.com/zabbix/${ZABBIX_VERSION}/stable/debian/" "$(lsb_release -cs)" "main"
 
 apt update
 
+inst_postgresql $POSTGRES_VERSION
+
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql-$POSTGRES_VERSION postgresql-client zabbix-proxy-pgsql zabbix-sql-scripts zabbix-agent2 zabbix-agent2-plugin-* ssl-cert
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends zabbix-proxy-pgsql zabbix-sql-scripts zabbix-agent2 zabbix-agent2-plugin-* ssl-cert
 
 timedatectl set-timezone ${LXC_TIMEZONE}
 
@@ -29,7 +30,7 @@ psql -c "CREATE DATABASE ${ZABBIX_DB_NAME} ENCODING UTF8 TEMPLATE template0 OWNE
 echo "Postgres User ${ZABBIX_DB_USR} and database ${ZABBIX_DB_NAME} created."
 EOF
 
-cat /usr/share/zabbix-sql-scripts/postgresql/proxy.sql | sudo -u zabbix psql ${ZABBIX_DB_NAME}
+cat /usr/share/zabbix/sql-scripts/postgresql/proxy.sql | sudo -u zabbix psql ${ZABBIX_DB_NAME}
 
 echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_proxy.conf
 
@@ -52,6 +53,8 @@ sed -i "s/# TLSConnect=unencrypted/TLSConnect=psk/g" /etc/zabbix/zabbix_proxy.co
 sed -i "s/# TLSAccept=unencrypted/TLSAccept=psk/g" /etc/zabbix/zabbix_proxy.conf
 sed -i "s/# TLSPSKIdentity=/TLSPSKIdentity=${LXC_HOSTNAME}.${LXC_DOMAIN}/g" /etc/zabbix/zabbix_proxy.conf
 sed -i "s|# TLSPSKFile=|TLSPSKFile=/var/lib/zabbix/proxy.psk|g" /etc/zabbix/zabbix_proxy.conf
+
+mv /etc/zabbix/zabbix_agent2.d/plugins.d/nvidia.conf  /etc/zabbix/zabbix_agent2.d/plugins.d/nvidia.off
 
 systemctl enable zabbix-proxy zabbix-agent2
 

@@ -15,10 +15,13 @@ webroot=/var/www/html
 
 LXC_RANDOMPWD=20
 MYSQL_PASSWORD="$(random_password)"
+PHP_VERSION=8.4
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends unzip sudo nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd
+inst_php cli,fpm,mysql,xml,mbstring,gd $PHP_VERSION
+
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends unzip sudo nginx-full mariadb-server mariadb-client 
 
 mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/open3a.key -out /etc/nginx/ssl/open3a.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
@@ -41,13 +44,12 @@ server {
 
     index index.php;
 
-    ssl on;
     ssl_certificate /etc/nginx/ssl/open3a.crt;
     ssl_certificate_key /etc/nginx/ssl/open3a.key;
 
     location ~ .php$ {
         include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php${PHP_VERSION}-fpm.sock;
     }
 }
 
@@ -78,8 +80,8 @@ localhost                               &%%%&open3a              &%%%&$MYSQL_PAS
 */ ?>
 EOF
 
-systemctl enable --now php8.2-fpm
-systemctl restart php8.2-fpm nginx
+systemctl enable --now php${PHP_VERSION}-fpm
+systemctl restart php${PHP_VERSION}-fpm nginx
 
 LXC_IP=$(ip address show dev eth0 | grep "inet " | cut -d ' ' -f6)
 

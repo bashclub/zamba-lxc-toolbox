@@ -19,7 +19,7 @@ DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::
 USER=$(echo "$ZMB_ADMIN_USER" | awk '{print tolower($0)}')
 useradd --comment "Zamba fileserver admin" --create-home --shell /bin/bash $USER
 echo "$USER:$ZMB_ADMIN_PASS" | chpasswd
-smbpasswd -x $USER
+smbpasswd -x $USER || true
 (echo $ZMB_ADMIN_PASS; echo $ZMB_ADMIN_PASS) | smbpasswd -a $USER
 
 usermod -aG sudo $USER

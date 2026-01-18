@@ -130,6 +130,6 @@ inst_mongodb() {
 inst_bashclub() {
     BASHCLUB_COMPONENT=${1:-release}
 
-    apt_repo "bashclub" "https://apt.bashclub.org/gpg/bashclub.pub" "https://apt.bashclub.org/$BASHCLUB_COMPONENT" "$(lsb_release -cs)" "main"
+    apt_repo "bashclub-$BASHCLUB_COMPONENT" "https://apt.bashclub.org/gpg/bashclub.pub" "https://apt.bashclub.org/$BASHCLUB_COMPONENT" "$(lsb_release -cs)" "main"
     apt update
 }

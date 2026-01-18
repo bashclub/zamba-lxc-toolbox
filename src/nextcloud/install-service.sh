@@ -576,4 +576,3 @@ echo "=> Modifying Crowdsec ..."
 mod_crowdsec
 
 echo -e "\n######################################################################\n\n    Please note this user and password for the nextcloud login:\n        '$NEXTCLOUD_ADMIN_USR' / '$NEXTCLOUD_ADMIN_PWD'\n                Enjoy your Nextcloud intallation.\n\n######################################################################"
-shutdown -r now
