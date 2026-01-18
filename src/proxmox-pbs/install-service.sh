@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Authors:
 # (C) 2021 Idea an concept by Christian Zengel <christian@sysops.de>
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
@@ -9,16 +11,14 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-cat << EOF > /etc/apt/sources.list.d/pbs-no-subscription.list 
-# PBS pbs-no-subscription repository provided by proxmox.com,
-# NOT recommended for production use
-deb http://download.proxmox.com/debian/pbs $(lsb_release -cs) pbs-no-subscription
-EOF
-
-wget -q -O - https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/proxmox-release-bookworm.gpg >/dev/null
-
+#### Set repo and install onlyoffice ####
+inst_pbs() {
+    apt_repo "proxmox" "https://enterprise.proxmox.com/debian/proxmox-release-trixie.gpg" "http://download.proxmox.com/debian/pbs" "trixie" "pbs-no-subscription"
 apt update && apt upgrade -y
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" proxmox-backup-server
+}
+
+inst_pbs
 
 proxmox-backup-manager datastore create $PBS_DATA /$LXC_SHAREFS_MOUNTPOINT/$PBS_DATA
 
