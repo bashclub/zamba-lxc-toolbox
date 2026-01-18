@@ -106,10 +106,10 @@ GRANT USAGE ON * . * TO 'freescout'@'localhost' IDENTIFIED BY '$MYSQL_PASSWORD' 
 CREATE DATABASE IF NOT EXISTS freescout;
 GRANT ALL PRIVILEGES ON freescout . * TO 'freescout'@'localhost';"
 
-curl -s https://api.github.com/repos/freescout-helpdesk/freescout/releases/latest | grep tarball_url | cut -d '"' -f 4 | wget -O $webroot/freescout.tar.gz -i -
+curl -s https://api.github.com/repos/freescout-help-desk/freescout/releases/latest | grep tarball_url | cut -d '"' -f 4 | wget -O $webroot/freescout.tar.gz -i -
 cd $webroot
 tar -vxf freescout.tar.gz
-dir=$(ls -d freescout-helpdesk-freescout*)
+dir=$(ls -d freescout-help-desk-freescout*)
 mv -v $dir freescout
 chown -R www-data:www-data /var/www/html
 find /var/www/html -type f -exec chmod 664 {} \;    
