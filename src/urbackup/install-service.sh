@@ -9,6 +9,8 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
+set -euo pipefail
+
 mkdir -p /$LXC_SHAREFS_MOUNTPOINT/tmp
 mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$URBACKUP_DATA
 mkdir -p /etc/urbackup

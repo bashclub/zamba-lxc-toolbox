@@ -9,20 +9,20 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
+set -euo pipefail
+
 ONLYOFFICE_DB_PASS=$(random_password)
 
-curl -fsSL https://download.onlyoffice.com/GPG-KEY-ONLYOFFICE | gpg --dearmor | tee /etc/apt/trusted.gpg.d/onlyoffice.gpg >/dev/null
-echo "deb https://download.onlyoffice.com/repo/debian squeeze main" > /etc/apt/sources.list.d/onlyoffice.list
+inst_postgresql
 
-cat > /etc/apt/preferences.d/onlyoffice << EOF
-Package: onlyoffice-documentserver
-Pin: version 7.1.1-23
-Pin-Priority: 900
-EOF
+#cat > /etc/apt/preferences.d/onlyoffice << EOF
+#Package: onlyoffice-documentserver
+#Pin: version 7.1.1-23
+#Pin-Priority: 900
+#EOF
 
-apt update 
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq postgresql rabbitmq-server libstdc++6 supervisor
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq rabbitmq-server libstdc++6 supervisor
 
 su postgres <<EOF
 psql -c "CREATE USER $ONLYOFFICE_DB_USER WITH PASSWORD '$ONLYOFFICE_DB_PASS';"
@@ -36,7 +36,7 @@ echo onlyoffice-documentserver onlyoffice/db-user string $ONLYOFFICE_DB_NAME | d
 echo onlyoffice-documentserver onlyoffice/db-name string $ONLYOFFICE_DB_USER | debconf-set-selections
 echo onlyoffice-documentserver onlyoffice/db-pwd password $ONLYOFFICE_DB_PASS | debconf-set-selections
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install ttf-mscorefonts-installer onlyoffice-documentserver
+inst_onlyoffice
 
 cat << EOF > /root/onlyoffice.credentials
 ONLYOFFICE_DB_HOST=$ONLYOFFICE_DB_HOST

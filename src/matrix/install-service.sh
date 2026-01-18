@@ -9,6 +9,8 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
+set -euo pipefail
+
 MRX_PKE=$(random_password)
 
 ELE_DBNAME="synapse_db"
@@ -17,15 +19,10 @@ ELE_DBPASS=$(random_password)
 ELE_PATH=/var/www/element-web
 WEBROOT=/var/www
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq nginx postgresql python3-psycopg2
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq nginx python3-psycopg2
 
-wget -O /usr/share/keyrings/matrix-org-archive-keyring.gpg https://packages.matrix.org/debian/matrix-org-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/matrix-org-archive-keyring.gpg] https://packages.matrix.org/debian/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/matrix-org.list
-apt update
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq matrix-synapse-py3
-systemctl enable matrix-synapse
-
-ss -tulpen
+inst_postgresql
+inst_matrix
 
 mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/matrix.key -out /etc/nginx/ssl/matrix.crt -subj "/CN=$MATRIX_FQDN" -addext "subjectAltName=DNS:$MATRIX_FQDN"
@@ -47,9 +44,9 @@ server {
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
+    http2 on;
     server_name $MATRIX_FQDN;
 
-    ssl on;
     ssl_certificate /etc/nginx/ssl/matrix.crt;
     ssl_certificate_key /etc/nginx/ssl/matrix.key;
 
@@ -62,9 +59,9 @@ server {
 server {
     listen 8448 ssl;
     listen [::]:8448 ssl;
+    http2 on;
     server_name $MATRIX_FQDN;
 
-    ssl on;
     ssl_certificate /etc/nginx/ssl/matrix.crt;
     ssl_certificate_key /etc/nginx/ssl/matrix.key;
 
@@ -97,9 +94,9 @@ server {
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
+    http2 on;
     server_name $MATRIX_ELEMENT_FQDN;
 
-    ssl on;
     ssl_certificate /etc/nginx/ssl/matrix.crt;
     ssl_certificate_key /etc/nginx/ssl/matrix.key;
 
