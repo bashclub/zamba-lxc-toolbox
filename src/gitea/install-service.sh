@@ -9,15 +9,13 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-wget -q -O - https://nginx.org/keys/nginx_signing.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/nginx.key >/dev/null
-echo "deb [signed-by=/etc/apt/trusted.gpg.d/nginx.key] http://nginx.org/packages/debian $(lsb_release -cs) nginx" | tee /etc/apt/sources.list.d/nginx.list
+inst_nginx
 
-wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc  | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/postgresql.key >/dev/null
-echo "deb [signed-by=/etc/apt/trusted.gpg.d/postgresql.key] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
+inst_postgresql
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install --no-install-recommends -y -qq postgresql nginx git ssl-cert unzip zip
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install --no-install-recommends -y -qq git ssl-cert unzip zip
 
 systemctl enable --now postgresql
 
