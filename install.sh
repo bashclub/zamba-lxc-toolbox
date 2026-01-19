@@ -20,12 +20,12 @@ prog="$(basename $0)"
 
 usage() {
 	cat >&2 <<-EOF
-	usage: $prog [-h] [-d] [-i CTID] [-s SERVICE] [-c CFGFILE]
+	usage: $prog [-h] [-d] [-i CTID] [-s SERVICE] [-c CFGFILE] [-p]
 	  installs a preconfigured lxc container on your proxmox server
     -i CTID      provide a container id instead of auto detection
     -s SERVICE   provide the service name and skip the selection dialog
     -c CFGFILE   use a different config file than 'zamba.conf'
-    -r           remove zamba.conf inside container
+    -p           preserve zamba.conf ans scripts inside container
     -d           Debug mode inside LXC container
     -h           displays this help text
   ---------------------------------------------------------------------------
@@ -40,15 +40,15 @@ ctid=0
 service=ask
 config=$PWD/conf/zamba.conf
 debug=0
-preserve_install_scripts=1
+preserve_install_scripts=0
 
-while getopts "hi:s:c:dr" opt; do
+while getopts "hi:s:c:dp" opt; do
   case $opt in
     h) usage 0 ;;
     i) ctid=$OPTARG ;;
     s) service=$OPTARG ;;
     c) config=$OPTARG ;;
-    r) preserve_install_scripts=0 ;;
+    p) preserve_install_scripts=1 ;;
     d) debug=1 ;;
     *) usage 1 ;;
   esac
@@ -229,6 +229,6 @@ fi
 
 if [ $preserve_install_scripts -eq 0 ]; then
   for f in constants.conf constants-service.conf functions.sh install-service.sh lxc-base.sh zamba.conf; do
-    pct exec $LXC_NBR -- if [ -f /root/$f ] ; then rm -f /root/${f} ; fi
+    pct exec $LXC_NBR -- bash -c "if [ -f /root/$f ] ; then rm -f /root/${f} ; fi"
   done
 fi
