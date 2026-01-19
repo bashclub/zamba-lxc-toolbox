@@ -114,6 +114,9 @@ systemctl unmask samba-ad-dc
 systemctl enable samba-ad-dc
 systemctl restart samba-ad-dc
 
+bash /root/zmb-ad_auto-map-root.sh
+chmod +x /usr/bin/create-service-account
+
 # configure ad backup
 cat << EOF > /usr/local/bin/smb-backup
 #!/bin/bash
