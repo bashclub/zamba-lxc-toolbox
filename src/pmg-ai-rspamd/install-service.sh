@@ -243,6 +243,29 @@ secure_ip = "${LXC_IP%/*}";
 .include(try=true,glob=true) "\$LOCAL_CONFDIR/secure_ips.d/*.conf"
 EOF
 
+cat << EOF > /etc/rspamd/local.d/actions.conf
+# Alle Aktionen, die normalerweise ablehnen würden, auf null setzen
+reject = null;      # Niemals ablehnen
+add_header = 6.0;   # Ab diesem Score den X-Spam-Header setzen
+greylist = null;    # Greylisting deaktivieren (macht PMG schon besser)
+rewrite_subject = null;
+EOF
+
+cat << EOF > /etc/rspamd/local.d/milter_headers.conf
+# Diese Header werden für jede Mail geschrieben
+use = ["spam-header", "symbols", "score"];
+
+header_names {
+    "spam-header" = "X-Spam-Flag";
+    "symbols" = "X-Rspamd-Symbols";
+    "score" = "X-Rspamd-Score";
+}
+
+# Fügt den Score immer hinzu, egal wie hoch er ist
+skip_local = false;
+extended_symbols = true;
+EOF
+
 # oletools aktivieren
 cat << 'EOF' > /etc/rspamd/local.d/oletools.conf
 enabled = true;
