@@ -5,9 +5,18 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+set -euo pipefail
+
 source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
+
+#### Set repo and install matrix ####
+inst_matrix() {
+    apt_repo "matrix" "https://packages.matrix.org/debian/matrix-org-archive-keyring.gpg" "https://packages.matrix.org/debian" "$(lsb_release -cs)" "main"
+    apt update
+    DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq matrix-synapse-py3 && systemctl enable matrix-synapse
+}
 
 MRX_PKE=$(random_password)
 
@@ -17,15 +26,10 @@ ELE_DBPASS=$(random_password)
 ELE_PATH=/var/www/element-web
 WEBROOT=/var/www
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq nginx postgresql python3-psycopg2
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq nginx python3-psycopg2
 
-wget -O /usr/share/keyrings/matrix-org-archive-keyring.gpg https://packages.matrix.org/debian/matrix-org-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/matrix-org-archive-keyring.gpg] https://packages.matrix.org/debian/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/matrix-org.list
-apt update
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq matrix-synapse-py3
-systemctl enable matrix-synapse
-
-ss -tulpen
+inst_postgresql
+inst_matrix
 
 mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/matrix.key -out /etc/nginx/ssl/matrix.crt -subj "/CN=$MATRIX_FQDN" -addext "subjectAltName=DNS:$MATRIX_FQDN"
@@ -47,9 +51,9 @@ server {
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
+    http2 on;
     server_name $MATRIX_FQDN;
 
-    ssl on;
     ssl_certificate /etc/nginx/ssl/matrix.crt;
     ssl_certificate_key /etc/nginx/ssl/matrix.key;
 
@@ -62,9 +66,9 @@ server {
 server {
     listen 8448 ssl;
     listen [::]:8448 ssl;
+    http2 on;
     server_name $MATRIX_FQDN;
 
-    ssl on;
     ssl_certificate /etc/nginx/ssl/matrix.crt;
     ssl_certificate_key /etc/nginx/ssl/matrix.key;
 
@@ -97,9 +101,9 @@ server {
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
+    http2 on;
     server_name $MATRIX_ELEMENT_FQDN;
 
-    ssl on;
     ssl_certificate /etc/nginx/ssl/matrix.crt;
     ssl_certificate_key /etc/nginx/ssl/matrix.key;
 
@@ -154,6 +158,6 @@ systemctl restart matrix-synapse
 
 rm /var/www/element-release-key.asc /var/www/element-$MATRIX_ELEMENT_VERSION.tar.gz /var/www/element-$MATRIX_ELEMENT_VERSION.tar.gz.asc
 
-register_new_matrix_user -a -u $MATRIX_ADMIN_USER -p \'$MATRIX_ADMIN_PASSWORD\' -c /etc/matrix-synapse/conf.d/registration.yaml http://127.0.0.1:8008
+register_new_matrix_user -a -u $MATRIX_ADMIN_USER -p "$MATRIX_ADMIN_PASSWORD" -c /etc/matrix-synapse/conf.d/registration.yaml http://127.0.0.1:8008
 
 echo -e "Your matrix installation is now complete. Please login into your element:\nLogin:\t\t$MATRIX_ADMIN_USER\nPassword:\t$MATRIX_ADMIN_PASSWORD\n\n"

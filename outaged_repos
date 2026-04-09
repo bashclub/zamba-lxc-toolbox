@@ -1,0 +1,6 @@
+repos ohne debian trixie support
+- manticore (fixed via bashclub repo)
+- 45drives
+- mongodb
+- influxdb
+- zammad

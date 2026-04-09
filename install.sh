@@ -20,11 +20,12 @@ prog="$(basename $0)"
 
 usage() {
 	cat >&2 <<-EOF
-	usage: $prog [-h] [-d] [-i CTID] [-s SERVICE] [-c CFGFILE]
+	usage: $prog [-h] [-d] [-i CTID] [-s SERVICE] [-c CFGFILE] [-p]
 	  installs a preconfigured lxc container on your proxmox server
     -i CTID      provide a container id instead of auto detection
     -s SERVICE   provide the service name and skip the selection dialog
     -c CFGFILE   use a different config file than 'zamba.conf'
+    -p           preserve zamba.conf ans scripts inside container
     -d           Debug mode inside LXC container
     -h           displays this help text
   ---------------------------------------------------------------------------
@@ -39,13 +40,15 @@ ctid=0
 service=ask
 config=$PWD/conf/zamba.conf
 debug=0
+preserve_install_scripts=0
 
-while getopts "hi:s:c:d" opt; do
+while getopts "hi:s:c:dp" opt; do
   case $opt in
     h) usage 0 ;;
     i) ctid=$OPTARG ;;
     s) service=$OPTARG ;;
     c) config=$OPTARG ;;
+    p) preserve_install_scripts=1 ;;
     d) debug=1 ;;
     *) usage 1 ;;
   esac
@@ -154,6 +157,10 @@ pct create $LXC_NBR $TAGS $LXC_CORES $LXC_POOL --password $LXC_PWD -unprivileged
 set -u
 sleep 2;
 
+if [[ $SERVICE_TAGS == *"docker"* ]]; then
+  echo "lxc.apparmor.profile: unconfined" >> /etc/pve/lxc/${LXC_NBR}.conf
+fi
+
 # Check vlan configuration
 if [[ $LXC_VLAN != "NONE" ]];then VLAN=",tag=$LXC_VLAN"; else VLAN=""; fi
 # Reconfigure conatiner
@@ -185,18 +192,17 @@ sleep 5;
 pct exec $LXC_NBR -- mkdir -p /root/.ssh
 pct push $LXC_NBR $LXC_AUTHORIZED_KEY /root/.ssh/authorized_keys
 pct push $LXC_NBR "$config" /root/zamba.conf
+for f in "$PWD/src/functions.sh" "$PWD/src/constants.conf" "$PWD/src/lxc-base.sh" "$PWD/src/$service/install-service.sh" "$PWD/src/$service/constants-service.conf"; do
+  pct push $LXC_NBR $f /root/$(basename $f)
+done
+
+if [[ $service == "zmb-ad" ]] || [[ $service == "zmb-ad-join" ]]; then
+  pct push $LXC_NBR scripts/zmb-ad_auto-map-root.sh /root/zmb-ad_auto-map-root.sh
+  pct push $LXC_NBR scripts/create-service-account /usr/bin/create-service-account
+fi
+
 pct exec $LXC_NBR -- sed -i "s,\${service},${service}," /root/zamba.conf
 pct exec $LXC_NBR -- echo "LXC_NBR=$LXC_NBR" /root/zamba.conf
-pct push $LXC_NBR "$PWD/src/functions.sh" /root/functions.sh
-pct push $LXC_NBR "$PWD/src/constants.conf" /root/constants.conf
-pct push $LXC_NBR "$PWD/src/lxc-base.sh" /root/lxc-base.sh
-pct push $LXC_NBR "$PWD/src/$service/install-service.sh" /root/install-service.sh
-pct push $LXC_NBR "$PWD/src/$service/constants-service.conf" /root/constants-service.conf
-
-if [[ $service == "zmb-ad-restore" ]]; then
-    pct exec $LXC_NBR -- mkdir -p /backup/online
-    pct push $LXC_NBR "$PWD/samba-backup-*.tar.bz2" /backup/online/
-fi
 
 if [ $debug -gt 0 ]; then dbg=-vx; else dbg=""; fi
 
@@ -219,4 +225,10 @@ pct start $LXC_NBR
 if [[ $service == "zmb-ad" ]] || [[ $service == "zmb-ad-join" ]]; then
   sleep 5
   pct exec $LXC_NBR /usr/local/bin/smb-backup 7
+fi
+
+if [ $preserve_install_scripts -eq 0 ]; then
+  for f in constants.conf constants-service.conf functions.sh install-service.sh lxc-base.sh zamba.conf; do
+    pct exec $LXC_NBR -- bash -c "if [ -f /root/$f ] ; then rm -f /root/${f} ; fi"
+  done
 fi

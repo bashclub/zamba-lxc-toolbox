@@ -5,19 +5,13 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+set -euo pipefail
+
 source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-# Add Docker's official GPG key:
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-chmod a+r /etc/apt/keyrings/docker.gpg
-
-# Add the repository to Apt sources:
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-apt-get update
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+inst_docker
 
 SECRET=$(random_password)
 myip=$(ip a s dev eth0 | grep -m1 inet | cut -d' ' -f6 | cut -d'/' -f1)
@@ -26,8 +20,6 @@ install_portainer_full() {
     mkdir -p /opt/portainer/data
     cd /opt/portainer
     cat << EOF > /opt/portainer/docker-compose.yml
-version: "3.4"
-
 services:
   portainer:
     restart: always
@@ -52,8 +44,6 @@ install_portainer_agent() {
     mkdir -p /opt/portainer-agent/data
     cd /opt/portainer-agent
     cat << EOF > /opt/portainer-agent/docker-compose.yml
-version: "3.4"
-
 services:
   portainer:
     restart: always  

@@ -5,16 +5,15 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+set -euo pipefail
+
 source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-# echo "deb http://ftp.halifax.rwth-aachen.de/debian/ bookworm-backports main contrib" >> /etc/apt/sources.list
-
 apt update
 
-#DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -t bookworm-backports -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules wsdd
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules wsdd
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba winbind libpam-winbind libnss-winbind krb5-user krb5-config samba-dsdb-modules samba-vfs-modules
 
 mv /etc/krb5.conf /etc/krb5.conf.bak
 cat > /etc/krb5.conf <<EOF
@@ -25,9 +24,6 @@ cat > /etc/krb5.conf <<EOF
 	dns_lookup_kdc = true
 	renew_lifetime = 7d
 EOF
-
-echo -e "$ZMB_ADMIN_PASS" | kinit -V $ZMB_ADMIN_USER
-klist
 
 mv /etc/samba/smb.conf /etc/samba/smb.conf.bak
 cat > /etc/samba/smb.conf <<EOF
@@ -75,8 +71,12 @@ cat > /etc/samba/smb.conf <<EOF
 	shadow: snapprefix = ^zfs-auto-snap_\(frequent\)\{0,1\}\(hourly\)\{0,1\}\(daily\)\{0,1\}\(weekly\)\{0,1\}\(monthly\)\{0,1\}\(backup\)\{0,1\}\(manual\)\{0,1\}
 	shadow: delimiter = -20
 
+EOF
+
+IFS=',' read -r -a ZMB_SHARES_ARRAY <<< "$ZMB_SHARES"
+for ZMB_SHARE in "${ZMB_SHARES_ARRAY[@]}" ; do
+    cat >> /etc/samba/smb.conf << EOF
 [$ZMB_SHARE]
-	comment = Main Share
 	path = /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 	read only = No
 	create mask = 0660
@@ -84,6 +84,10 @@ cat > /etc/samba/smb.conf <<EOF
 	inherit acls = Yes
 
 EOF
+done
+
+echo -e "$ZMB_ADMIN_PASS" | kinit -V $ZMB_ADMIN_USER
+klist
 
 systemctl restart smbd
 
@@ -96,12 +100,17 @@ systemctl restart winbind nmbd
 wbinfo -u
 wbinfo -g
 
-mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+unset ZMB_SHARE
 
-# originally 'domain users' was set, added variable for domain admins group, samba wiki recommends separate group e.g. 'unix admins'
-chown "${ZMB_ADMIN_USER@L}":"${ZMB_DOMAIN_ADMINS@L}" /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+for ZMB_SHARE in "${ZMB_SHARES_ARRAY[@]}"
+do
+  mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
-setfacl -Rm u:${ZMB_ADMIN_USER@L}:rwx,g:"${ZMB_DOMAIN_ADMINS@L}":rwx,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
-setfacl -Rdm u:${ZMB_ADMIN_USER@L}:rwx,g:"${ZMB_DOMAIN_ADMINS@L}":rwx,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+  # originally 'domain users' was set, added variable for domain admins group, samba wiki recommends separate group e.g. 'unix admins'
+  chown "${ZMB_ADMIN_USER@L}":"${ZMB_DOMAIN_ADMINS@L}" /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
-systemctl restart smbd nmbd winbind wsdd
+  setfacl -Rm u:${ZMB_ADMIN_USER@L}:rwx,g:"${ZMB_DOMAIN_ADMINS@L}":rwx,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+  setfacl -Rdm u:${ZMB_ADMIN_USER@L}:rwx,g:"${ZMB_DOMAIN_ADMINS@L}":rwx,o::- /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+done
+
+systemctl restart smbd nmbd winbind

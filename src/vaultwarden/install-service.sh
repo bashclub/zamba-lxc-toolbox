@@ -5,13 +5,17 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+set -euo pipefail
+
 source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
 admin_token=$(openssl rand -base64 48)
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq postgresql nginx git ssl-cert
+inst_postgresql 
+
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq nginx git ssl-cert
 
 systemctl enable --now postgresql
 
@@ -149,6 +153,9 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_pass http://127.0.0.1:8000;
         proxy_read_timeout 90;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
     }
 }
 

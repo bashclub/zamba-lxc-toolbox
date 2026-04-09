@@ -5,6 +5,8 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+set -euo pipefail
+
 source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
@@ -12,13 +14,12 @@ source /root/constants-service.conf
 mkdir /opt/rei3
 wget -c https://rei3.de/latest/x64_linux -O - | tar -zx -C /opt/rei3
 
-wget -q -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | sudo tee /usr/share/keyrings/postgres.gpg
-echo "deb [signed-by=/usr/share/keyrings/postgres.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
+inst_postgresql
 
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql imagemagick ghostscript postgresql-client
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends imagemagick ghostscript
 
 timedatectl set-timezone ${LXC_TIMEZONE}
 

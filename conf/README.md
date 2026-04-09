@@ -153,10 +153,10 @@ ZMB_ADMIN_PASS='Start!123'
 ```
 Please use 'single quotation marks' to avoid unexpected behaviour.
 `zmb-ad` domain administrator has to meet the password complexity policy, if password is too weak, domain provisioning will fail.
-### ZMB_SHARE
-Defines the name of your Zamba share
+### ZMB_SHARES
+Defines the names of your Zamba shares
 ```bash
-ZMB_SHARE="share"
+ZMB_SHARES="share1,share2"
 ```
 <br>
 

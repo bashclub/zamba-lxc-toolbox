@@ -14,12 +14,11 @@ source /root/constants-service.conf
 KIMAI_DB_PWD=$(random_password)
 webroot=/var/www/kimai/public
 
-#wget -q -O - https://packages.sury.org/php/apt.gpg | apt-key add -
-#echo "deb https://packages.sury.org/php/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/php.list
-
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq zip unzip sudo nginx-full mariadb-server mariadb-client php${KIMAI_PHP_VERSION} php${KIMAI_PHP_VERSION}-intl php${KIMAI_PHP_VERSION}-cli php${KIMAI_PHP_VERSION}-fpm php${KIMAI_PHP_VERSION}-mysql php${KIMAI_PHP_VERSION}-xml php${KIMAI_PHP_VERSION}-mbstring php${KIMAI_PHP_VERSION}-gd php${KIMAI_PHP_VERSION}-tokenizer php${KIMAI_PHP_VERSION}-zip php${KIMAI_PHP_VERSION}-opcache php${KIMAI_PHP_VERSION}-curl
+inst_php intl,cli,fpm,mysql,xml,mbstring,gd,tokenizer,zip,opcache,curl $KIMAI_PHP_VERSION
+
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq zip unzip sudo nginx-full mariadb-server mariadb-client  
 
 mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/kimai.key -out /etc/nginx/ssl/kimai.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"

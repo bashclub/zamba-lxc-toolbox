@@ -7,6 +7,8 @@ set -euo pipefail
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+set -euo pipefail
+
 source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
@@ -14,9 +16,11 @@ source /root/constants-service.conf
 BOOKSTACK_DB_PWD=$(random_password)
 webroot=/var/www/bookstack/public
 
+inst_php cli,fpm,mysql,fpm,xml,mbstring,gd,tokenizer,curl,ldap,tidy,zip 8.5
+
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends zip unzip nginx-full mariadb-server mariadb-client php php-cli php-fpm php-mysql php-xml php-mbstring php-gd php-tokenizer php-xml php-dompdf php-curl php-ldap php-tidy php-zip redis-server
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends zip unzip nginx-full mariadb-server mariadb-client redis-server
 curl -s https://api.github.com/repos/wkhtmltopdf/packaging/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep 'bookworm_amd64.deb$' | wget -O /opt/wkhtmltox.deb -i -
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends /opt/wkhtmltox.deb
 

@@ -5,6 +5,8 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+set -euo pipefail
+
 source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
@@ -78,9 +80,9 @@ cat << EOF > /etc/docker/daemon.json
 {
   "default-ulimits": {
     "nproc": {
-      "name": "nproc",
-      "soft": -1,
-      "hard": -1
+      "Name": "nproc",
+      "Soft": 4096,
+      "Hard": 4096
     }
   }
 }
@@ -264,7 +266,7 @@ USE_WATCHDOG=y
 #WATCHDOG_NOTIFY_WEBHOOK=https://discord.com/api/webhooks/XXXXXXXXXXXXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 # JSON body included in the webhook POST request. Needs to be in single quotes.
 # Following variables are available: SUBJECT, BODY
-#WATCHDOG_NOTIFY_WEBHOOK_BODY='{"username": "mailcow Watchdog", "content": "**${SUBJECT}**\n${BODY}"}'
+#WATCHDOG_NOTIFY_WEBHOOK_BODY='{"username": "mailcow Watchdog", "content": "**\${SUBJECT}**\n\${BODY}"}'
 
 # Notify about banned IP (includes whois lookup)
 WATCHDOG_NOTIFY_BAN=n

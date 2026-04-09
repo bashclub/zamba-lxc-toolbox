@@ -11,14 +11,15 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-apt_repo "zabbix" "https://repo.zabbix.com/zabbix-official-repo.key" "https://repo.zabbix.com/zabbix/${ZABBIX_VERSION}/debian/ $(lsb_release -cs) main"
-apt_repo "postgresql" "https://www.postgresql.org/media/keys/ACCC4CF8.asc" "http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main"
-apt_repo "timescaledb" "https://packagecloud.io/timescale/timescaledb/gpgkey" "https://packagecloud.io/timescale/timescaledb/debian/ $(lsb_release -c -s) main"
+apt_repo "zabbix" "https://repo.zabbix.com/zabbix-official-repo.key" "https://repo.zabbix.com/zabbix/${ZABBIX_VERSION}/stable/debian/" "$(lsb_release -cs)" "main"
+apt_repo "timescaledb" "https://packagecloud.io/timescale/timescaledb/gpgkey" "https://packagecloud.io/timescale/timescaledb/debian/" "$(lsb_release -cs)" "main"
+inst_postgresql ${POSTGRES_VERSION}
+inst_php pgsql,fpm $PHP_VERSION
 
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq dist-upgrade
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends postgresql-$POSTGRES_VERSION timescaledb-2-oss-$TS_VERSION-postgresql-$POSTGRES_VERSION postgresql-client-$POSTGRES_VERSION timescaledb-tools nginx php$PHP_VERSION-pgsql php$PHP_VERSION-fpm zabbix-server-pgsql zabbix-frontend-php zabbix-nginx-conf zabbix-sql-scripts zabbix-agent2 zabbix-agent2-plugin-* ssl-cert
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install --no-install-recommends timescaledb-2-oss-$TS_VERSION-postgresql-$POSTGRES_VERSION timescaledb-tools nginx  zabbix-server-pgsql zabbix-frontend-php zabbix-nginx-conf zabbix-sql-scripts zabbix-agent2 zabbix-agent2-plugin-* ssl-cert
 
 unlink /etc/nginx/sites-enabled/default
 
@@ -216,18 +217,20 @@ psql -c "CREATE DATABASE ${ZABBIX_DB_NAME} ENCODING UTF8 TEMPLATE template0 OWNE
 echo "Postgres User ${ZABBIX_DB_USR} and database ${ZABBIX_DB_NAME} created."
 EOF
 
-sed -i "s/false/true/g" /usr/share/zabbix/include/locales.inc.php
+#sed -i "s/false/true/g" /usr/share/zabbix/include/locales.inc.php
 
-zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql ${ZABBIX_DB_NAME}
+zcat /usr/share/zabbix/sql-scripts/postgresql/server.sql.gz | sudo -u zabbix psql ${ZABBIX_DB_NAME}
 
 timescaledb-tune --quiet --yes >> /etc/postgresql/$POSTGRES_VERSION/main/postgresql.conf
 
 systemctl restart postgresql
 
 echo "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;" | sudo -u postgres psql zabbix
-cat /usr/share/zabbix-sql-scripts/postgresql/timescaledb/schema.sql | sudo -u zabbix psql ${ZABBIX_DB_NAME}
+cat /usr/share/zabbix/sql-scripts/postgresql/timescaledb/schema.sql | sudo -u zabbix psql ${ZABBIX_DB_NAME}
 
-echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_server.conf
+echo "DBPassword=${ZABBIX_DB_PWD}" >> /etc/zabbix/zabbix_server.d/dbpassword.conf
+
+mv /etc/zabbix/zabbix_agent2.d/plugins.d/nvidia.conf  /etc/zabbix/zabbix_agent2.d/plugins.d/nvidia.off
 
 generate_dhparam
 

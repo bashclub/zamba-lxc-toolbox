@@ -1,4 +1,6 @@
 
+set -euo pipefail
+
 source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
@@ -16,8 +18,8 @@ echo "deb [signed-by=/usr/share/keyrings/icinga-archive-keyring.gpg] https://pac
 curl -fsSL https://packages.netways.de/netways-repo.asc | gpg --dearmor -o /usr/share/keyrings/netways-archive-keyring.gpg
 echo "deb [signed-by=/usr/share/keyrings/netways-archive-keyring.gpg] https://packages.netways.de/extras/debian/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/netways.list
 
-curl -fsSL https://repos.influxdata.com/influxdata-archive_compat.key | gpg --dearmor -o /usr/share/keyrings/influxdata-archive_compat-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/influxdata-archive_compat-keyring.gpg] https://repos.influxdata.com/debian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/influxdata.list
+curl -fsSL https://repos.influxdata.com/influxdata-archive.key | gpg --dearmor -o /usr/share/keyrings/influxdata-archive_compat-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/influxdata-archive_compat-keyring.gpg] https://repos.influxdata.com/debian bookworm stable" > /etc/apt/sources.list.d/influxdata.list
 
 apt update
 
@@ -345,7 +347,8 @@ database:
   password: ${NOTIFICATIONS_DB_PASS}
 EOF
 
-cat << EOF > /etc/icingaweb2/modules/notifications/config.ini 
+mkdir -p /etc/icingaweb2/modules/notifications/
+cat << EOF > /etc/icingaweb2/modules/notifications/config.ini
 [database]
 resource = "notifications"
 EOF
@@ -466,7 +469,7 @@ EOF
 
 icinga2 feature enable icingadb api influxdb2-writer perfdata
 
-icingacli x509 import --file /etc/ssl/certs/ca-certificates.crt
+#icingacli x509 import --file /etc/ssl/certs/ca-certificates.crt
 
 echo "[INFO] Icinga Web 2 Module werden in korrekter Reihenfolge aktiviert."
 icingacli module enable reactbundle

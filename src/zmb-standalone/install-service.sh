@@ -5,26 +5,21 @@
 # (C) 2021 Script design and prototype by Markus Helmke <m.helmke@nettwarker.de>
 # (C) 2021 Script rework and documentation by Thorsten Spille <thorsten@spille-edv.de>
 
+set -euo pipefail
+
 source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-apt-key adv --fetch-keys https://repo.45drives.com/key/gpg.asc
-echo "deb https://repo.45drives.com/debian focal main" > /etc/apt/sources.list.d/45drives.list
+inst_45drives
 
-# echo "deb http://deb.debian.org/debian/ bookworm-backports main contrib" >> /etc/apt/sources.list
-
-apt update
-
-#DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -t bookworm-backports -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba samba-common samba-common-bin samba-dsdb-modules samba-vfs-modules samba-libs libwbclient0 winbind wsdd
-#DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -t bookworm-backports -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" --no-install-recommends cockpit cockpit-identities cockpit-file-sharing cockpit-navigator
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba samba-common samba-common-bin samba-dsdb-modules samba-vfs-modules samba-libs libwbclient0 winbind wsdd
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" acl samba samba-common samba-common-bin samba-dsdb-modules samba-vfs-modules samba-libs libwbclient0 winbind wsdd2
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -o DPkg::options::="--force-confdef" -o DPkg::options::="--force-confold" --no-install-recommends cockpit cockpit-identities cockpit-file-sharing cockpit-navigator
 
 USER=$(echo "$ZMB_ADMIN_USER" | awk '{print tolower($0)}')
 useradd --comment "Zamba fileserver admin" --create-home --shell /bin/bash $USER
 echo "$USER:$ZMB_ADMIN_PASS" | chpasswd
-smbpasswd -x $USER
+smbpasswd -x $USER || true
 (echo $ZMB_ADMIN_PASS; echo $ZMB_ADMIN_PASS) | smbpasswd -a $USER
 
 usermod -aG sudo $USER
@@ -65,14 +60,18 @@ EOF
 
 net conf import /etc/samba/import.template
 
-mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
-chmod -R 770 /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
-chown -R $USER:root /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+IFS=',' read -r -a ZMB_SHARES_ARRAY <<< "$ZMB_SHARES"
+for ZMB_SHARE in "${ZMB_SHARES_ARRAY[@]}"
+do
+    mkdir -p /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+    chmod -R 770 /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+    chown -R $USER:root /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
 
-net conf addshare $ZMB_SHARE /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
-net conf setparm $ZMB_SHARE readonly no
-net conf setparm $ZMB_SHARE browseable yes
-net conf setparm $ZMB_SHARE createmask 0660
-net conf setparm $ZMB_SHARE directorymask 0770
+    net conf addshare $ZMB_SHARE /$LXC_SHAREFS_MOUNTPOINT/$ZMB_SHARE
+    net conf setparm $ZMB_SHARE readonly no
+    net conf setparm $ZMB_SHARE browseable yes
+    net conf setparm $ZMB_SHARE createmask 0660
+    net conf setparm $ZMB_SHARE directorymask 0770
+done
 
-systemctl restart smbd nmbd wsdd
+systemctl restart smbd nmbd wsdd2

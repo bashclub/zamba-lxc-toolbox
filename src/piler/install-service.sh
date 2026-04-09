@@ -3,13 +3,14 @@
 # Author:
 # (C) 2024 Thorsten Spille <thorsten@spille-edv.de>
 
-source zamba.conf
+set -euo pipefail
 
-wget -O - https://apt.bashclub.org/gpg/bashclub.pub | gpg --dearmor > /usr/share/keyrings/bashclub-keyring.gpg
+source /root/functions.sh
+source /root/zamba.conf
+source /root/constants-service.conf
 
-echo "deb [signed-by=/usr/share/keyrings/bashclub-keyring.gpg] https://apt.bashclub.org/manticore bookworm main" > /etc/apt/sources.list.d/bashclub-manticore.list
-echo "deb [signed-by=/usr/share/keyrings/bashclub-keyring.gpg] https://apt.bashclub.org/$PILER_BRANCH bookworm main" > /etc/apt/sources.list.d/bashclub-$PILER_BRANCH.list
-apt update
+inst_bashclub manticore
+inst_bashclub $PILER_BRANCH
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends piler
 
