@@ -1,0 +1,30 @@
+cat << 'EOF' > /usr/local/bin/sysvol-sync
+#!/bin/bash
+
+rc=0
+
+if /usr/bin/mount | grep "/mnt/sysvol" > /dev/null 2>&1 ; then
+	/usr/bin/umount /mnt/sysvol
+fi
+
+/usr/bin/mount -t cifs //192.168.55.221/sysvol /mnt/sysvol -o credentials=/root/.smbcredentials
+
+if [ -d /mnt/sysvol/$(hostname -d) ]; then
+	/usr/bin/rsync -XAavz --delete-after /mnt/sysvol/ /var/lib/samba/sysvol > /dev/null 2>&1
+else
+	rc=1
+fi
+
+if ! /usr/bin/samba-tool ntacl sysvolcheck > /dev/null 2>&1 ; then
+	/usr/bin/samba-tool ntacl sysvolreset
+fi
+
+exit $rc
+EOF
+
+cat << EOF > /etc/cron.d/sysvol-sync 
+*/15 * * * * root /usr/local/bin/sysvol-sync
+EOF
+
+sed -i '\|/mnt/sysvol|d' /etc/fstab
+
