@@ -1,0 +1,46 @@
+#!/bin/bash
+cat << EOF > /etc/cron.d/smb-backup 
+0 23 * * * root /usr/local/bin/smb-backup 7 >> /var/log/smb-backup.log 2>&1
+EOF
+
+cat << 'EOF' > /usr/local/bin/smb-backup 
+#!/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+rc=0
+keep=$1
+
+mkdir -p /backup/{online,offline}
+
+prune () {
+  backup_type=$1
+  if [ $(find /backup/$backup_type/*.tar.bz2 | wc -l) -gt $keep ]; then
+    find /backup/$backup_type/*.tar.bz2 | head --lines=-$keep | xargs -d '\n' rm
+  fi
+}
+
+echo "$(date) Starting samba-ad-dc online backup"
+if echo -e 'BM-clp#2018' | samba-tool domain backup online --targetdir=/backup/online --server=ad.taxi-clp.de -UAdministrator ; then
+  echo "$(date) Finished samba-ad-dc online backup. Cleaning up old online backups..."
+  prune online
+else
+  echo "$(date) samba-ad-dc online backup failed"
+  rc=$(($rc + 1))
+fi
+
+echo "$(date) Starting samba-ad-dc offline backup"
+if samba-tool domain backup offline --targetdir=/backup/offline ; then 
+  echo "$(date) Finished samba-ad-dc offline backup. Cleaning up old offline backups..."
+  prune offline
+else
+  echo "S(date) samba-ad-dc offline backup failed"
+  rc=$(($rc + 1))
+fi
+
+exit $rc
+EOF
+
+chmod +x /usr/local/bin/smb-backup
+
+smb-backup
+

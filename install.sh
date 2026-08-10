@@ -124,7 +124,7 @@ fi
 
 # Check is the newest template available, else download it.
 pveam update
-TMPL_NAME=$(pveam available --section system | grep $LXC_TEMPLATE_VERSION | tail -1 | cut -d' ' -f11)
+TMPL_NAME=$(pveam available --section system | grep $(dpkg --print-architecture) | grep $LXC_TEMPLATE_VERSION | tail -1 | cut -d' ' -f11)
 pveam download $LXC_TEMPLATE_STORAGE $TMPL_NAME
 
 if [ $ctid -gt 99 ]; then
