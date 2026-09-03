@@ -17,6 +17,7 @@ curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/
 chmod a+r /etc/apt/keyrings/docker.gpg
 
 # Add the repository to Apt sources:
+systemctl disable --now postfix
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 apt-get update
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt-get install -y -qq rsync docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin jq
