@@ -86,6 +86,21 @@ EOF
 
 cat << EOF > /var/lib/vaultwarden/update.sh
 PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+VersionInstalled=$(/opt/vaultwarden/vaultwarden -v | awk -F' ' '/Vaultwarden/ {print $2; exit}')
+VersionRepo=$(curl -s https://github.com/dani-garcia/vaultwarden/releases.atom | grep -oE '<title>[0-9]+\.[0-9]{1,2}\.[0-9]+' | head -n 1 | sed 's/<title>//')
+# Check if Version pattern matches to 1.2.3 or 1.23.4
+if ! echo "$VersionRepo" | grep -qE '^[0-9]+\.[0-9]{1,2}\.[0-9]+$'; then
+        echo "[WARN] Version number is not a valid string: $VersionRepo"
+        exit 1
+fi
+# Check whether the update needs to be installed
+if [ "$VersionInstalled" = "$VersionRepo" ] ; then
+        echo "[INFO] Installed Version $VersionInstalled up to date, nothing to do!" 
+        exit 0
+else
+        echo "[INFO] Installed Version $VersionInstalled outdated! Updating to $VersionRepo ..."
+fi
+#download docker-umage-extract and extract files from docker-image
 wget https://raw.githubusercontent.com/jjlin/docker-image-extract/main/docker-image-extract
 chmod +x docker-image-extract
 ./docker-image-extract vaultwarden/server:alpine
