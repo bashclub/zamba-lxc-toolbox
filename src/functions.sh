@@ -133,3 +133,61 @@ inst_bashclub() {
     apt_repo "bashclub-$BASHCLUB_COMPONENT" "https://apt.bashclub.org/gpg/bashclub.pub" "https://apt.bashclub.org/$BASHCLUB_COMPONENT" "$(lsb_release -cs)" "main"
     apt update
 }
+
+#### Download and install Checkmk ####
+# First parameter is the edition (community, pro, ultimate, ultimatemt - legacy names like raw are accepted)
+# Second parameter is the version (optional):
+#   empty     = latest stable release
+#   2.4 / 2.4.0 = latest patch release of branch 2.4.0
+#   2.4.0p18    = exactly this release (checksum is only available for the latest patch release of a branch)
+inst_checkmk() {
+    local cmk_edition cmk_version cmk_branch cmk_os cmk_release cmk_latest cmk_file cmk_sha256
+    case "${1}" in
+        raw|cre|community)      cmk_edition=community ;;
+        enterprise|cee|pro)     cmk_edition=pro ;;
+        cloud|cce|ultimate)     cmk_edition=ultimate ;;
+        managed|cme|ultimatemt) cmk_edition=ultimatemt ;;
+        *) echo "❌ Unknown checkmk edition '${1}'."; exit 1 ;;
+    esac
+    cmk_version=${2:-}
+    # short branch notation: 2.4 -> 2.4.0
+    if [[ "${cmk_version}" =~ ^[0-9]+\.[0-9]+$ ]]; then
+        cmk_version="${cmk_version}.0"
+    fi
+    cmk_branch=$(grep -oE '^[0-9]+\.[0-9]+\.[0-9]+' <<< "${cmk_version}" || true)
+    cmk_os=$(lsb_release -cs)
+
+    cmk_release=$(curl -fsSL https://download.checkmk.com/stable_downloads.json | jq -r \
+        --arg ed "${cmk_edition}" --arg os "${cmk_os}" --arg branch "${cmk_branch}" '
+        .checkmk | to_entries
+        | map(select(.value.editions[$ed][$os] != null))
+        | map(select(if $branch == "" then .value.class == "stable" else .key == $branch end))
+        | sort_by(.key | split(".") | map(tonumber)) | last // empty
+        | [.value.version, .value.editions[$ed][$os][]] | @tsv') || true
+    if [ -z "${cmk_release}" ]; then
+        echo "❌ No checkmk release found for edition '${cmk_edition}', version '${cmk_version:-latest}' on ${cmk_os}."
+        exit 1
+    fi
+    read -r cmk_latest cmk_file cmk_sha256 <<< "${cmk_release}"
+
+    if [ -z "${cmk_version}" ] || [ "${cmk_version}" == "${cmk_branch}" ]; then
+        cmk_version=${cmk_latest}
+    elif [ "${cmk_version}" != "${cmk_latest}" ]; then
+        # older patch release: same file name scheme as the latest one of this branch, but no checksum
+        cmk_file=${cmk_file/${cmk_latest}/${cmk_version}}
+        cmk_sha256=""
+    fi
+
+    echo "Downloading checkmk ${cmk_version} (${cmk_file})..."
+    if ! curl -fsSL -o "/tmp/${cmk_file}" "https://download.checkmk.com/checkmk/${cmk_version}/${cmk_file}"; then
+        echo "❌ Download of checkmk ${cmk_version} failed."
+        exit 1
+    fi
+    if [ -n "${cmk_sha256}" ]; then
+        echo "${cmk_sha256}  /tmp/${cmk_file}" | sha256sum -c -
+    else
+        echo "⚠️ No checksum available for checkmk ${cmk_version}, skipping verification."
+    fi
+    DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install "/tmp/${cmk_file}"
+    rm -f "/tmp/${cmk_file}"
+}

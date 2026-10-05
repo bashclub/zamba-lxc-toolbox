@@ -11,9 +11,7 @@ source /root/functions.sh
 source /root/zamba.conf
 source /root/constants-service.conf
 
-cd /tmp
-wget https://download.checkmk.com/checkmk/$CMK_VERSION/check-mk-$CMK_EDITION-$CMK_VERSION$CMK_BUILD.$(lsb_release -cs)_amd64.deb
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install ./check-mk-$CMK_EDITION-$CMK_VERSION$CMK_BUILD.$(lsb_release -cs)_amd64.deb
+inst_checkmk "$CMK_EDITION" "$CMK_VERSION"
 
 omd create --admin-password $CMK_ADMIN_PW $CMK_INSTANCE
 

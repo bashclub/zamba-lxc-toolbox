@@ -15,9 +15,7 @@ wget -O - https://apt.bashclub.org/gpg/bashclub.pub | gpg --dearmor > /usr/share
 echo "deb [signed-by=/usr/share/keyrings/bashclub-keyring.gpg] https://apt.bashclub.org/testing $(lsb_release -cs) main" > /etc/apt/sources.list.d/bashclub.list
 apt update
 
-cd /tmp
-wget https://download.checkmk.com/checkmk/$CMK_VERSION/check-mk-$CMK_EDITION-$CMK_VERSION$CMK_BUILD.$(lsb_release -cs)_amd64.deb
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install ./check-mk-$CMK_EDITION-$CMK_VERSION$CMK_BUILD.$(lsb_release -cs)_amd64.deb
+inst_checkmk "$CMK_EDITION" "$CMK_VERSION"
 omd create --admin-password $CMK_ADMIN_PW $CMK_INSTANCE
 
 cat << EOF > /etc/apache2/sites-available/000-default.conf

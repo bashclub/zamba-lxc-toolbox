@@ -249,11 +249,13 @@ CMK_ADMIN_PW='Start!123'
 ```
 
 ### CMK_EDITION
-checkmk edition (raw or free)
-- raw = completely free
-- free = limited version of the enterprise edition (25 hosts, 1 instance)
+checkmk edition (community, pro, ultimate or ultimatemt), the latest release will be installed
+- community = completely free (formerly raw, which is still accepted)
+- pro, ultimate, ultimatemt = commercial editions (formerly enterprise, cloud, managed)
+
+The version can be pinned with `CMK_VERSION` in `src/checkmk/constants-service.conf` (empty = latest stable release, `2.4` = latest patch release of a branch, `2.4.0p18` = exactly this release).
 ```bash
-CMK_EDITION=raw
+CMK_EDITION=community
 ```
 ### Kopano-Section
 

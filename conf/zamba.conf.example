@@ -160,10 +160,10 @@ CMK_INSTANCE=zmbrocks
 # Define the password of user 'cmkadmin'
 CMK_ADMIN_PW='Start!123'
 
-# checkmk edition (raw or free)
-# raw = completely free
-# free = limited version of the enterprise edition (25 hosts, 1 instance)
-CMK_EDITION=raw
+# checkmk edition (community, pro, ultimate or ultimatemt), the latest release will be installed
+# community = completely free (formerly raw, which is still accepted)
+# pro, ultimate, ultimatemt = commercial editions (formerly enterprise, cloud, managed)
+CMK_EDITION=community
 
 ############### vaultwarden Section ###############
 
