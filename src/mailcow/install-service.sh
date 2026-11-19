@@ -35,7 +35,7 @@ version: "3.4"
 services:
   portainer:
     restart: always
-    image: portainer/portainer:latest
+    image: portainer/portainer-ce:latest
     volumes:
       - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
