@@ -21,8 +21,9 @@ inst_php cli,fpm,mysql,fpm,xml,mbstring,gd,tokenizer,curl,ldap,tidy,zip 8.5
 apt update
 
 DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends zip unzip nginx-full mariadb-server mariadb-client redis-server
-curl -s https://api.github.com/repos/wkhtmltopdf/packaging/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep 'bookworm_amd64.deb$' | wget -O /opt/wkhtmltox.deb -i -
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends /opt/wkhtmltox.deb
+curl -s https://api.github.com/repos/pdfkiln/pdfkiln/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep '_amd64.deb$' | wget -O /opt/pdfkiln.deb -i -
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends /opt/pdfkiln.deb
+rm -f /opt/pdfkiln.deb
 
 mkdir -p /etc/nginx/ssl
 openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/open3a.key -out /etc/nginx/ssl/open3a.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
@@ -114,6 +115,13 @@ sed -i "s/post_max_size = 8M/post_max_size = 100M/g" /etc/php/${PHP_VERSION:0:3}
 sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 100M/g" /etc/php/${PHP_VERSION:0:3}/fpm/php.ini
 sed -i "s/memory_limit = 128M/memory_limit = 512M/g" /etc/php/${PHP_VERSION:0:3}/fpm/php.ini
 
+# Chromium's sandbox (PDFKiln, PDF export) needs the user, pid and net namespaces
+mkdir -p /etc/systemd/system/php${PHP_VERSION:0:3}-fpm.service.d
+cat << EOF > /etc/systemd/system/php${PHP_VERSION:0:3}-fpm.service.d/pdfkiln.conf
+[Service]
+RestrictNamespaces=user pid net
+EOF
+
 EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')"
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 ACTUAL_CHECKSUM="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
@@ -153,7 +161,7 @@ SESSION_SECURE_COOKIE=true
 CACHE_DRIVER=redis
 SESSION_DRIVER=redis
 REDIS_SERVERS=127.0.0.1:6379:0
-WKHTMLTOPDF=/usr/local/bin/wkhtmltopdf
+WKHTMLTOPDF=/usr/bin/wkhtmltopdf
 ALLOW_UNTRUSTED_SERVER_FETCHING=true
 EOF
 
