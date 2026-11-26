@@ -194,6 +194,17 @@ if [ $LXC_MP -gt 0 ]; then
     dataset=$(grep mp0 /etc/pve/lxc/$LXC_NBR.conf | cut -d ':' -f3 | cut -d',' -f1)
     zfs set recordsize=$LXC_MP_RECORDSIZE $pool/$dataset
   fi
+  # A new ext4 volume (e.g. on LVM or directory storage) brings a lost+found
+  # owned by the host's root. In an unprivileged container it belongs to
+  # "nobody", and services that chown their data directory fail (#117).
+  if [ "$LXC_UNPRIVILEGED" -eq 1 ]; then
+    pct mount $LXC_NBR > /dev/null
+    lost_found=/var/lib/lxc/$LXC_NBR/rootfs/$LXC_SHAREFS_MOUNTPOINT/lost+found
+    if [ -d "$lost_found" ]; then
+      rmdir "$lost_found" || echo "Could not remove $lost_found"
+    fi
+    pct unmount $LXC_NBR
+  fi
 fi
 
 sleep 2;
