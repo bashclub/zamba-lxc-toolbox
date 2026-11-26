@@ -127,12 +127,20 @@ pveam download $LXC_TEMPLATE_STORAGE $TMPL_NAME
 if [ $ctid -gt 99 ]; then
   LXC_CHK=$ctid
 else
-  # Get next free LXC-number
-  LXC_CHK=$(($(pct list | cut -d' ' -f1 | tail -1) + 1))
+  # Get next free LXC-number: highest container id on this node + 1
+  # (skip the header line of `pct list`, there may be no container yet)
+  last_ct=$(pct list | awk 'NR > 1 { print $1 }' | sort -n | tail -1)
+  LXC_CHK=$(( ${last_ct:-0} + 1 ))
 fi
 
-if  [ $LXC_CHK -lt 100 ] || [ -f /etc/pve/qemu-server/$LXC_CHK.conf ]; then
+# Fall back to the next free id of the cluster if the id is below 100 or
+# already used by a VM or container on any node of the cluster
+if [ $LXC_CHK -lt 100 ] || compgen -G "/etc/pve/nodes/*/qemu-server/$LXC_CHK.conf" > /dev/null \
+    || compgen -G "/etc/pve/nodes/*/lxc/$LXC_CHK.conf" > /dev/null; then
   LXC_NBR=$(pvesh get /cluster/nextid);
+  if [ $LXC_CHK -gt 99 ]; then
+    echo "ID $LXC_CHK is already in use, using $LXC_NBR instead."
+  fi
 else
   LXC_NBR=$LXC_CHK;
 fi
@@ -208,7 +216,7 @@ if [[ $service == "zmb-ad" ]] || [[ $service == "zmb-ad-join" ]]; then
 fi
 
 pct exec $LXC_NBR -- sed -i "s,\${service},${service}," /root/zamba.conf
-pct exec $LXC_NBR -- echo "LXC_NBR=$LXC_NBR" /root/zamba.conf
+pct exec $LXC_NBR -- bash -c "echo LXC_NBR=$LXC_NBR >> /root/zamba.conf"
 
 if [ $debug -gt 0 ]; then dbg=-vx; else dbg=""; fi
 
