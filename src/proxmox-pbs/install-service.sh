@@ -22,4 +22,10 @@ inst_pbs
 
 proxmox-backup-manager datastore create $PBS_DATA /$LXC_SHAREFS_MOUNTPOINT/$PBS_DATA
 
-systemctl disable --now zfs-mount.service zfs-share.service
+# ZFS is managed by the Proxmox host, not inside the container. zfs-zed would
+# only fill the log with "Failed to initialize libzfs" (#118).
+for unit in zfs-mount.service zfs-share.service zfs-zed.service; do
+  if systemctl cat "$unit" > /dev/null 2>&1; then
+    systemctl disable --now "$unit"
+  fi
+done
