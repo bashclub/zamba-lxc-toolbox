@@ -118,9 +118,6 @@ if [ $LXC_MEM -lt $LXC_MEM_MIN ]; then
   LXC_MEM=$LXC_MEM_MIN
 fi
 
-if [ $LXC_AUTOTAG -gt 0 ]; then
-  TAGS="--tags ${LXC_TAGS},${SERVICE_TAGS}"
-fi
 
 # Check is the newest template available, else download it.
 pveam update
@@ -141,20 +138,29 @@ else
 fi
 echo "Will now create LXC Container $LXC_NBR!";
 
-if [ $LXC_THREADS -gt 0 ]; then
-  LXC_CORES=--cores\ $LXC_THREADS
+# Options for pct create, as an array so that values with spaces or
+# special characters (e.g. the root password) are passed unchanged
+pct_opts=( -unprivileged "$LXC_UNPRIVILEGED" -rootfs "$LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE,acl=1" )
+if [ "$LXC_AUTOTAG" -gt 0 ]; then
+  lxc_tags="${LXC_TAGS},${SERVICE_TAGS}"
+  pct_opts+=( --tags "${lxc_tags%,}" )
 fi
-
-
-if [[ $LXC_RESSOURCE_POOL != "" ]]; then
-  LXC_POOL=--pool\ $LXC_RESSOURCE_POOL
+if [ "$LXC_THREADS" -gt 0 ]; then
+  pct_opts+=( --cores "$LXC_THREADS" )
 fi
-
+if [ -n "$LXC_RESSOURCE_POOL" ]; then
+  pct_opts+=( --pool "$LXC_RESSOURCE_POOL" )
+fi
+# Without LXC_PWD the container gets no root password: log in with the SSH key
+# from LXC_AUTHORIZED_KEY or with `pct enter` on the Proxmox host (#144)
+if [ -n "${LXC_PWD:-}" ]; then
+  pct_opts+=( --password "$LXC_PWD" )
+else
+  echo "LXC_PWD is empty: the container gets no root password, log in with the SSH key or 'pct enter $LXC_NBR'."
+fi
 
 # Create the container
-set +u
-pct create $LXC_NBR $TAGS $LXC_CORES $LXC_POOL --password $LXC_PWD -unprivileged $LXC_UNPRIVILEGED $LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME -rootfs $LXC_ROOTFS_STORAGE:$LXC_ROOTFS_SIZE,acl=1;
-set -u
+pct create "$LXC_NBR" "$LXC_TEMPLATE_STORAGE:vztmpl/$TMPL_NAME" "${pct_opts[@]}"
 sleep 2;
 
 if [[ $SERVICE_TAGS == *"docker"* ]]; then

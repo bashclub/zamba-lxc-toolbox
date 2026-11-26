@@ -64,6 +64,8 @@ LXC_BRIDGE="vmbr0"
 LXC_VLAN=NONE
 
 # Defines the `root` password of your LXC container. Please use 'single quatation marks' to avoid unexpected behaviour.
+# Leave it empty (LXC_PWD='') to create the container without root password: then root can only log in
+# with the SSH key from LXC_AUTHORIZED_KEY or with `pct enter <CTID>` on the Proxmox host.
 LXC_PWD='Start!123'
 
 # Defines an authorized_keys file to push into the LXC container.
