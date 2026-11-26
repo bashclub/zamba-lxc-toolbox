@@ -1,46 +1,48 @@
 #!/bin/bash
-cat << EOF > /etc/cron.d/smb-backup 
-0 23 * * * root /usr/local/bin/smb-backup 7 >> /var/log/smb-backup.log 2>&1
-EOF
+# Adds the daily samba AD backup (/usr/local/bin/smb-backup) to an existing
+# zmb-ad or zmb-ad-join container, the same way the installers set it up.
+#
+# Run it on the Proxmox host, from the directory of the toolbox:
+#   scripts/zmb-ad_add_smb-backup CTID [BACKUP_DIR]
+# BACKUP_DIR is the directory inside the container (default: /backup).
+#
+# The online backup authenticates with the administrator keytab
+# /root/admin.keytab; it is exported if the container has none yet.
 
-cat << 'EOF' > /usr/local/bin/smb-backup 
-#!/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+set -euo pipefail
 
-rc=0
-keep=$1
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+  echo "usage: $0 CTID [BACKUP_DIR]" >&2
+  exit 2
+fi
+ctid=$1
+backup_dir=${2:-/backup}
+backup_dir=${backup_dir#/}
 
-mkdir -p /backup/{online,offline}
+cd "$(dirname "$0")/.."
+pct push "$ctid" src/functions.sh /root/zamba-functions.sh
 
-prune () {
-  backup_type=$1
-  if [ $(find /backup/$backup_type/*.tar.bz2 | wc -l) -gt $keep ]; then
-    find /backup/$backup_type/*.tar.bz2 | head --lines=-$keep | xargs -d '\n' rm
-  fi
-}
+pct exec "$ctid" -- bash -s "$backup_dir" <<'EOF'
+set -euo pipefail
+source /root/zamba-functions.sh
+rm -f /root/zamba-functions.sh
 
-echo "$(date) Starting samba-ad-dc online backup"
-if echo -e 'BM-clp#2018' | samba-tool domain backup online --targetdir=/backup/online --server=ad.taxi-clp.de -UAdministrator ; then
-  echo "$(date) Finished samba-ad-dc online backup. Cleaning up old online backups..."
-  prune online
-else
-  echo "$(date) samba-ad-dc online backup failed"
-  rc=$(($rc + 1))
+realm=$(awk -F '=' '/^[[:space:]]*realm[[:space:]]*=/ { gsub(/[[:space:]]/, "", $2); print toupper($2) }' /etc/samba/smb.conf)
+if [ -z "$realm" ]; then
+  echo "No realm in /etc/samba/smb.conf: this container is no samba AD DC." >&2
+  exit 1
 fi
 
-echo "$(date) Starting samba-ad-dc offline backup"
-if samba-tool domain backup offline --targetdir=/backup/offline ; then 
-  echo "$(date) Finished samba-ad-dc offline backup. Cleaning up old offline backups..."
-  prune offline
-else
-  echo "S(date) samba-ad-dc offline backup failed"
-  rc=$(($rc + 1))
+if [ ! -s /root/admin.keytab ]; then
+  echo "Exporting the keytab of administrator@$realm to /root/admin.keytab"
+  samba-tool domain exportkeytab /root/admin.keytab --principal="administrator@$realm"
+  chmod 600 /root/admin.keytab
 fi
 
-exit $rc
+# a DC's DNS name is its host name in the domain of the realm
+LXC_SHAREFS_MOUNTPOINT=$1
+LXC_HOSTNAME=$(hostname -s)
+LXC_DOMAIN=${realm,,}
+inst_smb_backup
+echo "smb-backup installed: /usr/local/bin/smb-backup, settings in /etc/default/smb-backup, runs daily at 23:00"
 EOF
-
-chmod +x /usr/local/bin/smb-backup
-
-smb-backup
-

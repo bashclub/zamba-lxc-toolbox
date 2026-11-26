@@ -137,6 +137,85 @@ inst_bashclub() {
     apt update
 }
 
+#### Online and offline backup of a samba AD DC ####
+# Writes /usr/local/bin/smb-backup with a daily cron job. The online backup
+# authenticates with the administrator keytab /root/admin.keytab (created by
+# zmb-ad_auto-map-root.sh), so no password is stored on disk (#133).
+inst_smb_backup() {
+    cat << EOF > /etc/default/smb-backup
+# Settings of /usr/local/bin/smb-backup
+BACKUP_DIR=/${LXC_SHAREFS_MOUNTPOINT}
+SERVER=${LXC_HOSTNAME}.${LXC_DOMAIN}
+KEYTAB=/root/admin.keytab
+EOF
+
+    cat << 'EOF' > /usr/local/bin/smb-backup
+#!/bin/bash
+# Online and offline backup of this samba AD DC.
+# usage: smb-backup [KEEP]   keeps the newest KEEP backups of each kind (default: 7)
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+set -u
+. /etc/default/smb-backup
+
+keep=${1:-7}
+if ! [[ "$keep" =~ ^[1-9][0-9]*$ ]]; then
+  echo "usage: $0 [KEEP]   KEEP: number of backups to keep, at least 1" >&2
+  exit 2
+fi
+
+rc=0
+mkdir -p "$BACKUP_DIR/online" "$BACKUP_DIR/offline"
+
+prune () {
+  # the file names end with a timestamp, so sorting by name sorts by age
+  find "$BACKUP_DIR/$1" -maxdepth 1 -type f -name '*.tar.bz2' | sort | head -n "-$keep" | xargs -r -d '\n' rm -f --
+}
+
+echo "$(date) Starting samba-ad-dc online backup"
+ccache=$(mktemp)
+principal=$(klist -k "$KEYTAB" 2>/dev/null | awk 'NR > 3 { print $2; exit }')
+if [ -n "$principal" ] \
+   && KRB5CCNAME="FILE:$ccache" kinit -k -t "$KEYTAB" "$principal" \
+   && KRB5CCNAME="FILE:$ccache" samba-tool domain backup online --targetdir="$BACKUP_DIR/online" --server="$SERVER" --use-kerberos=required ; then
+  echo "$(date) Finished samba-ad-dc online backup. Cleaning up old online backups..."
+  prune online
+else
+  echo "$(date) samba-ad-dc online backup failed"
+  rc=$((rc + 1))
+fi
+KRB5CCNAME="FILE:$ccache" kdestroy -q 2> /dev/null
+rm -f "$ccache"
+
+echo "$(date) Starting samba-ad-dc offline backup"
+if samba-tool domain backup offline --targetdir="$BACKUP_DIR/offline" ; then
+  echo "$(date) Finished samba-ad-dc offline backup. Cleaning up old offline backups..."
+  prune offline
+else
+  echo "$(date) samba-ad-dc offline backup failed"
+  rc=$((rc + 1))
+fi
+
+exit $rc
+EOF
+    chmod 0750 /usr/local/bin/smb-backup
+
+    cat << EOF > /etc/cron.d/smb-backup
+0 23 * * * root /usr/local/bin/smb-backup 7 >> /var/log/smb-backup.log 2>&1
+EOF
+
+    cat << EOF > /etc/logrotate.d/smb-backup
+/var/log/smb-backup.log {
+        weekly
+        rotate 12
+        compress
+        delaycompress
+        missingok
+        notifempty
+        create 644 root root
+}
+EOF
+}
+
 #### Download and install Checkmk ####
 # First parameter is the edition (community, pro, ultimate, ultimatemt - legacy names like raw are accepted)
 # Second parameter is the version (optional):
