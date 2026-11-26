@@ -20,12 +20,37 @@ inst_php cli,fpm,mysql,fpm,xml,mbstring,gd,tokenizer,curl,ldap,tidy,zip 8.5
 
 apt update
 
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends zip unzip nginx-full mariadb-server mariadb-client redis-server
-curl -s https://api.github.com/repos/wkhtmltopdf/packaging/releases/latest | grep browser_download_url | cut -d '"' -f 4 | grep 'bookworm_amd64.deb$' | wget -O /opt/wkhtmltox.deb -i -
-DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends /opt/wkhtmltox.deb
+DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt install -y -qq --no-install-recommends zip unzip nginx-full mariadb-server mariadb-client redis-server weasyprint fonts-dejavu-core fonts-liberation2
+
+# PDF export with WeasyPrint from Debian (wkhtmltopdf is archived and unmaintained).
+# The wrapper only lets WeasyPrint load data: URLs, which is how BookStack embeds
+# images into an export: pages cannot pull local files or internal URLs into a PDF.
+cat << 'EOF' > /usr/local/bin/bookstack-pdf
+#!/usr/bin/python3 -I
+# HTML to PDF for BookStack's PDF export (EXPORT_PDF_COMMAND), with WeasyPrint.
+# BookStack embeds images into the export as data: URLs. Every other URL
+# (http, https, file, ...) is refused, so a page cannot make the export read
+# local files or reach internal addresses.
+import sys
+
+from weasyprint import HTML, default_url_fetcher
+
+
+def only_data_urls(url, *args, **kwargs):
+    if url.startswith("data:"):
+        return default_url_fetcher(url, *args, **kwargs)
+    raise ValueError("blocked by bookstack-pdf: " + url[:200])
+
+
+if len(sys.argv) != 3:
+    sys.exit("usage: bookstack-pdf INPUT.html OUTPUT.pdf")
+
+HTML(filename=sys.argv[1], url_fetcher=only_data_urls).write_pdf(sys.argv[2])
+EOF
+chmod 0755 /usr/local/bin/bookstack-pdf
 
 mkdir -p /etc/nginx/ssl
-openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/open3a.key -out /etc/nginx/ssl/open3a.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
+openssl req -x509 -nodes -days 3650 -newkey rsa:4096 -keyout /etc/nginx/ssl/bookstack.key -out /etc/nginx/ssl/bookstack.crt -subj "/CN=$LXC_HOSTNAME.$LXC_DOMAIN" -addext "subjectAltName=DNS:$LXC_HOSTNAME.$LXC_DOMAIN"
 
 PHP_VERSION=$(php -v | head -1 | cut -d ' ' -f2)
 
@@ -52,8 +77,8 @@ server {
 
     index index.php;
 
-    ssl_certificate /etc/nginx/ssl/open3a.crt;
-    ssl_certificate_key /etc/nginx/ssl/open3a.key;
+    ssl_certificate /etc/nginx/ssl/bookstack.crt;
+    ssl_certificate_key /etc/nginx/ssl/bookstack.key;
 
     access_log  /var/log/nginx/bookstack.access.log;
     error_log   /var/log/nginx/bookstack.error.log;
@@ -153,8 +178,9 @@ SESSION_SECURE_COOKIE=true
 CACHE_DRIVER=redis
 SESSION_DRIVER=redis
 REDIS_SERVERS=127.0.0.1:6379:0
-WKHTMLTOPDF=/usr/local/bin/wkhtmltopdf
-ALLOW_UNTRUSTED_SERVER_FETCHING=true
+EXPORT_PDF_COMMAND="/usr/local/bin/bookstack-pdf {input_html_path} {output_pdf_path}"
+EXPORT_PDF_COMMAND_TIMEOUT=120
+ALLOW_UNTRUSTED_SERVER_FETCHING=false
 EOF
 
 # Generate the application key
