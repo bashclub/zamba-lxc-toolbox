@@ -32,10 +32,13 @@ apt_repo() {
         rm -f "${tmp_key_file}"
         exit 1
     fi
-    if file "${tmp_key_file}" | grep -q "ASCII"; then
+    # Detect an ASCII-armored key by its content: `file` is not always installed
+    # and does not call every armored key "ASCII" (#141)
+    if grep -q -- "-----BEGIN PGP PUBLIC KEY BLOCK-----" "${tmp_key_file}"; then
         echo "🔍 Format erkannt: ASCII. Konvertiere den Schlüssel..."
         # Wenn es ASCII ist, konvertiere es mit --dearmor
-        if sudo gpg --dearmor -o "${apt_key_path}" "${tmp_key_file}"; then
+        if gpg --batch --yes --dearmor -o "${apt_key_path}" "${tmp_key_file}"; then
+            rm -f "${tmp_key_file}"
             chmod 644 ${apt_key_path}
             echo "✅ Schlüssel erfolgreich nach ${apt_key_path} konvertiert."
         else
@@ -46,7 +49,7 @@ apt_repo() {
     else
         echo "🔍 Format erkannt: Binär. Kopiere den Schlüssel direkt..."
         # Wenn es kein ASCII ist, gehen wir von Binär aus und verschieben die Datei
-        if sudo mv "${tmp_key_file}" "${apt_key_path}"; then
+        if mv "${tmp_key_file}" "${apt_key_path}"; then
             echo "✅ Schlüssel erfolgreich nach ${apt_key_path} kopiert."
             chmod 644 ${apt_key_path}
         else
