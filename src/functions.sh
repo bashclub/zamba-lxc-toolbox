@@ -216,20 +216,22 @@ EOF
 EOF
 }
 
-#### Download and install Checkmk ####
+#### Find a Checkmk release ####
+# Prints "VERSION FILE SHA256" of a checkmk release for this Debian release.
 # First parameter is the edition (community, pro, ultimate, ultimatemt - legacy names like raw are accepted)
 # Second parameter is the version (optional):
 #   empty     = latest stable release
 #   2.4 / 2.4.0 = latest patch release of branch 2.4.0
 #   2.4.0p18    = exactly this release (checksum is only available for the latest patch release of a branch)
-inst_checkmk() {
+# SHA256 is "-" when checkmk publishes no checksum for the release.
+cmk_find_release() {
     local cmk_edition cmk_version cmk_branch cmk_os cmk_release cmk_latest cmk_file cmk_sha256
     case "${1}" in
         raw|cre|community)      cmk_edition=community ;;
         enterprise|cee|pro)     cmk_edition=pro ;;
         cloud|cce|ultimate)     cmk_edition=ultimate ;;
         managed|cme|ultimatemt) cmk_edition=ultimatemt ;;
-        *) echo "❌ Unknown checkmk edition '${1}'."; exit 1 ;;
+        *) echo "❌ Unknown checkmk edition '${1}'." >&2; return 1 ;;
     esac
     cmk_version=${2:-}
     # short branch notation: 2.4 -> 2.4.0
@@ -247,8 +249,8 @@ inst_checkmk() {
         | sort_by(.key | split(".") | map(tonumber)) | last // empty
         | [.value.version, .value.editions[$ed][$os][]] | @tsv') || true
     if [ -z "${cmk_release}" ]; then
-        echo "❌ No checkmk release found for edition '${cmk_edition}', version '${cmk_version:-latest}' on ${cmk_os}."
-        exit 1
+        echo "❌ No checkmk release found for edition '${cmk_edition}', version '${cmk_version:-latest}' on ${cmk_os}." >&2
+        return 1
     fi
     read -r cmk_latest cmk_file cmk_sha256 <<< "${cmk_release}"
 
@@ -259,17 +261,195 @@ inst_checkmk() {
         cmk_file=${cmk_file/${cmk_latest}/${cmk_version}}
         cmk_sha256=""
     fi
+    echo "${cmk_version} ${cmk_file} ${cmk_sha256:--}"
+}
+
+#### Download and install Checkmk ####
+# Parameters: see cmk_find_release
+inst_checkmk() {
+    local cmk_release cmk_version cmk_file cmk_sha256
+    cmk_release=$(cmk_find_release "${1}" "${2:-}") || exit 1
+    read -r cmk_version cmk_file cmk_sha256 <<< "${cmk_release}"
 
     echo "Downloading checkmk ${cmk_version} (${cmk_file})..."
     if ! curl -fsSL -o "/tmp/${cmk_file}" "https://download.checkmk.com/checkmk/${cmk_version}/${cmk_file}"; then
         echo "❌ Download of checkmk ${cmk_version} failed."
         exit 1
     fi
-    if [ -n "${cmk_sha256}" ]; then
-        echo "${cmk_sha256}  /tmp/${cmk_file}" | sha256sum -c -
+    if [ "${cmk_sha256}" != "-" ]; then
+        if ! echo "${cmk_sha256}  /tmp/${cmk_file}" | sha256sum -c -; then
+            echo "❌ Checksum of checkmk ${cmk_version} does not match."
+            rm -f "/tmp/${cmk_file}"
+            exit 1
+        fi
     else
         echo "⚠️ No checksum available for checkmk ${cmk_version}, skipping verification."
     fi
     DEBIAN_FRONTEND=noninteractive DEBIAN_PRIORITY=critical apt -y -qq install "/tmp/${cmk_file}"
     rm -f "/tmp/${cmk_file}"
+}
+
+#### Automatic Checkmk patch updates ####
+# Installs /usr/local/sbin/cmk-update with a daily systemd timer. The timer is
+# only enabled with CMK_AUTO_UPDATE=1; without it, cmk-update can still be run
+# by hand or the timer enabled later: systemctl enable --now cmk-update.timer
+# Only patch releases of a site's branch are installed (e.g. 2.4.0p18 -> p19):
+# major releases have to be upgraded one after another and checked by hand.
+inst_cmk_autoupdate() {
+    cat << EOF > /etc/default/cmk-update
+# Settings of /usr/local/sbin/cmk-update
+CMK_EDITION=${CMK_EDITION}
+# Each site is backed up here before its update (only the latest backup is kept)
+BACKUP_DIR=/opt/cmk-update-backup
+EOF
+
+    {
+        cat << 'EOF'
+#!/bin/bash
+# Installs the newest patch release of each site's checkmk branch and updates
+# the site. Every site is backed up first and restored from the backup if it
+# does not come up again; a release that was rolled back is not retried.
+# usage: cmk-update [--force]    --force retries releases that were rolled back
+set -euo pipefail
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+. /etc/default/cmk-update
+STATE=/var/lib/cmk-update
+
+log() { echo "cmk-update: $*"; logger -t cmk-update -- "$*" 2> /dev/null || true; }
+
+EOF
+        declare -f cmk_find_release inst_checkmk
+        cat << 'EOF'
+
+# A site is healthy when all its services run and its own apache serves the
+# login page (asked directly, the system apache may redirect other sites).
+site_healthy() {
+    local site=$1 url port _
+    port=$(omd config "$site" show APACHE_TCP_PORT 2> /dev/null || true)
+    url="http://127.0.0.1:${port}/${site}/check_mk/login.py"
+    if [ -n "${CMK_UPDATE_HEALTH_URL:-}" ]; then
+        # shellcheck disable=SC2059
+        url=$(printf "$CMK_UPDATE_HEALTH_URL" "$site")
+    fi
+    for _ in $(seq 1 60); do
+        if omd status --bare "$site" 2> /dev/null | grep -qx 'OVERALL 0' \
+            && [ "$(curl -sk -o /dev/null -w '%{http_code}' --max-time 5 "$url")" = 200 ]; then
+            return 0
+        fi
+        sleep 2
+    done
+    return 1
+}
+
+force=0
+[ "${1:-}" = "--force" ] && force=1
+
+mkdir -p "$STATE" "$BACKUP_DIR"
+chmod 700 "$STATE" "$BACKUP_DIR"
+exec 9> "$STATE/lock"
+flock -n 9 || { log "already running"; exit 0; }
+touch "$STATE/failed"
+
+rc=0
+newest=$(cmk_find_release "$CMK_EDITION" "" | cut -d' ' -f1) || newest=""
+
+for site in $(omd sites --bare); do
+    current=$(omd version --bare "$site")      # e.g. 2.4.0p18.cre
+    branch=$(grep -oE '^[0-9]+\.[0-9]+\.[0-9]+' <<< "$current")
+    cur_ver=$(grep -oE '^[0-9]+\.[0-9]+\.[0-9]+(p[0-9]+)?' <<< "$current")
+
+    if ! release=$(cmk_find_release "$CMK_EDITION" "$branch"); then
+        log "ERROR: no checkmk release found for site $site (branch $branch)"
+        rc=1
+        continue
+    fi
+    latest=${release%% *}
+
+    if [ "$latest" = "$cur_ver" ]; then
+        if [ -n "$newest" ] && [[ "$newest" != "$branch"* ]]; then
+            log "site $site is up to date on $cur_ver; checkmk $newest is available, a major upgrade has to be done by hand"
+        fi
+        continue
+    fi
+    if [ "$force" -eq 0 ] && grep -qx "$site $latest" "$STATE/failed"; then
+        log "skipping $latest for site $site, it was rolled back before (use --force to retry)"
+        continue
+    fi
+
+    if ! omd versions --bare | grep -q "^${latest}\."; then
+        if ! ( inst_checkmk "$CMK_EDITION" "$latest" ); then
+            log "ERROR: installing checkmk $latest failed"
+            rc=1
+            continue
+        fi
+    fi
+    target=$(omd versions --bare | grep -m1 "^${latest}\.")
+
+    # the backup needs about the size of the site
+    need=$(du -sxk "/omd/sites/$site" | cut -f1)
+    avail=$(df -Pk "$BACKUP_DIR" | awk 'NR == 2 { print $4 }')
+    if [ "$avail" -lt $(( need * 12 / 10 )) ]; then
+        log "ERROR: not enough space in $BACKUP_DIR to back up site $site before the update"
+        rc=1
+        continue
+    fi
+
+    backup="$BACKUP_DIR/$site-$cur_ver.tar.gz"
+    log "updating site $site from $cur_ver to $latest (backup: $backup)"
+    omd stop "$site" || true
+    rm -f "$BACKUP_DIR/$site-"*.tar.gz
+    if ! omd backup "$site" "$backup"; then
+        log "ERROR: backup of site $site failed, not updating it"
+        omd start "$site" || true
+        rc=1
+        continue
+    fi
+
+    if omd -f -V "$target" update --conflict=install "$site" && omd start "$site" && site_healthy "$site"; then
+        log "site $site updated from $cur_ver to $latest"
+        sed -i "/^$site /d" "$STATE/failed"
+    else
+        log "ERROR: site $site does not work with $latest, restoring $cur_ver from $backup"
+        omd stop "$site" || true
+        omd -f restore --reuse --kill "$site" "$backup" || log "ERROR: restore of site $site failed, see $backup"
+        omd start "$site" || true
+        grep -qx "$site $latest" "$STATE/failed" || echo "$site $latest" >> "$STATE/failed"
+        rc=1
+    fi
+done
+
+omd cleanup > /dev/null 2>&1 || true
+exit $rc
+EOF
+    } > /usr/local/sbin/cmk-update
+    chmod 0750 /usr/local/sbin/cmk-update
+
+    cat << EOF > /etc/systemd/system/cmk-update.service
+[Unit]
+Description=Install checkmk patch releases and update the sites
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/cmk-update
+EOF
+
+    cat << EOF > /etc/systemd/system/cmk-update.timer
+[Unit]
+Description=Daily checkmk patch update
+
+[Timer]
+OnCalendar=*-*-* 04:00
+RandomizedDelaySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+    systemctl daemon-reload
+    if [ "${CMK_AUTO_UPDATE:-1}" -eq 1 ]; then
+        systemctl enable --now cmk-update.timer
+    fi
 }

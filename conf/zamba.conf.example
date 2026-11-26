@@ -167,6 +167,11 @@ CMK_ADMIN_PW='Start!123'
 # pro, ultimate, ultimatemt = commercial editions (formerly enterprise, cloud, managed)
 CMK_EDITION=community
 
+# Install new checkmk patch releases of the site's branch automatically (1 = on, 0 = off, default: 1)
+# A daily timer updates the sites with a backup before and a rollback if a site does not come up again.
+# Major releases (e.g. 2.4 -> 2.5) are never installed automatically.
+CMK_AUTO_UPDATE=1
+
 ############### vaultwarden Section ###############
 
 # Enable/disable signups (true/false)

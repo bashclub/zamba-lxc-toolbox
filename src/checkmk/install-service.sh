@@ -76,3 +76,6 @@ omd start $CMK_INSTANCE
 wget -O /opt/omd/sites/$CMK_INSTANCE/local/share/check_mk/notifications/matrix.py https://github.com/bashclub/check_mk_matrix_notifications/raw/master/matrix.py
 chmod +x /opt/omd/sites/$CMK_INSTANCE/local/share/check_mk/notifications/matrix.py
 chown $CMK_INSTANCE /opt/omd/sites/$CMK_INSTANCE/local/share/check_mk/notifications/matrix.py
+
+# automatic patch updates (switch: CMK_AUTO_UPDATE in zamba.conf)
+inst_cmk_autoupdate
